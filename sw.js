@@ -1,6 +1,6 @@
 // ひらがなカード Service Worker
 // ファイルを更新したら CACHE_VERSION の数字を上げてください。
-var CACHE_VERSION = 'v1';
+var CACHE_VERSION = 'v2';
 var CACHE_NAME = 'hiragana-cards-' + CACHE_VERSION;
 
 var ASSETS = [
