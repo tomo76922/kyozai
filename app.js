@@ -2,7 +2,8 @@
   'use strict';
 
   // 五十音表（null は空きマス）
-  var ROWS = [
+  // r は行の色の番号（style.css の --r0〜--r11）
+  var SEION = [
     ['あ', 'い', 'う', 'え', 'お'],
     ['か', 'き', 'く', 'け', 'こ'],
     ['さ', 'し', 'す', 'せ', 'そ'],
@@ -16,12 +17,22 @@
     ['ん', null, null, null, null]
   ];
 
+  // 濁音・半濁音（色は元の行と同じ。ぱ行だけは ば行と並ぶので別の色）
+  var DAKUON = [
+    ['が', 'ぎ', 'ぐ', 'げ', 'ご'],
+    ['ざ', 'じ', 'ず', 'ぜ', 'ぞ'],
+    ['だ', 'ぢ', 'づ', 'で', 'ど'],
+    ['ば', 'び', 'ぶ', 'べ', 'ぼ'],
+    ['ぱ', 'ぴ', 'ぷ', 'ぺ', 'ぽ']
+  ];
+  var DAKUON_COLORS = [1, 2, 3, 5, 11];
+
   // 1文字だけだと読み方がぶれる文字の読み上げ用テキスト
   var SPEAK_AS = {
     'を': 'お'
   };
 
-  var grid = document.getElementById('grid');
+  var main = document.querySelector('main');
   var notice = document.getElementById('notice');
   var speedBtn = document.getElementById('speedBtn');
 
@@ -68,7 +79,7 @@
 
   var activeTimer = null;
   function flash(card) {
-    var prev = grid.querySelector('.card.is-active');
+    var prev = main.querySelector('.card.is-active');
     if (prev) prev.classList.remove('is-active');
     card.classList.add('is-active');
     clearTimeout(activeTimer);
@@ -77,28 +88,34 @@
     }, 600);
   }
 
-  var frag = document.createDocumentFragment();
-  ROWS.forEach(function (row, r) {
-    row.forEach(function (ch) {
-      if (ch === null) {
-        var blank = document.createElement('div');
-        blank.className = 'blank';
-        blank.setAttribute('aria-hidden', 'true');
-        frag.appendChild(blank);
-        return;
-      }
-      var btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'card';
-      btn.textContent = ch;
-      btn.setAttribute('aria-label', ch);
-      btn.style.setProperty('--row-color', 'var(--r' + r + ')');
-      frag.appendChild(btn);
+  function build(grid, rows, colors) {
+    var frag = document.createDocumentFragment();
+    rows.forEach(function (row, r) {
+      var color = colors ? colors[r] : r;
+      row.forEach(function (ch) {
+        if (ch === null) {
+          var blank = document.createElement('div');
+          blank.className = 'blank';
+          blank.setAttribute('aria-hidden', 'true');
+          frag.appendChild(blank);
+          return;
+        }
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'card';
+        btn.textContent = ch;
+        btn.setAttribute('aria-label', ch);
+        btn.style.setProperty('--row-color', 'var(--r' + color + ')');
+        frag.appendChild(btn);
+      });
     });
-  });
-  grid.appendChild(frag);
+    grid.appendChild(frag);
+  }
 
-  grid.addEventListener('click', function (e) {
+  build(document.getElementById('grid-seion'), SEION);
+  build(document.getElementById('grid-dakuon'), DAKUON, DAKUON_COLORS);
+
+  main.addEventListener('click', function (e) {
     var card = e.target.closest('.card');
     if (!card) return;
     flash(card);

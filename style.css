@@ -14,7 +14,7 @@
   /* 行ごとのやさしい色（左上のしるし） */
   --r0: #c9b79c; --r1: #a8bfa6; --r2: #a9bccb; --r3: #cbb0a8;
   --r4: #b8b0c9; --r5: #c7c09a; --r6: #a3c2bd; --r7: #cdb08e;
-  --r8: #b5c3a0; --r9: #a9b5c9; --r10: #c4a9b5;
+  --r8: #b5c3a0; --r9: #a9b5c9; --r10: #c4a9b5; --r11: #d1b9a0;
 }
 
 * { box-sizing: border-box; }
@@ -78,13 +78,28 @@ body {
   color: var(--muted);
 }
 
+.section-title {
+  max-width: 1100px;
+  margin: 24px auto 0;
+  padding: 0 20px;
+  font-size: clamp(24px, 3.6vw, 34px);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--text);
+}
+.section + .section .section-title {
+  margin-top: 16px;
+  padding-top: 24px;
+  border-top: 3px dashed var(--card-border);
+}
+
 .grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   gap: clamp(10px, 1.8vw, 20px);
   max-width: 1100px;
   margin: 0 auto;
-  padding: 12px 20px 40px;
+  padding: 12px 20px 24px;
 }
 
 .card, .blank {
@@ -113,10 +128,10 @@ body {
 .card::before {
   content: "";
   position: absolute;
-  top: 12px;
-  left: 12px;
-  width: 14px;
-  height: 14px;
+  top: 6px;
+  left: 6px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   background: var(--row-color, var(--card-border));
 }
