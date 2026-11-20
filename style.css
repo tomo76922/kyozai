@@ -10,11 +10,17 @@
   --btn: #e6efe9;
   --btn-border: #a9c2b3;
   --btn-on: #b9d3c4;
+  --tab: #fffdf7;
+  --tab-on: #e9dcc2;
+  --tab-on-border: #b89e72;
 
   /* 行ごとのやさしい色（左上のしるし） */
   --r0: #c9b79c; --r1: #a8bfa6; --r2: #a9bccb; --r3: #cbb0a8;
   --r4: #b8b0c9; --r5: #c7c09a; --r6: #a3c2bd; --r7: #cdb08e;
   --r8: #b5c3a0; --r9: #a9b5c9; --r10: #c4a9b5; --r11: #d1b9a0;
+
+  --gap: clamp(10px, 1.8vw, 20px);
+  --side: 20px;
 }
 
 * { box-sizing: border-box; }
@@ -38,68 +44,88 @@ body {
            env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
 
+[hidden] { display: none !important; }
+
+/* ---------- 上の帯（たて向き：1段目 タイトル＋ゆっくり、2段目 切り替え） ---------- */
 .header {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas:
+    "title speed"
+    "tabs  tabs";
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
+  gap: 14px 16px;
   max-width: 1100px;
   margin: 0 auto;
-  padding: 20px 20px 8px;
+  padding: 20px var(--side) 8px;
 }
 
 .title {
+  grid-area: title;
   margin: 0;
   font-size: clamp(28px, 4.5vw, 44px);
   font-weight: 700;
   letter-spacing: 0.08em;
 }
 
-.btn {
+.tabs {
+  grid-area: tabs;
+  display: flex;
+  gap: 12px;
+}
+
+#speedBtn { grid-area: speed; }
+
+.btn, .tab {
   font: inherit;
   font-size: clamp(22px, 3vw, 30px);
   font-weight: 700;
   color: var(--text);
-  background: var(--btn);
-  border: 3px solid var(--btn-border);
   border-radius: 999px;
   min-height: 64px;
   padding: 8px 28px;
   cursor: pointer;
+  white-space: nowrap;
+}
+.btn:focus-visible, .tab:focus-visible {
+  outline: 4px solid var(--active-border);
+  outline-offset: 3px;
+}
+
+.btn {
+  background: var(--btn);
+  border: 3px solid var(--btn-border);
 }
 .btn[aria-pressed="true"] { background: var(--btn-on); }
-.btn:focus-visible { outline: 4px solid var(--active-border); outline-offset: 3px; }
+
+.tab {
+  flex: 1 1 0;
+  background: var(--tab);
+  border: 3px solid var(--card-border);
+  color: var(--muted);
+}
+.tab[aria-selected="true"] {
+  background: var(--tab-on);
+  border-color: var(--tab-on-border);
+  color: var(--text);
+}
 
 .notice {
   max-width: 1100px;
   margin: 8px auto 0;
-  padding: 12px 20px;
+  padding: 12px var(--side);
   font-size: 20px;
   color: var(--muted);
 }
 
-.section-title {
-  max-width: 1100px;
-  margin: 24px auto 0;
-  padding: 0 20px;
-  font-size: clamp(24px, 3.6vw, 34px);
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  color: var(--text);
-}
-.section + .section .section-title {
-  margin-top: 16px;
-  padding-top: 24px;
-  border-top: 3px dashed var(--card-border);
-}
-
+/* ---------- カード（たて向き：横に あいうえお） ---------- */
 .grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: clamp(10px, 1.8vw, 20px);
+  gap: var(--gap);
   max-width: 1100px;
   margin: 0 auto;
-  padding: 12px 20px 24px;
+  padding: 12px var(--side) 32px;
 }
 
 .card, .blank {
@@ -149,7 +175,72 @@ body {
   .card.is-active { transform: none; }
 }
 
-/* 横向き（iPad）は少しだけ余白を詰める */
-@media (orientation: landscape) and (min-width: 900px) {
-  .card { font-size: clamp(56px, 8vw, 110px); }
+/* ---------- 横向き：五十音表と同じ縦の並びで、1画面に全部収める ---------- */
+@media (orientation: landscape) {
+  :root {
+    --gap: clamp(6px, 1vw, 12px);
+    --header-h: 84px;
+  }
+
+  body {
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .header {
+    grid-template-columns: auto 1fr auto;
+    grid-template-areas: "title tabs speed";
+    width: 100%;
+    max-width: none;
+    height: var(--header-h);
+    padding: 10px var(--side);
+  }
+  .title { font-size: 26px; letter-spacing: 0.04em; }
+  .tabs { justify-content: center; }
+  .tab { flex: 0 1 auto; }
+  .btn, .tab { min-height: 60px; font-size: 24px; padding: 6px 24px; }
+
+  main {
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+  .section { height: 100%; }
+
+  /* あ行が いちばん右、たてに あいうえお */
+  .grid {
+    direction: rtl;
+    grid-auto-flow: column;
+    grid-template-columns: none;
+    grid-template-rows: repeat(5, 1fr);
+    height: 100%;
+    max-width: none;
+    padding: 8px var(--side) 16px;
+    margin: 0 auto;
+  }
+  /* 11列ぶん（または5列ぶん）を、高さに合わせた幅にして中央に置く */
+  .grid[data-cols="11"] {
+    grid-template-columns: repeat(11, 1fr);
+    width: min(100%, calc((100dvh - var(--header-h) - 24px) / 5 * 11));
+  }
+  .grid[data-cols="5"] {
+    grid-template-columns: repeat(5, 1fr);
+    width: min(100%, calc((100dvh - var(--header-h) - 24px) * 1.1));
+  }
+
+  .card, .blank {
+    aspect-ratio: auto;
+    min-width: 0;
+    min-height: 0;
+    border-radius: 16px;
+  }
+  .card {
+    direction: ltr;
+    container-type: size;
+    font-size: clamp(32px, 6vh, 80px);
+  }
+  /* カードの大きさに合わせて文字を大きくする */
+  .card-label { font-size: min(68cqw, 68cqh); }
 }

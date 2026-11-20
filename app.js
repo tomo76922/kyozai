@@ -103,7 +103,10 @@
         var btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'card';
-        btn.textContent = ch;
+        var label = document.createElement('span');
+        label.className = 'card-label';
+        label.textContent = ch;
+        btn.appendChild(label);
         btn.setAttribute('aria-label', ch);
         btn.style.setProperty('--row-color', 'var(--r' + color + ')');
         frag.appendChild(btn);
@@ -121,6 +124,36 @@
     flash(card);
     speak(card.textContent);
   });
+
+  // 「あ〜ん」「が・ざ・だ・ば・ぱ」の切り替え
+  var tabs = Array.prototype.slice.call(document.querySelectorAll('.tab'));
+
+  function selectTab(tab) {
+    tabs.forEach(function (t) {
+      var on = t === tab;
+      t.setAttribute('aria-selected', String(on));
+      t.tabIndex = on ? 0 : -1;
+      document.getElementById(t.getAttribute('aria-controls')).hidden = !on;
+    });
+    if (synth) synth.cancel();
+    window.scrollTo(0, 0);
+    try { localStorage.setItem('tab', tab.id); } catch (e) {}
+  }
+
+  tabs.forEach(function (t, i) {
+    t.addEventListener('click', function () { selectTab(t); });
+    t.addEventListener('keydown', function (e) {
+      if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+      var next = tabs[(i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length];
+      selectTab(next);
+      next.focus();
+    });
+  });
+
+  try {
+    var saved = document.getElementById(localStorage.getItem('tab') || '');
+    if (saved && saved.classList.contains('tab')) selectTab(saved);
+  } catch (e) {}
 
   speedBtn.addEventListener('click', function () {
     slow = !slow;
