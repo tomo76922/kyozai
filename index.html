@@ -19,21 +19,23 @@
 <body>
   <header class="header">
     <h1 class="title">ひらがな カード</h1>
-    <div class="controls">
-      <button type="button" class="btn" id="speedBtn" aria-pressed="false">ゆっくり</button>
+    <div class="tabs" role="tablist" aria-label="ひょうじする もじ">
+      <button type="button" class="tab" role="tab" id="tab-seion"
+              aria-controls="sec-seion" aria-selected="true">あ〜ん</button>
+      <button type="button" class="tab" role="tab" id="tab-dakuon"
+              aria-controls="sec-dakuon" aria-selected="false" tabindex="-1">が・ざ・だ・ば・ぱ</button>
     </div>
+    <button type="button" class="btn" id="speedBtn" aria-pressed="false">ゆっくり</button>
   </header>
 
   <p class="notice" id="notice" hidden></p>
 
   <main>
-    <section class="section" aria-labelledby="h-seion">
-      <h2 class="section-title" id="h-seion">あ〜ん</h2>
-      <div class="grid" id="grid-seion"></div>
+    <section class="section" id="sec-seion" role="tabpanel" aria-labelledby="tab-seion">
+      <div class="grid" id="grid-seion" data-cols="11"></div>
     </section>
-    <section class="section" aria-labelledby="h-dakuon">
-      <h2 class="section-title" id="h-dakuon">が・ざ・だ・ば・ぱ</h2>
-      <div class="grid" id="grid-dakuon"></div>
+    <section class="section" id="sec-dakuon" role="tabpanel" aria-labelledby="tab-dakuon" hidden>
+      <div class="grid" id="grid-dakuon" data-cols="5"></div>
     </section>
   </main>
 
