@@ -163,8 +163,24 @@
 
   // オフライン対応（Service Worker）
   if ('serviceWorker' in navigator) {
+    // すでに古い版が動いていたときだけ、新しい版への切り替えで1回だけ再読み込みする
+    var hadController = !!navigator.serviceWorker.controller;
+    var reloaded = false;
+    navigator.serviceWorker.addEventListener('controllerchange', function () {
+      if (!hadController || reloaded) return;
+      reloaded = true;
+      window.location.reload();
+    });
+
     window.addEventListener('load', function () {
-      navigator.serviceWorker.register('./sw.js', { scope: './' }).catch(function () {});
+      navigator.serviceWorker.register('./sw.js', { scope: './', updateViaCache: 'none' })
+        .then(function (reg) {
+          // ホーム画面から開き直したとき（画面に戻ったとき）も更新を確認する
+          document.addEventListener('visibilitychange', function () {
+            if (document.visibilityState === 'visible') reg.update().catch(function () {});
+          });
+        })
+        .catch(function () {});
     });
   }
 })();
