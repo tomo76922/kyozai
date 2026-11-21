@@ -1,7 +1,8 @@
 // ひらがなカード Service Worker
 // ファイルを更新したら CACHE_VERSION の数字を上げてください。
-var CACHE_VERSION = 'v3';
-var CACHE_NAME = 'hiragana-cards-' + CACHE_VERSION;
+var CACHE_VERSION = 'v4';
+var CACHE_PREFIX = 'hiragana-cards-';
+var CACHE_NAME = CACHE_PREFIX + CACHE_VERSION;
 
 var ASSETS = [
   './',
@@ -14,10 +15,15 @@ var ASSETS = [
   './icons/apple-touch-icon.png'
 ];
 
+// 新しい版を入れるときは、ブラウザのHTTPキャッシュを通さずに取り直す
 self.addEventListener('install', function (event) {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(function (cache) { return cache.addAll(ASSETS); })
+      .then(function (cache) {
+        return cache.addAll(ASSETS.map(function (url) {
+          return new Request(url, { cache: 'reload' });
+        }));
+      })
       .then(function () { return self.skipWaiting(); })
   );
 });
@@ -26,7 +32,7 @@ self.addEventListener('activate', function (event) {
   event.waitUntil(
     caches.keys().then(function (keys) {
       return Promise.all(keys.map(function (key) {
-        if (key.indexOf('hiragana-cards-') === 0 && key !== CACHE_NAME) {
+        if (key.indexOf(CACHE_PREFIX) === 0 && key !== CACHE_NAME) {
           return caches.delete(key);
         }
       }));
@@ -34,32 +40,33 @@ self.addEventListener('activate', function (event) {
   );
 });
 
+// ネット優先：つながっていれば最新を取りに行き、保存も更新する。
+// つながっていないときだけ、保存してある版を返す。
+function networkFirst(request, cacheKey) {
+  return fetch(request, { cache: 'no-cache' }).then(function (res) {
+    if (res && res.ok) {
+      var copy = res.clone();
+      caches.open(CACHE_NAME).then(function (cache) { cache.put(cacheKey, copy); });
+    }
+    return res;
+  }).catch(function () {
+    return caches.match(cacheKey, { ignoreSearch: true }).then(function (cached) {
+      return cached || Response.error();
+    });
+  });
+}
+
 self.addEventListener('fetch', function (event) {
   var req = event.request;
   if (req.method !== 'GET') return;
   if (new URL(req.url).origin !== self.location.origin) return;
 
-  // ページを開くとき：キャッシュの index.html を返す（オフラインでも開ける）
   if (req.mode === 'navigate') {
-    event.respondWith(
-      caches.match('./index.html', { ignoreSearch: true }).then(function (cached) {
-        return cached || fetch(req);
-      })
-    );
+    // ページ本体は index.html として保存・取り出しする
+    event.respondWith(networkFirst(req, './index.html'));
     return;
   }
 
-  // それ以外：キャッシュ優先、なければネットから取得して保存
-  event.respondWith(
-    caches.match(req, { ignoreSearch: true }).then(function (cached) {
-      if (cached) return cached;
-      return fetch(req).then(function (res) {
-        if (res && res.ok) {
-          var copy = res.clone();
-          caches.open(CACHE_NAME).then(function (cache) { cache.put(req, copy); });
-        }
-        return res;
-      });
-    })
-  );
+  // CSS・JS なども同じくネット優先（ページと版がずれないように）
+  event.respondWith(networkFirst(req, req));
 });
