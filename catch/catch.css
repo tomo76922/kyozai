@@ -517,3 +517,195 @@ body {
   .hud-top { gap: 8px; }
   .score { min-width: 0; padding: 4px 12px; }
 }
+
+/* ---------- あそびかた（ゆび・こえ） ---------- */
+.mode {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+.mode-btn { gap: 8px; min-height: 64px; padding: 6px 20px; }
+.mode-btn svg { width: 1.3em; height: 1.3em; flex: none; }
+.mode-btn[aria-pressed="false"] { background: var(--card); border-color: var(--card-border); }
+.mode-btn[aria-pressed="true"] { background: var(--active); border-color: var(--active-border); }
+
+.koe-row {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.koe-note {
+  margin: 0;
+  font-size: clamp(17px, 2vw, 20px);
+  font-weight: 700;
+  color: var(--muted);
+  text-align: center;
+}
+.koe-test-btn { gap: 6px; background: var(--card); border-color: var(--btn-border); }
+.koe-test-btn svg { width: 1.2em; height: 1.2em; }
+
+/* ---------- こえの メーター ---------- */
+.meter {
+  position: relative;
+  overflow: visible;
+  background: #e8e1d2;
+  border: 3px solid var(--card-border);
+  border-radius: 999px;
+}
+.meter-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 100%;
+  border-radius: 999px;
+  background: #a9c2b3;
+  transform: scaleX(0);
+  transform-origin: left center;
+  will-change: transform;
+}
+.meter.is-over .meter-fill { background: #e3c06a; }
+.meter-line {
+  position: absolute;
+  top: -10px;
+  bottom: -10px;
+  left: 50%;
+  width: 4px;
+  margin-left: -2px;
+  border-radius: 2px;
+  background: #c8665a;
+}
+.meter-line span {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-top: 4px;
+  transform: translateX(-50%);
+  font-size: 16px;
+  font-weight: 700;
+  color: #b4583f;
+  white-space: nowrap;
+}
+.meter-big { flex: 1 1 auto; height: 40px; min-width: 0; }
+.meter-small { width: clamp(140px, 26vw, 240px); height: 20px; }
+.meter-small .meter-line { top: -6px; bottom: -6px; }
+
+/* あそんでいる ときの メーター（下の まんなか） */
+.koe-hud {
+  position: absolute;
+  left: 50%;
+  bottom: calc(26px + env(safe-area-inset-bottom));
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
+  background: rgba(255, 253, 247, 0.85);
+  border: 3px solid var(--card-border);
+  border-radius: 999px;
+  transform: translateX(-50%);
+}
+.koe-hud svg { width: 30px; height: 30px; flex: none; }
+
+/* ---------- マイクの おしらせ ---------- */
+.mic-card, .test-card { width: min(720px, 92vw); }
+.mic-icon {
+  width: 64px;
+  height: 64px;
+  padding: 10px;
+  color: var(--text);
+  background: var(--btn);
+  border: 3px solid var(--btn-border);
+  border-radius: 50%;
+}
+.mic-title, .test-title { font-size: clamp(30px, 4.4vw, 42px); }
+.mic-text, .test-text {
+  margin: 0;
+  font-size: clamp(19px, 2.4vw, 23px);
+  font-weight: 700;
+  line-height: 1.6;
+  text-align: center;
+}
+.mic-sub, .test-hint {
+  margin: 0;
+  font-size: clamp(16px, 2vw, 18px);
+  color: var(--muted);
+  text-align: center;
+  line-height: 1.5;
+}
+.mic-err {
+  margin: 0;
+  padding: 10px 16px;
+  font-size: 18px;
+  line-height: 1.5;
+  background: #fbe3dc;
+  border-radius: 12px;
+}
+
+/* ---------- こえテスト ---------- */
+.test-meter-row {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  width: 100%;
+  padding: 14px 4px 28px;
+}
+.test-lamp {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 108px;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--muted);
+}
+.lamp-dot {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #ebe4d6;
+  border: 3px solid var(--card-border);
+  transition: background-color 0.15s ease, transform 0.15s ease;
+}
+.test-lamp.is-on { color: var(--text); }
+.test-lamp.is-on .lamp-dot { background: #f3cf63; border-color: #e0a92a; transform: scale(1.12); }
+.test-adjust {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 10px 12px;
+}
+.adj-label { font-size: clamp(18px, 2.2vw, 21px); font-weight: 700; }
+.adj-btn { min-height: 60px; padding: 6px 20px; }
+.adj-value {
+  min-width: 3em;
+  font-size: 28px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.koe-again {
+  margin: 0;
+  padding: 6px 18px;
+  font-size: clamp(19px, 2.4vw, 23px);
+  font-weight: 700;
+  background: var(--btn);
+  border: 3px solid var(--btn-border);
+  border-radius: 999px;
+}
+
+/* せっていの えらぶ ボタン */
+.opt-btn[aria-pressed="false"] { background: var(--card); border-color: var(--card-border); }
+.set-note-gap { margin-top: 22px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .lamp-dot { transition: none; }
+  .test-lamp.is-on .lamp-dot { transform: none; }
+}
+
+/* わかちがきの ところで だけ 改行する */
+.mic-text, .mic-sub, .test-text, .test-hint, .koe-note, .koe-again { word-break: keep-all; overflow-wrap: anywhere; }
+.adj-label { flex-basis: 100%; text-align: center; }
