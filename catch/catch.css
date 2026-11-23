@@ -1,0 +1,519 @@
+/* たべもの キャッチ（色・文字・もくじボタンは ../common.css） */
+:root {
+  --ok: #e3efe2;
+  --ok-border: #8fb58c;
+}
+
+/* 画面いっぱいに使い、ページは スクロールさせない */
+html, body { height: 100%; overflow: hidden; }
+body {
+  position: fixed;
+  inset: 0;
+  overscroll-behavior: none;
+}
+
+.cv {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  touch-action: none;
+  background: var(--bg);
+}
+
+/* ---------- ボタン（ほかの教材と同じ形） ---------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font: inherit;
+  font-size: clamp(20px, 2.6vw, 26px);
+  font-weight: 700;
+  color: var(--text);
+  text-decoration: none;
+  border-radius: 999px;
+  min-height: 60px;
+  padding: 6px 24px;
+  cursor: pointer;
+  white-space: nowrap;
+  background: var(--btn);
+  border: 3px solid var(--btn-border);
+}
+.btn[aria-pressed="true"] { background: var(--btn-on); }
+.btn:active { background: var(--btn-on); }
+.btn:focus-visible, .gear:focus-visible, .move-btn:focus-visible {
+  outline: 4px solid var(--active-border);
+  outline-offset: 3px;
+}
+.btn-go { background: var(--ok); border-color: var(--ok-border); }
+.btn-go:active { background: #cfe3cd; }
+.btn-sub { background: var(--card); border-color: var(--card-border); }
+
+.sound-btn { gap: 6px; padding: 6px 18px; }
+.sound-btn svg { width: 1.3em; height: 1.3em; flex: none; }
+.sound-btn[aria-pressed="false"] { background: var(--card); border-color: var(--card-border); color: var(--muted); }
+
+/* ---------- はじめの がめん ---------- */
+.title-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left);
+}
+
+.header {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  grid-template-areas: "home title sound gear";
+  align-items: center;
+  gap: 12px 16px;
+  width: 100%;
+  padding: 12px var(--side) 4px;
+}
+.header .home-btn { grid-area: home; min-height: 60px; }
+.header .sound-btn { grid-area: sound; }
+.title {
+  grid-area: title;
+  margin: 0;
+  font-size: clamp(24px, 3.6vw, 40px);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+
+/* せってい（小さく・目立たない。ながおしで ひらく） */
+.gear {
+  grid-area: gear;
+  position: relative;
+  overflow: hidden;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 4px 12px;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--muted);
+  background: rgba(255, 253, 247, 0.7);
+  border: 2px solid var(--card-border);
+  border-radius: 12px;
+  cursor: pointer;
+  -webkit-touch-callout: none;
+}
+.gear-text { position: relative; z-index: 1; }
+.gear::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--active);
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+.gear.is-pressing::before {
+  transform: scaleX(1);
+  transition: transform var(--hold, 1s) linear;
+}
+.gear-hint {
+  position: absolute;
+  right: var(--side);
+  top: calc(100% - 4px);
+  z-index: 3;
+  margin: 0;
+  padding: 6px 12px;
+  font-size: 15px;
+  color: var(--muted);
+  background: var(--card);
+  border: 2px solid var(--card-border);
+  border-radius: 10px;
+}
+
+/* 横向き：ならべる／縦向き：たてに つむ。下の じめん（ひよこ）には かからないように */
+.title-body {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: clamp(14px, 2.4vw, 28px);
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: clamp(6px, 1.6vh, 16px) var(--side) 0;
+}
+@media (orientation: portrait) {
+  .title-body { flex-direction: column; align-items: stretch; max-width: 640px; }
+}
+
+.panel {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: clamp(14px, 2vh, 22px) clamp(16px, 2.4vw, 26px);
+  background: rgba(255, 253, 247, 0.9);
+  border: 3px solid var(--card-border);
+  border-radius: 28px;
+  box-shadow: 0 4px 0 #d9d2c3;
+}
+.panel-title {
+  margin: 0 0 8px;
+  font-size: clamp(21px, 2.6vw, 26px);
+  font-weight: 700;
+}
+.panel-title-sub { margin-top: clamp(8px, 1.6vh, 14px); }
+
+.guide-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+  gap: 6px 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.guide-list li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: clamp(18px, 2.2vw, 22px);
+  font-weight: 700;
+  white-space: nowrap;
+}
+.g-pic { font-size: 1.7em; line-height: 1; width: 1.25em; text-align: center; }
+.g-pic svg { width: 1em; height: 1em; vertical-align: -0.1em; }
+.guide-avoid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+.guide-avoid li { color: var(--muted); }
+.sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.start-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(10px, 1.8vh, 18px);
+}
+.speed {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.speed-label { font-size: clamp(20px, 2.4vw, 24px); font-weight: 700; margin-right: 4px; }
+.speed-btn[aria-pressed="false"] { background: var(--card); border-color: var(--card-border); }
+
+.btn-start {
+  min-width: 260px;
+  min-height: 84px;
+  font-size: clamp(30px, 4vw, 40px);
+  letter-spacing: 0.1em;
+  box-shadow: 0 4px 0 #b8cfb6;
+}
+
+.best { align-self: stretch; }
+.best .panel-title { text-align: center; }
+.best-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.best-list li {
+  display: grid;
+  grid-template-columns: 2.6em 1fr auto;
+  align-items: baseline;
+  gap: 8px;
+  padding: 4px 14px;
+  font-size: clamp(19px, 2.3vw, 23px);
+  font-weight: 700;
+  background: #f6f2e9;
+  border-radius: 14px;
+}
+.best-list .b-rank { color: var(--muted); }
+.best-list .b-score b { font-size: 1.15em; }
+.best-list .b-date { font-size: 0.8em; color: var(--muted); text-align: right; }
+.best-list .b-slow {
+  margin-left: 6px;
+  padding: 0 8px;
+  font-size: 0.7em;
+  color: var(--muted);
+  background: var(--card);
+  border: 2px solid var(--card-border);
+  border-radius: 999px;
+  vertical-align: 0.1em;
+}
+.best-list li.is-new { background: var(--active); outline: 3px solid var(--active-border); }
+.best-list .b-empty { display: block; text-align: center; color: var(--muted); background: none; }
+
+/* ---------- あそんでいる ときの 表示 ---------- */
+.hud {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;   /* なぞる 操作は うしろの 絵に とおす */
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+.hud a, .hud button { pointer-events: auto; }
+.hud-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px var(--side) 0;
+}
+.hud-top .home-btn { min-height: 60px; flex: none; }
+.hud-top .sound-btn { flex: none; }
+
+.hearts {
+  flex: 1 1 auto;
+  display: flex;
+  justify-content: center;
+  gap: clamp(2px, 0.8vw, 8px);
+  min-width: 0;
+}
+.heart { width: clamp(34px, 5vw, 50px); height: clamp(34px, 5vw, 50px); flex: none; }
+.heart .h-fill { fill: #ef9c96; transition: fill 0.3s ease; }
+.heart.is-empty .h-fill { fill: #ebe4d6; }
+.heart.is-empty .h-shine { opacity: 0; }
+.heart.is-lost { animation: shake 0.5s ease; }
+.heart.is-gain { animation: pop 0.45s ease; }
+
+.score {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  min-width: 128px;
+  justify-content: flex-end;
+  margin: 0;
+  padding: 4px 18px;
+  font-size: clamp(28px, 3.6vw, 36px);
+  font-weight: 700;
+  background: rgba(255, 253, 247, 0.85);
+  border: 3px solid var(--card-border);
+  border-radius: 999px;
+  flex: none;
+}
+.score small { font-size: 0.6em; }
+.score span { display: inline-block; }
+.score.is-pop span { animation: pop 0.3s ease; }
+
+/* レベルアップ・しんきろく（小さく 出て きえる） */
+.toast {
+  position: absolute;
+  left: 50%;
+  top: calc(84px + env(safe-area-inset-top));
+  margin: 0;
+  padding: 6px 20px;
+  font-size: clamp(19px, 2.4vw, 23px);
+  font-weight: 700;
+  background: rgba(255, 253, 247, 0.92);
+  border: 3px solid var(--active-border);
+  border-radius: 999px;
+  white-space: nowrap;
+  transform: translateX(-50%);
+  opacity: 0;
+  pointer-events: none;
+}
+.toast.is-show { animation: toast 1.8s ease forwards; }
+
+.hint {
+  position: absolute;
+  left: 50%;
+  top: 34%;
+  margin: 0;
+  padding: 10px 26px;
+  font-size: clamp(22px, 3.2vw, 32px);
+  font-weight: 700;
+  background: rgba(255, 253, 247, 0.9);
+  border: 3px solid var(--card-border);
+  border-radius: 999px;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* みぎ・ひだりの ボタン（じめんの 上の 左右の すみ） */
+.move-btn {
+  position: absolute;
+  bottom: calc(12px + env(safe-area-inset-bottom));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: clamp(80px, 11vmin, 104px);
+  height: clamp(80px, 11vmin, 104px);
+  padding: 0;
+  color: var(--text);
+  background: rgba(255, 253, 247, 0.82);
+  border: 3px solid var(--card-border);
+  border-radius: 50%;
+  box-shadow: 0 3px 0 #d9d2c3;
+  cursor: pointer;
+  touch-action: none;
+  -webkit-touch-callout: none;
+}
+.move-btn svg { width: 56%; height: 56%; }
+.move-btn.is-down { background: var(--active); border-color: var(--active-border); transform: translateY(2px); box-shadow: 0 1px 0 #d9d2c3; }
+.move-left { left: calc(var(--side) + env(safe-area-inset-left)); }
+.move-right { right: calc(var(--side) + env(safe-area-inset-right)); }
+
+/* ---------- いちじていし・おしまい ---------- */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(243, 239, 230, 0.55);
+}
+.card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  max-width: 92vw;
+  max-height: 100%;
+  overflow-y: auto;
+  padding: clamp(20px, 3.4vh, 32px) clamp(24px, 4vw, 48px);
+  background: var(--card);
+  border: 3px solid var(--card-border);
+  border-radius: 32px;
+  box-shadow: 0 6px 0 #d9d2c3;
+  animation: rise 0.3s ease;
+}
+.card-title {
+  margin: 0;
+  font-size: clamp(34px, 5vw, 52px);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+.card-btns {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 4px;
+}
+.card-btns .btn { min-height: 68px; padding: 8px 28px; }
+
+.new-rec {
+  margin: 0;
+  padding: 4px 22px;
+  font-size: clamp(26px, 3.6vw, 36px);
+  font-weight: 700;
+  color: #b4583f;
+  background: #fbe9d6;
+  border: 3px solid #e7b48f;
+  border-radius: 999px;
+  animation: pop 0.6s ease 0.2s both;
+}
+.over-score {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin: 0;
+  font-size: clamp(28px, 4vw, 38px);
+  font-weight: 700;
+}
+.over-score b { font-size: 1.8em; }
+.best-small { width: min(420px, 78vw); }
+.best-small li { font-size: clamp(17px, 2vw, 20px); padding: 2px 14px; }
+
+/* ---------- せってい（先生用） ---------- */
+.settings {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  background: var(--bg);
+  padding: env(safe-area-inset-top) env(safe-area-inset-right)
+           env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+.set-inner {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 20px var(--side) 48px;
+}
+.set-head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 8px 0 12px;
+  background: var(--bg);
+}
+.set-title { margin: 0; font-size: clamp(22px, 3.4vw, 32px); font-weight: 700; }
+.set-warn {
+  margin: 0 0 12px;
+  padding: 12px 16px;
+  font-size: 18px;
+  background: #fbe3dc;
+  border-radius: 12px;
+}
+.set-sec {
+  margin-top: 20px;
+  padding: 18px clamp(14px, 2.4vw, 24px) 22px;
+  background: var(--card);
+  border: 3px solid var(--card-border);
+  border-radius: 22px;
+}
+.set-h { margin: 0 0 6px; font-size: clamp(22px, 3vw, 28px); }
+.set-note { margin: 0 0 12px; font-size: 17px; color: var(--muted); }
+.set-list { margin: 0; padding-left: 1.6em; font-size: 19px; line-height: 1.7; }
+.set-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 16px;
+  margin-top: 16px;
+}
+.set-status { font-size: 18px; font-weight: 700; color: #4e8a63; }
+.btn-reset { background: #fbe9e4; border-color: #e0a99c; }
+.btn-reset:active, .btn-reset.is-armed { background: #f5d2c8; border-color: #c9725f; }
+
+/* ---------- うごき ---------- */
+@keyframes pop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.25); }
+  100% { transform: scale(1); }
+}
+@keyframes shake {
+  0%, 100% { transform: none; }
+  20% { transform: translateX(-4px) rotate(-6deg); }
+  40% { transform: translateX(4px) rotate(5deg); }
+  60% { transform: translateX(-3px) rotate(-3deg); }
+  80% { transform: translateX(2px); }
+}
+@keyframes rise {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes toast {
+  0% { opacity: 0; transform: translate(-50%, 8px); }
+  15% { opacity: 1; transform: translate(-50%, 0); }
+  75% { opacity: 1; transform: translate(-50%, 0); }
+  100% { opacity: 0; transform: translate(-50%, -6px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card, .new-rec, .score.is-pop span, .heart.is-lost, .heart.is-gain { animation: none; }
+  .toast.is-show { animation: none; opacity: 1; }
+}
+
+/* せまい 画面 */
+@media (max-width: 600px) {
+  .header { grid-template-columns: auto 1fr auto; grid-template-areas: "home sound gear" "title title title"; }
+  .title { text-align: center; }
+  .hud-top { gap: 8px; }
+  .score { min-width: 0; padding: 4px 12px; }
+}
