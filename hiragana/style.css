@@ -46,13 +46,13 @@ body {
 
 [hidden] { display: none !important; }
 
-/* ---------- 上の帯（たて向き：1段目 タイトル＋ゆっくり、2段目 切り替え） ---------- */
+/* ---------- 上の帯（たて向き：1段目 もくじ＋タイトル＋ゆっくり、2段目 切り替え） ---------- */
 .header {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: auto 1fr auto;
   grid-template-areas:
-    "title speed"
-    "tabs  tabs";
+    "home title speed"
+    "tabs tabs  tabs";
   align-items: center;
   gap: 14px 16px;
   max-width: 1100px;
@@ -75,6 +75,7 @@ body {
 }
 
 #speedBtn { grid-area: speed; }
+.header .home-btn { grid-area: home; }
 
 .btn, .tab {
   font: inherit;
@@ -191,8 +192,8 @@ body {
   }
 
   .header {
-    grid-template-columns: auto 1fr auto;
-    grid-template-areas: "title tabs speed";
+    grid-template-columns: auto auto 1fr auto;
+    grid-template-areas: "home title tabs speed";
     width: 100%;
     max-width: none;
     height: var(--header-h);
@@ -202,6 +203,7 @@ body {
   .tabs { justify-content: center; }
   .tab { flex: 0 1 auto; }
   .btn, .tab { min-height: 60px; font-size: 24px; padding: 6px 24px; }
+  .header .home-btn { min-height: 60px; font-size: 22px; padding: 6px 18px 6px 14px; }
 
   main {
     flex: 1 1 auto;

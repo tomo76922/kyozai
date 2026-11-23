@@ -1,7 +1,7 @@
 {
-  "name": "ひらがなカード",
-  "short_name": "ひらがな",
-  "description": "タップすると読み上げる、ひらがな46文字のカード",
+  "name": "きょうざい",
+  "short_name": "きょうざい",
+  "description": "ひらがなカード・みえるタイマーなどの きょうざい",
   "lang": "ja",
   "start_url": "./",
   "scope": "./",
