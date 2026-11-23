@@ -38,8 +38,9 @@
   };
   var KOE_LANES = [0.3, 0.7];   // こえモードの ひだり・みぎの れつ（はばに たいする わりあい）
   var KOE_SAFE_START = 6;
-  // めで あそぶ（しせんモード）：ひよこと 落ちてくる 物を 大きく（1.5ばい）。見つめた ほうへ うごく
-  var ME_SCALE = 1.5;
+  // めで あそぶ（しせんモード）：ひよこは 1.5ばい、落ちてくる 物は 3ばいに 大きく する。見つめた ほうへ うごく
+  var ME_CHICK_SCALE = 1.5;
+  var ME_ITEM_SCALE = 3;
   var ME_DWELL = 0.6;          // この びょうすう 見つめると、そちらへ うごく
   var HEART_CHANCE = 0.04;     // ハートは たまにしか でない
   var HEART_MIN_SEC = 12;
@@ -245,7 +246,8 @@
   var itemSize = 64;  // おちてくる ものの 大きさ
   var chickS = 1.3;   // ひよこの 大きさ
   var basketHalf = 56;
-  var sizeScale = 1;  // しせんモードの ときだけ 1.5
+  var chickScale = 1;  // しせんモードの ときだけ 大きく（ひよこ）
+  var itemScale = 1;   // しせんモードの ときだけ 大きく（落ちてくる 物）
   var bg = null;      // うしろの 絵（大きさが かわったときだけ かく）
   var sprites = {};   // おちてくる ものの 絵（さきに かいておく）
   var heartPath = null;
@@ -262,8 +264,8 @@
     k = clamp(vmin / 780, 0.6, 1.4);
     var btn = clamp(vmin * 0.11, 80, 104);
     groundY = H - (btn + 36);
-    itemSize = Math.round(72 * k * sizeScale);
-    chickS = 1.35 * k * sizeScale;
+    itemSize = Math.round(72 * k * itemScale);
+    chickS = 1.35 * k * chickScale;
     basketHalf = 44 * chickS;
     // ひよこの いちは、はばに たいする わりあいを たもつ
     if (P) P.x = clamp(P.x / oldW * W, minX(), maxX());
@@ -502,8 +504,9 @@
 
   // 2れつの いち。ひよこ（と 物）が 大きくても、となりの れつと かさならないように はなす
   function laneX(i) {
-    var d = Math.max(W * (0.5 - KOE_LANES[0]), basketHalf * 1.15 + 8);
-    d = Math.min(d, W / 2 - basketHalf - 6);
+    // かごどうし・物どうしが かさならない はば。物が がめんから はみださない はば
+    var d = Math.max(W * (0.5 - KOE_LANES[0]), basketHalf * 1.15 + 8, itemSize * 0.5 + 10);
+    d = Math.min(d, W / 2 - Math.max(basketHalf + 6, itemSize * 0.5 + 4));
     return i === 0 ? W / 2 - d : W / 2 + d;
   }
   function laneAt(x) { return x < W / 2 ? 0 : 1; }
@@ -534,8 +537,20 @@
     return Math.max(G.sp.gapMin, g);
   }
 
+  // 2れつの とき：その れつの 上の ほうに まだ 物が あると、かさなって しまう
+  function laneFree(l) {
+    var y0 = itemY(0);
+    for (var i = 0; i < items.length; i++) {
+      var o = items[i];
+      if (o.state === 'fall' && o.lane === l && itemY(o.p) - y0 < itemSize * 1.2) return false;
+    }
+    return true;
+  }
+
   function spawn() {
     var kind, type;
+    // 2れつの とき：どちらの れつも うまって いたら、すこし まって から だす
+    if (G.lanes && !laneFree(0) && !laneFree(1)) return false;
     var avoidRate = G.lanes ? Math.min(0.15 + 0.008 * (G.level - 1), 0.22) : Math.min(0.2 + 0.012 * (G.level - 1), 0.32);
     if (G.hp < HP_MAX && G.t - G.lastHeart > HEART_MIN_SEC && Math.random() < HEART_CHANCE) {
       kind = HEART; type = 'heart'; G.lastHeart = G.t;
@@ -561,6 +576,7 @@
       // こえ・しせんモード：ひだりか みぎの れつ。おなじ れつが ながく つづかないように
       lane = Math.random() < 0.5 ? 0 : 1;
       if (G.lastLane === lane && G.sameLane >= 2) lane = 1 - lane;
+      if (!laneFree(lane)) lane = 1 - lane;
       G.sameLane = G.lastLane === lane ? (G.sameLane || 0) + 1 : 1;
       G.lastLane = lane;
     }
@@ -660,8 +676,8 @@
     }
     G.next -= dt;
     if (G.next <= 0) {
-      spawn();
-      G.next = gapNow() * rand(0.75, 1.25);
+      if (spawn() === false) G.next = 0.15;
+      else G.next = gapNow() * rand(0.75, 1.25);
     }
     if (G.bubble) {
       G.bubble.t += dt;
@@ -799,7 +815,7 @@
     if (mode === 'play' && G && G.lanes) {
       ctx.fillStyle = 'rgba(255,253,247,0.55)';
       for (var ln = 0; ln < 2; ln++) {
-        ctx.beginPath(); ctx.ellipse(laneX(ln), groundY + 4, basketHalf * 1.05, 11 * k * sizeScale, 0, 0, 6.2832); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(laneX(ln), groundY + 4, basketHalf * 1.05, 11 * k * chickScale, 0, 0, 6.2832); ctx.fill();
       }
       // しせんモード：見つめている ほうに、たまっていく わ
       if (G.me && gaze.t > 0 && gaze.x !== null && !G.over && !paused) {
@@ -888,7 +904,7 @@
         sparkle(p.x, p.y, 7 * k, p.color);
       } else if (p.text === 'heart') {
         var sp = sprites.heart;
-        var s = itemSize * 0.5;
+        var s = Math.min(itemSize * 0.5, 64 * k);
         ctx.drawImage(sp, p.x - s / 2, p.y - s / 2, s, s);
       } else {
         var fs = Math.round(30 * k);
@@ -1023,7 +1039,7 @@
     // かごの 中に はいった たべもの（すこしの 間 みえる）
     if (P.catchT > 0 && sprites[P.catchEmoji]) {
       var sp = sprites[P.catchEmoji];
-      var cs = (itemSize * 0.75) / s;
+      var cs = Math.min(itemSize * 0.75, basketHalf * 1.1) / s;
       var sink = (1 - P.catchT / 0.5) * 10;
       ctx.drawImage(sp, -cs / 2, -40 - cs / 2 + 6 + sink, cs, cs);
     }
@@ -1219,14 +1235,16 @@
 
   // ---------- がめんの きりかえ ----------
   // しせんモードの ときだけ、ひよこと 物を 大きく する
-  function setScale(v) {
-    if (sizeScale === v) return;
-    sizeScale = v;
+  function setScale(big) {
+    var c = big ? ME_CHICK_SCALE : 1, it = big ? ME_ITEM_SCALE : 1;
+    if (chickScale === c && itemScale === it) return;
+    chickScale = c;
+    itemScale = it;
     resize();
   }
 
   function startGame() {
-    setScale(rec.mode === 'me' ? ME_SCALE : 1);
+    setScale(rec.mode === 'me');
     newGame();
     mode = 'play';
     paused = false;
@@ -1255,7 +1273,7 @@
     mode = 'title';
     paused = false;
     G = null;
-    setScale(1);
+    setScale(false);
     items = [];
     pops = [];
     P = newChick();
