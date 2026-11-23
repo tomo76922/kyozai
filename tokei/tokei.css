@@ -1,0 +1,300 @@
+/* とけい（色・文字・もくじボタンは ../common.css） */
+:root {
+  --tab: #fffdf7;
+  --tab-on: #e9dcc2;
+  --tab-on-border: #b89e72;
+  --ok: #e3efe2;
+  --ok-border: #8fb58c;
+  --retry: #f7ead6;
+  --retry-border: #d2ad74;
+  --gap: clamp(10px, 1.8vw, 18px);
+}
+
+/* 画面いっぱいに使う（入りきらない せまい画面では スクロールできる） */
+body {
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---------- 上の帯（ひらがなカードと同じ形） ---------- */
+.header {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-areas:
+    "home title speed"
+    "tabs tabs  tabs";
+  align-items: center;
+  gap: 14px 16px;
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 20px var(--side) 8px;
+}
+
+.title {
+  grid-area: title;
+  margin: 0;
+  font-size: clamp(28px, 4.5vw, 44px);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.tabs {
+  grid-area: tabs;
+  display: flex;
+  gap: 12px;
+}
+
+#speedBtn { grid-area: speed; }
+.header .home-btn { grid-area: home; }
+
+.btn, .tab, .seg-btn {
+  font: inherit;
+  font-size: clamp(22px, 3vw, 30px);
+  font-weight: 700;
+  color: var(--text);
+  border-radius: 999px;
+  min-height: 64px;
+  padding: 8px 28px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btn:focus-visible, .tab:focus-visible, .seg-btn:focus-visible, .answer:focus-visible {
+  outline: 4px solid var(--active-border);
+  outline-offset: 3px;
+}
+
+.btn {
+  background: var(--btn);
+  border: 3px solid var(--btn-border);
+}
+.btn[aria-pressed="true"] { background: var(--btn-on); }
+.btn:active { background: var(--btn-on); }
+
+.tab, .seg-btn {
+  background: var(--tab);
+  border: 3px solid var(--card-border);
+  color: var(--muted);
+}
+.tab { flex: 1 1 0; }
+.tab[aria-selected="true"], .seg-btn[aria-pressed="true"] {
+  background: var(--tab-on);
+  border-color: var(--tab-on-border);
+  color: var(--text);
+}
+
+.notice {
+  max-width: 1100px;
+  margin: 8px auto 0;
+  padding: 12px var(--side);
+  font-size: 20px;
+  color: var(--muted);
+}
+
+/* ---------- 中身 ---------- */
+main {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  min-height: 0;
+}
+
+.section {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+  min-height: 0;
+  padding: 8px var(--side) 24px;
+}
+
+.toolbar {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.hint {
+  margin: 0;
+  font-size: clamp(20px, 2.6vw, 26px);
+  font-weight: 700;
+  color: var(--muted);
+}
+.seg { display: flex; flex-wrap: wrap; gap: 10px; }
+.seg-btn { padding: 8px 16px; font-size: clamp(20px, 2.6vw, 26px); min-height: 60px; }
+.next-btn { padding: 8px 32px; }
+
+/* 時計を見せる 大きなカード */
+.stage {
+  flex: 1 1 auto;
+  min-height: 320px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: clamp(12px, 2.5vw, 28px);
+  background: var(--card);
+  border: 3px solid var(--card-border);
+  border-radius: 28px;
+  box-shadow: var(--shadow);
+}
+
+.clock-box {
+  flex: 1 1 auto;
+  align-self: stretch;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  container-type: size;
+}
+
+.clock {
+  display: block;
+  width: min(100cqw, 100cqh);
+  height: min(100cqw, 100cqh);
+  overflow: visible;
+}
+.clock text {
+  font-family: inherit;
+  font-weight: 700;
+}
+/* うごかす：ゆびで さわっても 画面が 動かないように */
+.clock.is-move {
+  touch-action: none;
+  cursor: grab;
+}
+.clock.is-move.is-drag { cursor: grabbing; }
+
+.stage-text {
+  flex: none;
+  margin: 0;
+  min-height: 92px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 28px;
+  border-radius: 999px;
+  border: 3px solid transparent;
+  font-size: clamp(28px, 4vw, 40px);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  text-align: center;
+}
+.stage-text.is-time {
+  font-size: clamp(40px, 6vw, 64px);
+  line-height: 1;
+  color: var(--text);
+}
+.stage-text.is-off { visibility: hidden; }
+.stage-text.is-ok {
+  font-size: clamp(36px, 5.5vw, 56px);
+  color: var(--text);
+  background: var(--ok);
+  border-color: var(--ok-border);
+}
+.stage-text.is-retry {
+  color: var(--text);
+  background: var(--retry);
+  border-color: var(--retry-border);
+}
+
+/* なんじかな：時計と 3つの こたえ */
+.quiz-body {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+  min-height: 0;
+}
+
+.answers {
+  flex: none;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--gap);
+}
+
+.answer {
+  min-width: 0;
+  min-height: 0;
+  height: clamp(84px, 11vh, 120px);
+  font: inherit;
+  font-size: clamp(30px, 4.6vw, 48px);
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  color: var(--text);
+  background: var(--card);
+  border: 3px solid var(--card-border);
+  border-radius: 22px;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  padding: 0 8px;
+  transition: transform 0.12s ease, background-color 0.2s ease, border-color 0.2s ease;
+}
+.answer:active { transform: scale(0.95); background: var(--active); }
+.answer.is-ok { background: var(--ok); border-color: var(--ok-border); }
+.answer.is-ng { animation: shake 0.4s ease; }
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-6px); }
+  75% { transform: translateX(6px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .answer { transition: background-color 0.2s ease, border-color 0.2s ease; }
+  .answer:active { transform: none; }
+  .answer.is-ng { animation: none; }
+}
+
+/* せまい画面 */
+@media (max-width: 560px) {
+  .btn, .tab, .seg-btn { padding: 8px 16px; }
+  .next-btn { padding: 8px 24px; }
+  .title { font-size: 24px; letter-spacing: 0.02em; white-space: nowrap; }
+  .answers { grid-template-columns: 1fr; }
+  .answer { height: 72px; }
+}
+
+/* ---------- 横向き：上の帯を1段にして、こたえは 時計の 右に たてに ならべる ---------- */
+@media (orientation: landscape) and (min-height: 500px) {
+  body { overflow: hidden; }
+
+  .header {
+    grid-template-columns: auto auto 1fr auto;
+    grid-template-areas: "home title tabs speed";
+    max-width: none;
+    padding: 10px var(--side);
+  }
+  .title { font-size: 26px; letter-spacing: 0.04em; }
+  .tabs { justify-content: center; }
+  .tab { flex: 0 1 auto; }
+  .btn, .tab { min-height: 60px; font-size: 24px; padding: 6px 24px; }
+  .seg-btn { min-height: 56px; font-size: 22px; padding: 6px 18px; }
+  .header .home-btn { min-height: 60px; font-size: 22px; padding: 6px 18px 6px 14px; }
+
+  .section { padding-bottom: 16px; }
+  .stage { min-height: 0; }
+  .stage-text { min-height: 72px; }
+
+  .quiz-body { flex-direction: row; }
+  .quiz-body .stage { flex: 1 1 auto; }
+  .answers {
+    flex: 0 0 clamp(240px, 30vw, 340px);
+    grid-template-columns: 1fr;
+    grid-auto-rows: 1fr;
+    align-content: center;
+  }
+  .answer { height: auto; min-height: 90px; max-height: 140px; }
+}
