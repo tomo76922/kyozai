@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>ぴよぴよ ラン</title>
+  <meta name="description" content="ひよこが はしって、しょうがいぶつを とびこえて おうちを めざす ゲーム">
+  <meta name="theme-color" content="#f3efe6">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="きょうざい">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="format-detection" content="telephone=no">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <link rel="icon" href="../icons/icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="../common.css">
+  <link rel="stylesheet" href="./game.css">
+</head>
+<body>
+  <!-- ゲームの絵（ぜんぶ プログラムで かく） -->
+  <canvas class="cv" id="cv" aria-label="ゲームの がめん。タップすると ジャンプ"></canvas>
+
+  <!-- ステージえらび -->
+  <div class="select" id="select">
+    <header class="header">
+      <a class="home-btn" href="../" aria-label="もくじに もどる">
+        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/></svg>
+        <span class="home-text">もくじ</span>
+      </a>
+      <h1 class="title">ぴよぴよ ラン</h1>
+      <button type="button" class="btn sound-btn" aria-pressed="true"></button>
+      <!-- 先生用：ながおし したときだけ ひらく -->
+      <button type="button" class="gear" id="gearBtn" aria-label="せってい（ながおしで ひらく）">
+        <span class="gear-text">せってい</span>
+      </button>
+      <p class="gear-hint" id="gearHint" role="status" hidden>ながく おして ください</p>
+    </header>
+
+    <div class="select-body">
+      <p class="select-ask">ステージを えらんでね</p>
+      <div class="stages" id="stages" role="group" aria-label="ステージ"></div>
+      <p class="select-msg" id="selectMsg" role="status"></p>
+      <div class="speed" role="group" aria-label="はやさ">
+        <span class="speed-label">はやさ</span>
+        <button type="button" class="btn speed-btn" data-speed="slow" aria-pressed="false">ゆっくり</button>
+        <button type="button" class="btn speed-btn" data-speed="normal" aria-pressed="true">ふつう</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- あそんでいる ときの 表示 -->
+  <div class="hud" id="hud" hidden>
+    <div class="hud-top">
+      <a class="home-btn" id="playHome" href="../" aria-label="もくじ（いちじ ていし）">
+        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/></svg>
+        <span class="home-text">もくじ</span>
+      </a>
+      <div class="progress" aria-hidden="true">
+        <div class="prog-track" id="progTrack">
+          <div class="prog-fill" id="progFill"></div>
+          <span class="prog-me" id="progMe"></span>
+        </div>
+        <svg class="prog-house" viewBox="0 0 40 40">
+          <path d="M5 19 20 6l15 13" fill="#c8665a" stroke="#3d3a35" stroke-width="3" stroke-linejoin="round"/>
+          <path d="M9 17v17h22V17" fill="#fff4dc" stroke="#3d3a35" stroke-width="3" stroke-linejoin="round"/>
+          <path d="M16 34v-9a4 4 0 0 1 8 0v9" fill="#b88a5e" stroke="#3d3a35" stroke-width="2.5"/>
+        </svg>
+      </div>
+      <p class="acorn-count" aria-live="off">
+        <svg viewBox="0 0 40 40" aria-hidden="true">
+          <ellipse cx="20" cy="24" rx="10" ry="12" fill="#c98d4e" stroke="#3d3a35" stroke-width="2.5"/>
+          <path d="M8 18c0-7 5-10 12-10s12 3 12 10z" fill="#8a6a45" stroke="#3d3a35" stroke-width="2.5" stroke-linejoin="round"/>
+          <path d="M20 8V4" stroke="#3d3a35" stroke-width="3" stroke-linecap="round"/>
+        </svg>
+        <span id="acornNum">0</span>
+      </p>
+      <button type="button" class="btn sound-btn" aria-pressed="true"></button>
+    </div>
+
+    <!-- パワーアップの のこり時間（画面の 右はし） -->
+    <div class="powers" id="powers">
+      <div class="power power-feather" id="pwFeather" hidden>
+        <svg viewBox="0 0 40 40" aria-hidden="true">
+          <path d="M30 6C18 8 10 18 9 33c9-2 20-11 21-27z" fill="#fffdf7" stroke="#6f97b8" stroke-width="2.5" stroke-linejoin="round"/>
+          <path d="M28 9 7 35" stroke="#6f97b8" stroke-width="2.5" stroke-linecap="round"/>
+        </svg>
+        <span class="pw-name">はね</span>
+        <span class="pw-bar"><span class="pw-fill" id="pwFeatherFill"></span></span>
+      </div>
+      <div class="power power-star" id="pwStar" hidden>
+        <svg viewBox="0 0 40 40" aria-hidden="true">
+          <path d="M20 4l4.7 10 10.8 1.2-8 7.4 2.2 10.7L20 27.9l-9.7 5.4 2.2-10.7-8-7.4L15.3 14z" fill="#f3cf63" stroke="#3d3a35" stroke-width="2.5" stroke-linejoin="round"/>
+        </svg>
+        <span class="pw-name">ほし</span>
+        <span class="pw-bar"><span class="pw-fill" id="pwStarFill"></span></span>
+      </div>
+    </div>
+
+    <p class="tap-hint" id="tapHint" hidden>がめんを タップすると ジャンプ！</p>
+  </div>
+
+  <!-- いちじ ていし -->
+  <div class="overlay" id="pause" hidden>
+    <div class="card" role="dialog" aria-modal="true" aria-labelledby="pauseTitle">
+      <p class="card-title" id="pauseTitle">やめる？</p>
+      <div class="card-btns">
+        <button type="button" class="btn btn-go" id="resumeBtn">つづける</button>
+        <button type="button" class="btn btn-sub" id="toSelectBtn">ステージを えらぶ</button>
+        <a class="btn btn-sub" id="quitBtn" href="../">やめる</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ゴール -->
+  <div class="overlay" id="goal" hidden>
+    <div class="card goal-card" role="dialog" aria-modal="true" aria-labelledby="goalTitle">
+      <p class="card-title" id="goalTitle">ゴール！</p>
+      <div class="goal-row">
+        <div class="hanamaru" id="goalMaru" aria-hidden="true"></div>
+        <p class="goal-acorn">
+          <svg viewBox="0 0 40 40" aria-hidden="true">
+            <ellipse cx="20" cy="24" rx="10" ry="12" fill="#c98d4e" stroke="#3d3a35" stroke-width="2.5"/>
+            <path d="M8 18c0-7 5-10 12-10s12 3 12 10z" fill="#8a6a45" stroke="#3d3a35" stroke-width="2.5" stroke-linejoin="round"/>
+            <path d="M20 8V4" stroke="#3d3a35" stroke-width="3" stroke-linecap="round"/>
+          </svg>
+          <span>どんぐり <b id="goalNum">0</b>こ</span>
+        </p>
+      </div>
+      <div class="card-btns">
+        <button type="button" class="btn btn-go" id="nextStageBtn">つぎの ステージ</button>
+        <button type="button" class="btn btn-sub" id="againBtn">もういちど</button>
+        <button type="button" class="btn btn-sub" id="goalSelectBtn">ステージを えらぶ</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 先生用の せってい -->
+  <div class="settings" id="settings" role="dialog" aria-modal="true" aria-labelledby="setTitle" hidden>
+    <div class="set-inner">
+      <div class="set-head">
+        <h2 class="set-title" id="setTitle">せってい（せんせい よう）</h2>
+        <button type="button" class="btn" id="closeBtn">とじる</button>
+      </div>
+
+      <p class="set-warn" id="saveWarn" hidden>この iPad では きろくを ほぞん できません。ページを とじると もとに もどります。</p>
+
+      <section class="set-sec" aria-labelledby="h-open">
+        <h3 class="set-h" id="h-open">ステージ</h3>
+        <p class="set-note">オンにすると、クリアしていない ステージも ぜんぶ えらべます。</p>
+        <div class="set-row">
+          <button type="button" class="btn" id="openAllBtn" aria-pressed="false">ぜんぶの ステージを ひらく</button>
+        </div>
+      </section>
+
+      <section class="set-sec" aria-labelledby="h-rec">
+        <h3 class="set-h" id="h-rec">きろく</h3>
+        <p class="set-note" id="recNote"></p>
+        <div class="set-row">
+          <button type="button" class="btn btn-reset" id="resetBtn">きろくを けす</button>
+          <span class="set-status" id="resetStatus" role="status"></span>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- たて向きの とき -->
+  <div class="rotate" id="rotate" aria-live="polite">
+    <svg viewBox="0 0 120 120" aria-hidden="true">
+      <rect class="rot-pad" x="38" y="22" width="44" height="76" rx="8" fill="#fffdf7" stroke="#3d3a35" stroke-width="4"/>
+      <path d="M26 88a40 40 0 0 1-6-46" fill="none" stroke="#c9a96b" stroke-width="5" stroke-linecap="round"/>
+      <path d="M14 46l6-6 6 7" fill="none" stroke="#c9a96b" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <p>よこに してね</p>
+  </div>
+
+  <script src="./game.js"></script>
+  <script src="../pwa.js"></script>
+</body>
+</html>
