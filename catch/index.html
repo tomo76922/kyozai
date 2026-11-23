@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>たべもの キャッチ</title>
+  <meta name="description" content="うえから おちてくる たべものを、ひよこを うごかして キャッチする ゲーム">
+  <meta name="theme-color" content="#f3efe6">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="きょうざい">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="format-detection" content="telephone=no">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <link rel="icon" href="../icons/icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="../common.css">
+  <link rel="stylesheet" href="./catch.css">
+</head>
+<body>
+  <!-- ゲームの絵（ぜんぶ プログラムと 絵文字で かく） -->
+  <canvas class="cv" id="cv" aria-label="ゲームの がめん。ゆびで みぎ ひだりに なぞると ひよこが ついてくる"></canvas>
+
+  <!-- はじめの がめん -->
+  <div class="title-screen" id="titleScreen">
+    <header class="header">
+      <a class="home-btn" href="../" aria-label="もくじに もどる">
+        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/></svg>
+        <span class="home-text">もくじ</span>
+      </a>
+      <h1 class="title">たべもの キャッチ</h1>
+      <button type="button" class="btn sound-btn" aria-pressed="true"></button>
+      <!-- 先生用：ながおし したときだけ ひらく -->
+      <button type="button" class="gear" id="gearBtn" aria-label="せってい（ながおしで ひらく）">
+        <span class="gear-text">せってい</span>
+      </button>
+      <p class="gear-hint" id="gearHint" role="status" hidden>ながく おして ください</p>
+    </header>
+
+    <div class="title-body">
+      <section class="panel guide" aria-labelledby="guideTitle">
+        <h2 class="panel-title" id="guideTitle">キャッチ してね</h2>
+        <ul class="guide-list" id="foodList"></ul>
+        <h2 class="panel-title panel-title-sub">よけてね</h2>
+        <ul class="guide-list guide-avoid" id="avoidList"></ul>
+      </section>
+
+      <section class="panel start-panel">
+        <div class="speed" role="group" aria-label="はやさ">
+          <span class="speed-label">はやさ</span>
+          <button type="button" class="btn speed-btn" data-speed="slow" aria-pressed="false">ゆっくり</button>
+          <button type="button" class="btn speed-btn" data-speed="normal" aria-pressed="true">ふつう</button>
+        </div>
+        <button type="button" class="btn btn-go btn-start" id="startBtn">スタート</button>
+        <div class="best">
+          <h2 class="panel-title">ハイスコア</h2>
+          <ol class="best-list" id="bestList"></ol>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- あそんでいる ときの 表示 -->
+  <div class="hud" id="hud" hidden>
+    <div class="hud-top">
+      <a class="home-btn" id="playHome" href="../" aria-label="もくじ（いちじ ていし）">
+        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/></svg>
+        <span class="home-text">もくじ</span>
+      </a>
+      <div class="hearts" id="hearts" role="img" aria-label="たいりょく 5"></div>
+      <p class="score" aria-live="off"><span id="scoreNum">0</span><small>てん</small></p>
+      <button type="button" class="btn sound-btn" aria-pressed="true"></button>
+    </div>
+    <p class="toast" id="toast" aria-live="polite"></p>
+
+    <p class="hint" id="hint" hidden>ゆびで みぎ ひだりに なぞってね</p>
+
+    <!-- みぎ・ひだりの ボタン -->
+    <button type="button" class="move-btn move-left" id="leftBtn" aria-label="ひだりへ">
+      <svg viewBox="0 0 40 40" aria-hidden="true"><path d="M25 8 12 20l13 12" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <button type="button" class="move-btn move-right" id="rightBtn" aria-label="みぎへ">
+      <svg viewBox="0 0 40 40" aria-hidden="true"><path d="M15 8l13 12-13 12" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+  </div>
+
+  <!-- いちじ ていし -->
+  <div class="overlay" id="pause" hidden>
+    <div class="card" role="dialog" aria-modal="true" aria-labelledby="pauseTitle">
+      <p class="card-title" id="pauseTitle">やめる？</p>
+      <div class="card-btns">
+        <button type="button" class="btn btn-go" id="resumeBtn">つづける</button>
+        <button type="button" class="btn btn-sub" id="toTitleBtn">はじめの がめん</button>
+        <a class="btn btn-sub" href="../">やめる</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- おしまい -->
+  <div class="overlay" id="over" hidden>
+    <div class="card over-card" role="dialog" aria-modal="true" aria-labelledby="overTitle">
+      <p class="card-title" id="overTitle">おしまい</p>
+      <p class="new-rec" id="newRec" hidden>しんきろく！</p>
+      <p class="over-score"><b id="overScore">0</b>てん</p>
+      <ol class="best-list best-small" id="overBest"></ol>
+      <div class="card-btns">
+        <button type="button" class="btn btn-go" id="againBtn">もういちど</button>
+        <a class="btn btn-sub" href="../">もくじ</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- 先生用の せってい -->
+  <div class="settings" id="settings" role="dialog" aria-modal="true" aria-labelledby="setTitle" hidden>
+    <div class="set-inner">
+      <div class="set-head">
+        <h2 class="set-title" id="setTitle">せってい（せんせい よう）</h2>
+        <button type="button" class="btn" id="closeBtn">とじる</button>
+      </div>
+
+      <p class="set-warn" id="saveWarn" hidden>この iPad では きろくを ほぞん できません。ページを とじると もとに もどります。</p>
+
+      <section class="set-sec" aria-labelledby="h-rec">
+        <h3 class="set-h" id="h-rec">ハイスコア</h3>
+        <p class="set-note" id="recNote"></p>
+        <ol class="set-list" id="setList"></ol>
+        <div class="set-row">
+          <button type="button" class="btn btn-reset" id="resetBtn">ハイスコアを けす</button>
+          <span class="set-status" id="resetStatus" role="status"></span>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script src="./catch.js"></script>
+  <script src="../pwa.js"></script>
+</body>
+</html>
