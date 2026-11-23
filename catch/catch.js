@@ -8,35 +8,40 @@
   // ---------- おちてくる もの ----------
   // w：でてくる わりあい（とくてんが たかい ものほど すくない）
   var FOODS = [
-    { id: 'apple',  emoji: '🍎', name: 'りんご',   pt: 10, w: 30 },
-    { id: 'banana', emoji: '🍌', name: 'バナナ',   pt: 10, w: 28 },
-    { id: 'onigiri', emoji: '🍙', name: 'おにぎり', pt: 20, w: 17 },
-    { id: 'ichigo', emoji: '🍓', name: 'いちご',   pt: 30, w: 10 },
-    { id: 'cake',   emoji: '🍰', name: 'ケーキ',   pt: 50, w: 5 }
+    { id: 'cheese',  emoji: '\uD83E\uDDC0', name: 'チーズ',     pt: 10, w: 30 },
+    { id: 'kanpyo',  emoji: null,             name: 'かんぴょう', pt: 20, w: 25 },   // あう 絵文字が ないので プログラムで かく
+    { id: 'ramen',   emoji: '\uD83C\uDF5C', name: 'ラーメン',   pt: 30, w: 17 },
+    { id: 'gyoza',   emoji: '\uD83E\uDD5F', name: 'ぎょうざ',   pt: 40, w: 11 },
+    { id: 'ichigo',  emoji: '\uD83C\uDF53', name: 'いちご',     pt: 50, w: 6 }
   ];
+  // たいりょくが へる もの（id の thunder は すこし ゆれながら おちる）
   var AVOIDS = [
-    { id: 'stone',   emoji: '🪨', name: 'いし', w: 1 },
-    { id: 'shoe',    emoji: '👟', name: 'くつ', w: 1 },
-    { id: 'thunder', emoji: '⛈️', name: 'かみなりぐも', w: 1 }
+    { id: 'thunder', emoji: '\u26A1', name: 'かみなり', w: 1 },
+    { id: 'rock',    emoji: '\uD83E\uDEA8', name: 'いわ', w: 1 },
+    { id: 'saru',    emoji: '\uD83D\uDC12', name: 'さる', w: 1 }
   ];
   var HEART = { id: 'heart', name: 'ハート' };
 
-  var HP_MAX = 5;
+  var HP_MAX = 3;
   var LEVEL_SEC = 30;          // 30びょう ごとに レベルアップ
   var LEVEL_CAP = 11;          // これより うえは むずかしく しない
   var SPEEDS = {
     // fall：うえから じめんまで おちる びょうすう ／ gap：つぎが でてくるまでの びょうすう
-    slow:   { fall: 4.8, gap: 1.55, gapMin: 0.7 },
-    normal: { fall: 3.5, gap: 1.15, gapMin: 0.5 }
+    slow:   { fall: 4.8, gap: 1.3, gapMin: 0.65 },
+    normal: { fall: 3.5, gap: 0.95, gapMin: 0.48 }
   };
   // こえモード：とても ゆっくり はじまり、はやく なるのも ゆるやか
   var KOE_SPEEDS = {
-    vslow:  { fall: 10, gap: 4.4, gapMin: 3.0 },
-    slow:   { fall: 8,  gap: 3.8, gapMin: 2.6 },
-    normal: { fall: 6.5, gap: 3.2, gapMin: 2.2 }
+    vslow:  { fall: 10, gap: 3.7, gapMin: 2.8 },
+    slow:   { fall: 8,  gap: 3.2, gapMin: 2.4 },
+    normal: { fall: 6.5, gap: 2.7, gapMin: 2.0 }
   };
   var KOE_LANES = [0.3, 0.7];   // こえモードの ひだり・みぎの れつ（はばに たいする わりあい）
   var KOE_SAFE_START = 6;
+  // めで あそぶ（しせんモード）：ひよこは 1.5ばい、落ちてくる 物は 3ばいに 大きく する。見つめた ほうへ うごく
+  var ME_CHICK_SCALE = 1.5;
+  var ME_ITEM_SCALE = 3;
+  var ME_DWELL = 0.6;          // この びょうすう 見つめると、そちらへ うごく
   var HEART_CHANCE = 0.04;     // ハートは たまにしか でない
   var HEART_MIN_SEC = 12;
   var SAFE_START = 3;          // はじめの 3びょうは よけるものを ださない
@@ -51,7 +56,7 @@
   // ---------- きろく（この iPad の中だけに ほぞん。なまえは いれない） ----------
   var STORE_KEY = 'tabecatch-v1';
   var canSave = true;
-  var rec = { scores: [], koeScores: [], speed: 'normal', sound: true, mode: 'yubi', koeSpeed: 'vslow' };
+  var rec = { scores: [], koeScores: [], meScores: [], speed: 'normal', sound: true, mode: 'yubi', koeSpeed: 'vslow' };
 
   (function load() {
     var raw = null;
@@ -61,8 +66,9 @@
       var d = JSON.parse(raw);
       rec.scores = readScores(d.scores);
       rec.koeScores = readScores(d.koeScores);
+      rec.meScores = readScores(d.meScores);
       rec.speed = d.speed === 'slow' ? 'slow' : 'normal';
-      rec.mode = d.mode === 'koe' ? 'koe' : 'yubi';
+      rec.mode = d.mode === 'koe' || d.mode === 'me' ? d.mode : 'yubi';
       rec.koeSpeed = KOE_SPEEDS[d.koeSpeed] ? d.koeSpeed : 'vslow';
       rec.sound = d.sound !== false;
     } catch (e) {}
@@ -100,7 +106,10 @@
   }
 
   // ハイスコアは「ゆび」と「こえ」で べつべつ
-  function scoreList(m) { return (m || rec.mode) === 'koe' ? rec.koeScores : rec.scores; }
+  function scoreList(m) {
+    m = m || rec.mode;
+    return m === 'koe' ? rec.koeScores : m === 'me' ? rec.meScores : rec.scores;
+  }
 
   // とくてんを いれる。上位5つに はいったら その じゅんばん（0〜4）、はいらなければ -1
   function addScore(s, m) {
@@ -109,7 +118,7 @@
     var i = 0;
     while (i < list.length && list[i].s >= s) i++;
     if (i >= 5) return -1;
-    list.splice(i, 0, { s: s, d: today(), sp: m === 'koe' ? rec.koeSpeed : rec.speed });
+    list.splice(i, 0, { s: s, d: today(), sp: m === 'koe' || m === 'me' ? rec.koeSpeed : rec.speed });
     if (list.length > 5) list.length = 5;
     save();
     return i;
@@ -237,6 +246,8 @@
   var itemSize = 64;  // おちてくる ものの 大きさ
   var chickS = 1.3;   // ひよこの 大きさ
   var basketHalf = 56;
+  var chickScale = 1;  // しせんモードの ときだけ 大きく（ひよこ）
+  var itemScale = 1;   // しせんモードの ときだけ 大きく（落ちてくる 物）
   var bg = null;      // うしろの 絵（大きさが かわったときだけ かく）
   var sprites = {};   // おちてくる ものの 絵（さきに かいておく）
   var heartPath = null;
@@ -253,8 +264,8 @@
     k = clamp(vmin / 780, 0.6, 1.4);
     var btn = clamp(vmin * 0.11, 80, 104);
     groundY = H - (btn + 36);
-    itemSize = Math.round(62 * k);
-    chickS = 1.35 * k;
+    itemSize = Math.round(72 * k * itemScale);
+    chickS = 1.35 * k * chickScale;
     basketHalf = 44 * chickS;
     // ひよこの いちは、はばに たいする わりあいを たもつ
     if (P) P.x = clamp(P.x / oldW * W, minX(), maxX());
@@ -274,35 +285,35 @@
     var b = bg.getContext('2d');
     b.setTransform(dpr, 0, 0, dpr, 0, 0);
     var g = b.createLinearGradient(0, 0, 0, groundY);
-    g.addColorStop(0, '#dcebf0');
-    g.addColorStop(1, '#f5f0e3');
+    g.addColorStop(0, '#a9bfc8');
+    g.addColorStop(1, '#cdcabb');
     b.fillStyle = g;
     b.fillRect(0, 0, W, H);
 
     // おひさま
-    b.fillStyle = 'rgba(248,227,163,0.55)';
+    b.fillStyle = 'rgba(234,214,154,0.35)';
     b.beginPath(); b.arc(W * 0.86, H * 0.2, 74 * k, 0, 6.2832); b.fill();
-    b.fillStyle = '#f8e3a3';
+    b.fillStyle = '#e2cc8e';
     b.beginPath(); b.arc(W * 0.86, H * 0.2, 48 * k, 0, 6.2832); b.fill();
 
     // とおくの おか・ちかくの おか
-    hills(b, '#cddfc6', groundY - 70 * k, 34 * k, 0.004 / k, 0.4);
-    hills(b, '#b6d0ad', groundY - 26 * k, 20 * k, 0.007 / k, 2.1);
+    hills(b, '#9fb59b', groundY - 70 * k, 34 * k, 0.004 / k, 0.4);
+    hills(b, '#87a183', groundY - 26 * k, 20 * k, 0.007 / k, 2.1);
 
     // じめん
-    b.fillStyle = '#e6d6b8';
+    b.fillStyle = '#c4b08a';
     b.fillRect(0, groundY, W, H - groundY);
-    b.fillStyle = '#d8c49f';
+    b.fillStyle = '#b29d76';
     for (var x = 18; x < W; x += 46) {
       var y = groundY + 26 + ((x * 37) % 53);
       if (y < H - 6) { b.beginPath(); b.ellipse(x, y, 5, 2.6, 0, 0, 6.2832); b.fill(); }
     }
-    b.fillStyle = '#9fc28f';
+    b.fillStyle = '#7d9c6f';
     b.fillRect(0, groundY - 4, W, 14);
-    b.fillStyle = '#86ad78';
+    b.fillStyle = '#668559';
     b.fillRect(0, groundY + 8, W, 3);
     // くさ
-    b.strokeStyle = '#86ad78';
+    b.strokeStyle = '#668559';
     b.lineWidth = 2.5;
     b.lineCap = 'round';
     b.beginPath();
@@ -327,46 +338,114 @@
   }
 
   // ---------- おちてくる ものの 絵 ----------
+  // 白くて ふとい ふちの 丸に のせて、うしろから めだつように する。
+  // へる もの（よける もの）は、ふちを こい はいいろに して 見わけやすく する。
   function makeSprites() {
     sprites = {};
-    FOODS.concat(AVOIDS).forEach(function (it) { sprites[it.id] = emojiSprite(it.emoji); });
-    sprites.heart = heartSprite();
+    FOODS.forEach(function (it) { sprites[it.id] = plateSprite(it, 'food', itemSize * dpr); });
+    AVOIDS.forEach(function (it) { sprites[it.id] = plateSprite(it, 'avoid', itemSize * dpr); });
+    sprites.heart = plateSprite(HEART, 'heart', itemSize * dpr);
   }
 
-  function emojiSprite(ch) {
-    var px = itemSize * dpr;
+  function plateSprite(it, type, px) {
     var c = document.createElement('canvas');
     c.width = c.height = Math.ceil(px * 1.3);
     var g = c.getContext('2d');
-    g.font = Math.round(px) + 'px ' + EMOJI_FONT;
-    g.textAlign = 'center';
-    g.textBaseline = 'middle';
-    g.fillText(ch, c.width / 2, c.height / 2 + px * 0.06);
+    var cx = c.width / 2, cy = c.height / 2;
+    var r = px * 0.5;
+    var ri = r * 0.8;          // 中の 丸
+    // かげ
+    g.fillStyle = 'rgba(30,28,25,0.3)';
+    g.beginPath(); g.arc(cx, cy + r * 0.1, r * 1.03, 0, 6.2832); g.fill();
+    // ふち（たべもの・ハート：しろ ／ よける もの：こい はいいろ）
+    g.fillStyle = type === 'avoid' ? '#4a4845' : '#ffffff';
+    g.beginPath(); g.arc(cx, cy, r, 0, 6.2832); g.fill();
+    g.lineWidth = Math.max(1.5, r * 0.06);
+    g.strokeStyle = type === 'avoid' ? '#2b2a28' : '#3d3a35';
+    g.stroke();
+    // 中
+    g.fillStyle = type === 'avoid' ? '#f4f3f0' : '#ffffff';
+    g.beginPath(); g.arc(cx, cy, ri, 0, 6.2832); g.fill();
+    if (type === 'food' || type === 'avoid') {
+      g.strokeStyle = type === 'avoid' ? '#2b2a28' : 'rgba(61,58,53,0.35)';
+      g.lineWidth = Math.max(1, r * 0.03);
+      g.stroke();
+    }
+    // 中身
+    if (type === 'heart') drawHeartIn(g, cx, cy, ri);
+    else if (it.id === 'kanpyo') drawKanpyo(g, cx, cy, ri);
+    else {
+      g.font = Math.round(ri * 1.45) + 'px ' + EMOJI_FONT;
+      g.textAlign = 'center';
+      g.textBaseline = 'middle';
+      g.fillText(it.emoji, cx, cy + ri * 0.08);
+    }
     return c;
   }
 
-  function heartSprite() {
-    var px = itemSize * dpr;
-    var c = document.createElement('canvas');
-    c.width = c.height = Math.ceil(px * 1.3);
-    var g = c.getContext('2d');
-    var s = px / 38;
-    g.translate(c.width / 2 - 20 * s, c.height / 2 - 20 * s);
+  function drawHeartIn(g, cx, cy, ri) {
+    if (!heartPath) return;
+    var s = ri * 1.5 / 40;
+    g.save();
+    g.translate(cx - 20 * s, cy - 19 * s);
     g.scale(s, s);
-    // まわりの ふんわりした ひかり
-    g.fillStyle = 'rgba(255,240,235,0.9)';
-    g.beginPath(); g.arc(20, 20, 19, 0, 6.2832); g.fill();
-    if (heartPath) {
-      g.fillStyle = '#ef9c96';
-      g.strokeStyle = INK;
-      g.lineWidth = 2.4;
-      g.lineJoin = 'round';
-      g.fill(heartPath);
-      g.stroke(heartPath);
-    }
+    g.fillStyle = '#e8746d';
+    g.strokeStyle = INK;
+    g.lineWidth = 2.4;
+    g.lineJoin = 'round';
+    g.fill(heartPath);
+    g.stroke(heartPath);
     g.fillStyle = 'rgba(255,253,247,0.85)';
     g.beginPath(); g.ellipse(12, 13, 3.6, 2.4, -0.6, 0, 6.2832); g.fill();
-    return c;
+    g.restore();
+  }
+
+  // かんぴょう：クリームいろの ながい おびを なんぼんか たばねて、まんなかを ひもで しばった かたち
+  function drawKanpyo(g, cx, cy, ri) {
+    var top = cy - ri * 0.86, bot = cy + ri * 0.36, mid = cy - ri * 0.25;
+    var n = 5;
+    g.lineCap = 'round';
+    for (var pass = 0; pass < 2; pass++) {
+      for (var i = 0; i < n; i++) {
+        var o = i - (n - 1) / 2;
+        var xt = cx + o * ri * 0.25, xm = cx + o * ri * 0.07, xb = cx + o * ri * 0.26;
+        g.beginPath();
+        g.moveTo(xt, top + Math.abs(o) * ri * 0.05);
+        g.quadraticCurveTo(xm - (xt - xm) * 0.6, mid, xm, mid);
+        g.quadraticCurveTo(xm - (xb - xm) * 0.6, mid, xb, bot - Math.abs(o) * ri * 0.04);
+        g.lineWidth = pass === 0 ? ri * 0.24 : ri * 0.16;
+        g.strokeStyle = pass === 0 ? '#9c8450' : (i % 2 ? '#f6ecc8' : '#efe0b0');
+        g.stroke();
+      }
+    }
+    // ひも
+    g.fillStyle = '#8a6a45';
+    g.strokeStyle = '#4e3b26';
+    g.lineWidth = Math.max(1, ri * 0.04);
+    roundRectOn(g, cx - ri * 0.36, mid - ri * 0.1, ri * 0.72, ri * 0.2, ri * 0.08);
+    g.fill(); g.stroke();
+    // なまえ（子どもに わかりやすいように）
+    var fs = Math.max(8, ri * 0.28);
+    g.font = '700 ' + Math.round(fs) + 'px ' + FONT;
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    var tw = g.measureText('かんぴょう').width;
+    var ly = cy + ri * 0.68;
+    g.fillStyle = '#3d3a35';
+    roundRectOn(g, cx - tw / 2 - fs * 0.35, ly - fs * 0.62, tw + fs * 0.7, fs * 1.24, fs * 0.6);
+    g.fill();
+    g.fillStyle = '#ffffff';
+    g.fillText('かんぴょう', cx, ly + fs * 0.04);
+  }
+
+  function roundRectOn(g, x, y, w, h, r) {
+    g.beginPath();
+    g.moveTo(x + r, y);
+    g.arcTo(x + w, y, x + w, y + h, r);
+    g.arcTo(x + w, y + h, x, y + h, r);
+    g.arcTo(x, y + h, x, y, r);
+    g.arcTo(x, y, x + w, y, r);
+    g.closePath();
   }
 
   // ---------- ゲームの ようす ----------
@@ -394,17 +473,21 @@
 
   function newGame() {
     var isKoe = rec.mode === 'koe';
-    var sp = isKoe ? KOE_SPEEDS[rec.koeSpeed] : SPEEDS[rec.speed];
+    var isMe = rec.mode === 'me';
+    var sp = isKoe || isMe ? KOE_SPEEDS[rec.koeSpeed] : SPEEDS[rec.speed];
     G = {
+      m: rec.mode,
       koe: isKoe,
+      me: isMe,
+      lanes: isKoe || isMe,     // ひだり・みぎ 2れつ
       sp: sp,
       t: 0,
       level: 1,
       score: 0,
       hp: HP_MAX,
-      next: 0.8,
+      next: 0.5,
       lastHeart: -99,
-      prevBest: bestScore(isKoe ? 'koe' : 'yubi'),
+      prevBest: bestScore(rec.mode),
       recShown: false,
       over: false,
       overT: 0,
@@ -413,12 +496,32 @@
     items = [];
     pops = [];
     P = newChick();
-    if (isKoe) P.x = laneX(0);
+    if (isKoe || isMe) P.x = laneX(0);
+    gaze.x = null; gaze.t = 0;
     drag.id = null; drag.x = null;
     hold.left = hold.right = false;
   }
 
-  function laneX(i) { return clamp(KOE_LANES[i] * W, minX(), maxX()); }
+  // 2れつの いち。ひよこ（と 物）が 大きくても、となりの れつと かさならないように はなす
+  function laneX(i) {
+    // かごどうし・物どうしが かさならない はば。物が がめんから はみださない はば
+    var d = Math.max(W * (0.5 - KOE_LANES[0]), basketHalf * 1.15 + 8, itemSize * 0.5 + 10);
+    d = Math.min(d, W / 2 - Math.max(basketHalf + 6, itemSize * 0.5 + 4));
+    return i === 0 ? W / 2 - d : W / 2 + d;
+  }
+  function laneAt(x) { return x < W / 2 ? 0 : 1; }
+
+  // しせんモード：見ている ところ（ポインタの いち）
+  var gaze = { x: null, t: 0 };
+
+  // しせんモード：その れつへ うごく
+  function goLane(l) {
+    if (!canControl() || !G.me || P.lane === l) return;
+    P.lane = l;
+    P.bounce = 1;
+    gaze.t = 0;
+    hideHint();
+  }
 
   // こえモード：ひだりと みぎを いれかわる
   function switchLane() {
@@ -428,18 +531,30 @@
     hideHint();
   }
 
-  function speedFactor() { return 1 + (G.koe ? 0.03 : 0.07) * (Math.min(G.level, LEVEL_CAP) - 1); }
+  function speedFactor() { return 1 + (G.lanes ? 0.03 : 0.07) * (Math.min(G.level, LEVEL_CAP) - 1); }
   function gapNow() {
-    var g = G.sp.gap / (1 + (G.koe ? 0.05 : 0.12) * (Math.min(G.level, LEVEL_CAP) - 1));
+    var g = G.sp.gap / (1 + (G.lanes ? 0.05 : 0.12) * (Math.min(G.level, LEVEL_CAP) - 1));
     return Math.max(G.sp.gapMin, g);
+  }
+
+  // 2れつの とき：その れつの 上の ほうに まだ 物が あると、かさなって しまう
+  function laneFree(l) {
+    var y0 = itemY(0);
+    for (var i = 0; i < items.length; i++) {
+      var o = items[i];
+      if (o.state === 'fall' && o.lane === l && itemY(o.p) - y0 < itemSize * 1.2) return false;
+    }
+    return true;
   }
 
   function spawn() {
     var kind, type;
-    var avoidRate = G.koe ? Math.min(0.15 + 0.008 * (G.level - 1), 0.22) : Math.min(0.2 + 0.012 * (G.level - 1), 0.32);
+    // 2れつの とき：どちらの れつも うまって いたら、すこし まって から だす
+    if (G.lanes && !laneFree(0) && !laneFree(1)) return false;
+    var avoidRate = G.lanes ? Math.min(0.15 + 0.008 * (G.level - 1), 0.22) : Math.min(0.2 + 0.012 * (G.level - 1), 0.32);
     if (G.hp < HP_MAX && G.t - G.lastHeart > HEART_MIN_SEC && Math.random() < HEART_CHANCE) {
       kind = HEART; type = 'heart'; G.lastHeart = G.t;
-    } else if (G.t > (G.koe ? KOE_SAFE_START : SAFE_START) && Math.random() < avoidRate) {
+    } else if (G.t > (G.lanes ? KOE_SAFE_START : SAFE_START) && Math.random() < avoidRate) {
       kind = pick(AVOIDS); type = 'avoid';
     } else {
       kind = pick(FOODS); type = 'food';
@@ -447,7 +562,7 @@
     // すぐ ちかくに おなじころ でた ものと かさならないように
     var m = itemSize * 0.7;
     var x = 0;
-    for (var tries = 0; tries < (G.koe ? 0 : 6); tries++) {
+    for (var tries = 0; tries < (G.lanes ? 0 : 6); tries++) {
       x = rand(m, W - m);
       var ok = true;
       for (var i = 0; i < items.length; i++) {
@@ -457,10 +572,11 @@
       if (ok) break;
     }
     var lane = -1;
-    if (G.koe) {
-      // こえモード：ひだりか みぎの れつ。おなじ れつが ながく つづかないように
+    if (G.lanes) {
+      // こえ・しせんモード：ひだりか みぎの れつ。おなじ れつが ながく つづかないように
       lane = Math.random() < 0.5 ? 0 : 1;
       if (G.lastLane === lane && G.sameLane >= 2) lane = 1 - lane;
+      if (!laneFree(lane)) lane = 1 - lane;
       G.sameLane = G.lastLane === lane ? (G.sameLane || 0) + 1 : 1;
       G.lastLane = lane;
     }
@@ -471,7 +587,7 @@
       xf: x / W,
       p: 0,
       dur: G.sp.fall / speedFactor() * rand(0.92, 1.08) * (kind.id === 'thunder' ? 1.12 : 1),
-      rot: rand(-0.3, 0.3),
+      rot: kind.id === 'kanpyo' ? 0 : rand(-0.2, 0.2),   // おちる ときは ほぼ まっすぐ（もじが さかさに ならないように）
       spin: rand(-1.2, 1.2),
       ph: rand(0, 6.28),
       state: 'fall',
@@ -508,7 +624,14 @@
   function moveChick(dt) {
     var px = P.x;
     var canMove = mode === 'play' && G && !G.over;
-    if (canMove && G.koe) {
+    if (canMove && G.lanes) {
+      // しせんモード：おなじ ほうを しばらく 見つめると、そちらへ うごく
+      if (G.me && gaze.x !== null && laneAt(gaze.x) !== P.lane) {
+        gaze.t += dt;
+        if (gaze.t >= ME_DWELL) goLane(laneAt(gaze.x));
+      } else {
+        gaze.t = 0;
+      }
       P.x += (laneX(P.lane) - P.x) * Math.min(1, dt * 12);
     } else if (canMove) {
       var dir = (hold.right ? 1 : 0) - (hold.left ? 1 : 0);
@@ -553,8 +676,8 @@
     }
     G.next -= dt;
     if (G.next <= 0) {
-      spawn();
-      G.next = gapNow() * rand(0.75, 1.25);
+      if (spawn() === false) G.next = 0.15;
+      else G.next = gapNow() * rand(0.75, 1.25);
     }
     if (G.bubble) {
       G.bubble.t += dt;
@@ -571,7 +694,6 @@
       it.t += dt;
       if (it.state === 'fall') {
         it.p += dt / it.dur;
-        it.rot += it.spin * dt * 0.6;
         var x = itemX(it), y = itemY(it.p);
         var live = mode === 'play' && G && !G.over;
         if (live && y + r > catchTop && y < catchBot && Math.abs(x - P.x) < basketHalf + r * 0.35) {
@@ -690,16 +812,29 @@
     clouds.forEach(function (c) { drawCloud(c.x * W, c.y * groundY, c.s * k); });
 
     // こえモード：ひよこが たてる 2つの ばしょの しるし
-    if (mode === 'play' && G && G.koe) {
+    if (mode === 'play' && G && G.lanes) {
       ctx.fillStyle = 'rgba(255,253,247,0.55)';
       for (var ln = 0; ln < 2; ln++) {
-        ctx.beginPath(); ctx.ellipse(laneX(ln), groundY + 4, basketHalf * 1.05, 11 * k, 0, 0, 6.2832); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(laneX(ln), groundY + 4, basketHalf * 1.05, 11 * k * chickScale, 0, 0, 6.2832); ctx.fill();
+      }
+      // しせんモード：見つめている ほうに、たまっていく わ
+      if (G.me && gaze.t > 0 && gaze.x !== null && !G.over && !paused) {
+        var gl = laneAt(gaze.x);
+        var gr = Math.min(basketHalf * 0.55, 60 * k);
+        var gy = groundY - 112 * chickS;
+        var ga = Math.min(1, gaze.t / ME_DWELL);
+        ctx.lineCap = 'round';
+        ctx.lineWidth = 9 * k;
+        ctx.strokeStyle = 'rgba(255,253,247,0.75)';
+        ctx.beginPath(); ctx.arc(laneX(gl), gy, gr, 0, 6.2832); ctx.stroke();
+        ctx.strokeStyle = '#e0a92a';
+        ctx.beginPath(); ctx.arc(laneX(gl), gy, gr, -Math.PI / 2, -Math.PI / 2 + ga * 6.2832); ctx.stroke();
       }
     }
 
     // おちてくる ものの かげ（どこに おちるか わかるように）
     var i, it;
-    ctx.fillStyle = 'rgba(61,58,53,0.12)';
+    ctx.fillStyle = 'rgba(40,36,30,0.2)';
     for (i = 0; i < items.length; i++) {
       it = items[i];
       if (it.state !== 'fall' || it.p < 0.15) continue;
@@ -724,7 +859,7 @@
   }
 
   function drawCloud(x, y, s) {
-    ctx.fillStyle = 'rgba(255,253,247,0.85)';
+    ctx.fillStyle = 'rgba(235,236,230,0.5)';
     ctx.beginPath();
     ctx.arc(x - 34 * s, y + 6 * s, 22 * s, 0, 6.2832);
     ctx.arc(x, y - 6 * s, 32 * s, 0, 6.2832);
@@ -769,7 +904,7 @@
         sparkle(p.x, p.y, 7 * k, p.color);
       } else if (p.text === 'heart') {
         var sp = sprites.heart;
-        var s = itemSize * 0.5;
+        var s = Math.min(itemSize * 0.5, 64 * k);
         ctx.drawImage(sp, p.x - s / 2, p.y - s / 2, s, s);
       } else {
         var fs = Math.round(30 * k);
@@ -904,7 +1039,7 @@
     // かごの 中に はいった たべもの（すこしの 間 みえる）
     if (P.catchT > 0 && sprites[P.catchEmoji]) {
       var sp = sprites[P.catchEmoji];
-      var cs = (itemSize * 0.75) / s;
+      var cs = Math.min(itemSize * 0.75, basketHalf * 1.1) / s;
       var sink = (1 - P.catchT / 0.5) * 10;
       ctx.drawImage(sp, -cs / 2, -40 - cs / 2 + 6 + sink, cs, cs);
     }
@@ -1099,7 +1234,17 @@
   }
 
   // ---------- がめんの きりかえ ----------
+  // しせんモードの ときだけ、ひよこと 物を 大きく する
+  function setScale(big) {
+    var c = big ? ME_CHICK_SCALE : 1, it = big ? ME_ITEM_SCALE : 1;
+    if (chickScale === c && itemScale === it) return;
+    chickScale = c;
+    itemScale = it;
+    resize();
+  }
+
   function startGame() {
+    setScale(rec.mode === 'me');
     newGame();
     mode = 'play';
     paused = false;
@@ -1112,13 +1257,15 @@
     setHearts();
     clearTimeout(againTimer);
     koeAgainEl.hidden = true;
-    leftBtn.hidden = rightBtn.hidden = G.koe;
+    leftBtn.hidden = rightBtn.hidden = G.lanes;
     koeHud.hidden = !G.koe;
     if (koe) koe.enabled = true;
-    hintEl.textContent = G.koe ? 'こえを だすと、ひよこが いれかわるよ' : 'ゆびで みぎ ひだりに なぞってね';
+    hintEl.textContent = G.koe ? 'こえを だすと、ひよこが いれかわるよ'
+      : G.me ? 'いきたい ほうを じっと みてね'
+      : 'ゆびで みぎ ひだりに なぞってね';
     hintEl.hidden = false;
     clearTimeout(hintTimer);
-    hintTimer = setTimeout(hideHint, G.koe ? 7000 : 4000);
+    hintTimer = setTimeout(hideHint, G.lanes ? 7000 : 4000);
     startLoop();
   }
 
@@ -1126,6 +1273,7 @@
     mode = 'title';
     paused = false;
     G = null;
+    setScale(false);
     items = [];
     pops = [];
     P = newChick();
@@ -1173,7 +1321,7 @@
   var againTimer = 0;
   var againReady = false;
   function showOver() {
-    var m = G.koe ? 'koe' : 'yubi';
+    var m = G.m;
     var prev = G.prevBest;
     var rank = addScore(G.score, m);
     var isNew = G.score > 0 && G.score > prev;
@@ -1200,7 +1348,7 @@
   // ハイスコアの ひょう
   var KOE_SPEED_NAMES = { vslow: 'とても ゆっくり', slow: 'ゆっくり', normal: 'すこし ゆっくり' };
   function speedTag(r, m) {
-    if (m === 'koe') return KOE_SPEED_NAMES[r.sp] || '';
+    if (m === 'koe' || m === 'me') return KOE_SPEED_NAMES[r.sp] || '';
     return r.sp === 'slow' ? 'ゆっくり' : '';
   }
   function renderBestList(el, newRank, m) {
@@ -1218,18 +1366,22 @@
     }).join('');
   }
   function renderBest() {
-    bestTitle.textContent = rec.mode === 'koe' ? 'ハイスコア（こえ）' : 'ハイスコア（ゆび）';
+    bestTitle.textContent = 'ハイスコア（' + ({ koe: 'こえ', me: 'め' }[rec.mode] || 'ゆび') + '）';
     renderBestList(document.getElementById('bestList'), -1, rec.mode);
   }
 
   // はじめの がめんの 「キャッチ してね」「よけてね」
   (function renderGuide() {
-    var heartIcon = '<svg viewBox="0 0 40 40" aria-hidden="true"><path d="' + HEART_D + '" fill="#ef9c96" stroke="#3d3a35" stroke-width="2.6" stroke-linejoin="round"/></svg>';
+    function pic(it, type) {
+      var url = '';
+      try { url = plateSprite(it, type, 96).toDataURL('image/png'); } catch (e) {}
+      return '<img class="g-img" src="' + url + '" alt="">';
+    }
     document.getElementById('foodList').innerHTML = FOODS.map(function (f) {
-      return '<li><span class="g-pic" aria-hidden="true">' + f.emoji + '</span><span>' + f.pt + 'てん</span><span class="sr">（' + f.name + '）</span></li>';
-    }).join('') + '<li><span class="g-pic">' + heartIcon + '</span><span>げんき＋1</span></li>';
+      return '<li><span class="g-pic" aria-hidden="true">' + pic(f, 'food') + '</span><span class="g-name">' + f.name + '</span><span class="g-pt">' + f.pt + 'てん</span></li>';
+    }).join('') + '<li><span class="g-pic" aria-hidden="true">' + pic(HEART, 'heart') + '</span><span class="g-name">ハート</span><span class="g-pt">げんき＋1</span></li>';
     document.getElementById('avoidList').innerHTML = AVOIDS.map(function (f) {
-      return '<li><span class="g-pic" aria-hidden="true">' + f.emoji + '</span><span>' + f.name + '</span></li>';
+      return '<li><span class="g-pic" aria-hidden="true">' + pic(f, 'avoid') + '</span><span class="g-name">' + f.name + '</span></li>';
     }).join('');
   })();
 
@@ -1281,12 +1433,22 @@
     if (!canControl()) return;
     // こえモードでも、がめんを タップすると いれかわる（てつだう ひと・スイッチ用）
     if (G.koe) { switchLane(); return; }
+    // しせんモード：タップ（iPad の しせん トラッキングで 見つめて タップ も）した ほうへ すぐ うごく
+    if (G.me) { goLane(laneAt(e.clientX)); return; }
     if (drag.id !== null && drag.id !== e.pointerId) return;
     drag.id = e.pointerId;
     drag.x = e.clientX;
     try { cv.setPointerCapture(e.pointerId); } catch (err) {}
     hideHint();
   });
+  // しせんモード：ポインタ（しせん トラッキングの ポインタなど）が どちらに あるかを おぼえる
+  cv.addEventListener('pointermove', function (e) {
+    if (mode === 'play' && G && G.me) {
+      if (gaze.x === null || laneAt(gaze.x) !== laneAt(e.clientX)) gaze.t = 0;
+      gaze.x = e.clientX;
+    }
+  });
+  cv.addEventListener('pointerleave', function () { gaze.x = null; gaze.t = 0; });
   cv.addEventListener('pointermove', function (e) {
     if (e.pointerId !== drag.id || !canControl()) return;
     drag.x = e.clientX;
@@ -1333,6 +1495,11 @@
 
   document.addEventListener('keydown', function (e) {
     // こえモード：スペース・エンター（外づけの スイッチなど）でも いれかわる
+    if (canControl() && G.me && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+      e.preventDefault();
+      goLane(e.key === 'ArrowLeft' ? 0 : 1);
+      return;
+    }
     if (canControl() && G.koe && (e.key === ' ' || e.key === 'Enter' || e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
       if (e.target && e.target.closest && e.target.closest('button, a')) return;
       e.preventDefault();
@@ -1452,7 +1619,7 @@
   });
 
   function renderSettings() {
-    var any = rec.scores.length + rec.koeScores.length > 0;
+    var any = rec.scores.length + rec.koeScores.length + rec.meScores.length > 0;
     recNote.textContent = any
       ? 'この iPad に ほぞん している ハイスコア（「ゆび」「こえ」それぞれ 上位5つ）です。けすと ぜんぶ きえます（はやさ・音・こえの せっていは のこります）。'
       : 'ハイスコアは まだ ありません。';
@@ -1462,6 +1629,9 @@
     });
     rec.koeScores.forEach(function (r) {
       html += '<li>こえ　' + r.s + 'てん　' + dateLong(r.d) + '（' + (KOE_SPEED_NAMES[r.sp] || '') + '）</li>';
+    });
+    rec.meScores.forEach(function (r) {
+      html += '<li>め　' + r.s + 'てん　' + dateLong(r.d) + '（' + (KOE_SPEED_NAMES[r.sp] || '') + '）</li>';
     });
     setList.innerHTML = html;
     setList.hidden = !any;
@@ -1500,7 +1670,7 @@
 
   // まちがえて けさないように、2回 おしたときだけ けす
   resetBtn.addEventListener('click', function () {
-    if (!rec.scores.length && !rec.koeScores.length) return;
+    if (!rec.scores.length && !rec.koeScores.length && !rec.meScores.length) return;
     if (!resetBtn.classList.contains('is-armed')) {
       resetBtn.classList.add('is-armed');
       resetBtn.textContent = 'もういちど おすと けします';
@@ -1511,6 +1681,7 @@
     disarmReset();
     rec.scores = [];
     rec.koeScores = [];
+    rec.meScores = [];
     save();
     renderSettings();
     resetStatus.textContent = 'ハイスコアを けしました';
@@ -1671,16 +1842,18 @@
   var modeBtns = Array.prototype.slice.call(document.querySelectorAll('.mode-btn'));
   var speedRow = document.getElementById('speedRow');
   var koeRow = document.getElementById('koeRow');
+  var meRow = document.getElementById('meRow');
   function renderMode() {
     modeBtns.forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.mode === rec.mode)); });
-    speedRow.hidden = rec.mode === 'koe';
+    speedRow.hidden = rec.mode !== 'yubi';
     koeRow.hidden = rec.mode !== 'koe';
+    meRow.hidden = rec.mode !== 'me';
     renderBest();
   }
   modeBtns.forEach(function (b) {
     b.addEventListener('click', function () {
       unlockAudio();
-      rec.mode = b.dataset.mode === 'koe' ? 'koe' : 'yubi';
+      rec.mode = b.dataset.mode === 'koe' || b.dataset.mode === 'me' ? b.dataset.mode : 'yubi';
       save();
       renderMode();
     });

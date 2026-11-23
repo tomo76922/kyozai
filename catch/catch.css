@@ -709,3 +709,23 @@ body {
 /* わかちがきの ところで だけ 改行する */
 .mic-text, .mic-sub, .test-text, .test-hint, .koe-note, .koe-again { word-break: keep-all; overflow-wrap: anywhere; }
 .adj-label { flex-basis: 100%; text-align: center; }
+
+/* はじめの がめんの 「キャッチ してね」「よけてね」：ゲームと おなじ 絵（ふちどりの 丸） */
+.guide-list { grid-template-columns: repeat(auto-fill, minmax(196px, 1fr)); gap: 4px 12px; }
+.guide-avoid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+.guide-list li { gap: 4px; }
+.g-pic { width: auto; font-size: inherit; flex: none; }
+.g-img { display: block; width: clamp(48px, 6vw, 58px); height: clamp(48px, 6vw, 58px); }
+.g-name { white-space: nowrap; }
+.g-pt { margin-left: 4px; white-space: nowrap; color: #b4583f; }
+.guide-avoid .g-name { color: var(--text); }
+
+/* めで あそぶ（しせんモード） */
+.me-sub {
+  margin: 0;
+  font-size: clamp(15px, 1.8vw, 17px);
+  color: var(--muted);
+  text-align: center;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
