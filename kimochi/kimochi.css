@@ -1,0 +1,283 @@
+/* きもちカード（色・文字・もくじボタンは ../common.css） */
+:root {
+  --tab: #fffdf7;
+  --tab-on: #e9dcc2;
+  --tab-on-border: #b89e72;
+  --gap: clamp(12px, 2vw, 22px);
+}
+
+/* ---------- 上の帯（ひらがなカードと同じ形） ---------- */
+.header {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-areas:
+    "home title speed"
+    "tabs tabs  tabs";
+  align-items: center;
+  gap: 14px 16px;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 20px var(--side) 8px;
+}
+
+.title {
+  grid-area: title;
+  margin: 0;
+  font-size: clamp(28px, 4.5vw, 44px);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.tabs {
+  grid-area: tabs;
+  display: flex;
+  gap: 12px;
+}
+
+#speedBtn { grid-area: speed; }
+.header .home-btn { grid-area: home; }
+
+.btn, .tab {
+  font: inherit;
+  font-size: clamp(22px, 3vw, 30px);
+  font-weight: 700;
+  color: var(--text);
+  border-radius: 999px;
+  min-height: 64px;
+  padding: 8px 28px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btn:focus-visible, .tab:focus-visible {
+  outline: 4px solid var(--active-border);
+  outline-offset: 3px;
+}
+
+.btn {
+  background: var(--btn);
+  border: 3px solid var(--btn-border);
+}
+.btn[aria-pressed="true"] { background: var(--btn-on); }
+
+.tab {
+  flex: 1 1 0;
+  background: var(--tab);
+  border: 3px solid var(--card-border);
+  color: var(--muted);
+}
+.tab[aria-selected="true"] {
+  background: var(--tab-on);
+  border-color: var(--tab-on-border);
+  color: var(--text);
+}
+
+.notice {
+  max-width: 1100px;
+  margin: 8px auto 0;
+  padding: 12px var(--side);
+  font-size: 20px;
+  color: var(--muted);
+}
+
+/* ---------- カードの いちらん（たて向き：3列、スクロール） ---------- */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--gap);
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 12px var(--side) 32px;
+}
+
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4%;
+  aspect-ratio: 5 / 6;
+  min-width: 0;
+  padding: 8% 6% 10%;
+  font: inherit;
+  color: var(--text);
+  background: var(--card);
+  border: 3px solid var(--card-border);
+  border-top: 10px solid var(--tone, var(--card-border));
+  border-radius: 22px;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  container-type: size;
+  transition: transform 0.12s ease, background-color 0.2s ease, border-color 0.2s ease;
+}
+.card:focus-visible { outline: 4px solid var(--active-border); outline-offset: 3px; }
+.card:active {
+  background: var(--active);
+  transform: scale(0.96);
+}
+
+.card-pic {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.card-pic svg {
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+}
+
+.card-label {
+  flex: none;
+  font-size: 28px;
+  /* 文字数（--len）に合わせて、カードからはみ出さない大きさにする */
+  font-size: min(16cqw, 14cqh, calc(86cqw / var(--len, 4)));
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+/* ---------- 大きく見せる画面 ---------- */
+.big {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  background: color-mix(in srgb, var(--tone, var(--card-border)) 22%, var(--card));
+  padding: calc(env(safe-area-inset-top) + 16px) calc(env(safe-area-inset-right) + 16px)
+           calc(env(safe-area-inset-bottom) + 12px) calc(env(safe-area-inset-left) + 16px);
+}
+
+.big-home {
+  position: absolute;
+  z-index: 1;
+  top: calc(env(safe-area-inset-top) + 16px);
+  left: calc(env(safe-area-inset-left) + 16px);
+}
+
+.big-card {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2vh;
+  width: 100%;
+  margin: 0;
+  padding: 72px 0 0;
+  font: inherit;
+  color: var(--text);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+.big-card:focus-visible { outline: 4px solid var(--active-border); outline-offset: -8px; border-radius: 24px; }
+
+.big-pic {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.big-pic svg {
+  width: 100%;
+  height: 100%;
+  max-width: 78vw;
+  max-height: 100%;
+}
+
+.big-label {
+  flex: none;
+  font-size: min(15vh, 18vw, calc(84vw / var(--len, 4)));
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.big-hint {
+  flex: none;
+  margin: 2vh 0 0;
+  text-align: center;
+  font-size: 20px;
+  color: var(--muted);
+}
+
+body.is-big { overflow: hidden; }
+
+.big:not([hidden]) { animation: big-in 0.18s ease-out; }
+@keyframes big-in {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card { transition: background-color 0.2s ease, border-color 0.2s ease; }
+  .card:active { transform: none; }
+  .big:not([hidden]) { animation: none; }
+}
+
+/* ---------- 横向き：スクロールなしで1画面に全部 ---------- */
+@media (orientation: landscape) {
+  :root {
+    --gap: clamp(8px, 1.4vw, 16px);
+    --header-h: 84px;
+  }
+
+  body {
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .header {
+    grid-template-columns: auto auto 1fr auto;
+    grid-template-areas: "home title tabs speed";
+    width: 100%;
+    max-width: none;
+    height: var(--header-h);
+    padding: 10px var(--side);
+  }
+  .title { font-size: 26px; letter-spacing: 0.04em; }
+  .tabs { justify-content: center; }
+  .tab { flex: 0 1 auto; min-width: 150px; }
+  .btn, .tab { min-height: 60px; font-size: 24px; padding: 6px 24px; }
+  .header .home-btn { min-height: 60px; font-size: 22px; padding: 6px 18px 6px 14px; }
+
+  main {
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+  .section { height: 100%; }
+
+  .grid {
+    grid-template-rows: repeat(2, 1fr);
+    height: 100%;
+    max-width: 1400px;
+    padding: 8px var(--side) 16px;
+  }
+  .grid[data-set="kimochi"] { grid-template-columns: repeat(4, 1fr); }
+  .grid[data-set="karada"]  { grid-template-columns: repeat(5, 1fr); }
+
+  .card {
+    aspect-ratio: auto;
+    min-height: 0;
+    border-radius: 18px;
+  }
+
+  .big-card { flex-direction: row; gap: 4vw; padding: 0 2vw; }
+  .big-pic { flex: 0 1 auto; width: min(80vh, 50vw); height: 100%; }
+  .big-pic svg { max-width: 100%; }
+  .big-label { font-size: min(18vh, 13vw, calc(46vw / var(--len, 4))); }
+}
