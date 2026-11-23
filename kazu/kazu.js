@@ -5,12 +5,18 @@
   var INK = '#3d3a35';
 
   var PICS = {
-    ringo:
-      '<path d="M50 30 Q38 18 24 26 Q8 38 14 62 Q20 86 38 90 Q45 92 50 88 Q55 92 62 90 Q80 86 86 62 Q92 38 76 26 Q62 18 50 30 Z" ' +
-        'fill="#e07a6a" stroke="' + INK + '" stroke-width="3.5" stroke-linejoin="round"/>' +
-      '<path d="M28 44 Q26 54 30 62" fill="none" stroke="#f4b9ae" stroke-width="5" stroke-linecap="round"/>' +
-      '<path d="M50 31 Q50 18 56 10" fill="none" stroke="' + INK + '" stroke-width="4" stroke-linecap="round"/>' +
-      '<path d="M54 18 Q66 6 80 12 Q70 26 54 18 Z" fill="#9cc58a" stroke="' + INK + '" stroke-width="3" stroke-linejoin="round"/>',
+    ichigo:
+      '<path d="M50 30 Q30 22 18 34 Q10 46 20 62 Q32 82 50 92 Q68 82 80 62 Q90 46 82 34 Q70 22 50 30 Z" ' +
+        'fill="#e06a6a" stroke="' + INK + '" stroke-width="3.5" stroke-linejoin="round"/>' +
+      '<g fill="#f7e3a1">' +
+        '<ellipse cx="34" cy="44" rx="2.2" ry="3.2"/><ellipse cx="50" cy="44" rx="2.2" ry="3.2"/><ellipse cx="66" cy="44" rx="2.2" ry="3.2"/>' +
+        '<ellipse cx="27" cy="56" rx="2.2" ry="3.2"/><ellipse cx="42" cy="57" rx="2.2" ry="3.2"/><ellipse cx="58" cy="57" rx="2.2" ry="3.2"/><ellipse cx="73" cy="56" rx="2.2" ry="3.2"/>' +
+        '<ellipse cx="36" cy="70" rx="2.2" ry="3.2"/><ellipse cx="50" cy="71" rx="2.2" ry="3.2"/><ellipse cx="64" cy="70" rx="2.2" ry="3.2"/>' +
+        '<ellipse cx="50" cy="83" rx="2.2" ry="3.2"/>' +
+      '</g>' +
+      '<path d="M50 32 L36 22 L44 24 L38 12 L50 22 L62 12 L56 24 L64 22 Z" ' +
+        'fill="#8fbf7a" stroke="' + INK + '" stroke-width="3" stroke-linejoin="round"/>' +
+      '<path d="M50 22 Q50 14 54 8" fill="none" stroke="' + INK + '" stroke-width="3.5" stroke-linecap="round"/>',
     hoshi:
       '<path d="M50 8 L61 36 L91 38 L68 57 L76 87 L50 70 L24 87 L32 57 L9 38 L39 36 Z" ' +
         'fill="#f3cf63" stroke="' + INK + '" stroke-width="3.5" stroke-linejoin="round"/>' +
@@ -189,7 +195,7 @@
   var counting = false;
 
   buildNums(countNums, 'num-count');
-  fillFrame(countFrame, 0, 'ringo');
+  fillFrame(countFrame, 0, 'ichigo');
 
   function stopCount() {
     countRun++;
@@ -206,7 +212,7 @@
     if (prev) prev.classList.remove('is-on');
     btn.classList.add('is-on');
 
-    fillFrame(countFrame, 0, 'ringo');
+    fillFrame(countFrame, 0, 'ichigo');
     var slots = countFrame.querySelectorAll('.slot');
     countText.className = 'stage-text is-big';
     countText.textContent = '';
@@ -223,7 +229,7 @@
         return;
       }
       i++;
-      slots[i - 1].innerHTML = picSvg('ringo');
+      slots[i - 1].innerHTML = picSvg('ichigo');
       slots[i - 1].classList.add('pop');
       countText.textContent = String(i);
       speak(READ[i], function () {
