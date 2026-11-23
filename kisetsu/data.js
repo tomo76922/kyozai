@@ -39,6 +39,22 @@
         ' L' + (x + 9) + ' ' + (y + 10) + ' L' + (x + 18) + ' ' + y + ' Q' + (x + 20) + ' ' + (y + 34) + ' ' + x + ' ' + (y + 36) +
         ' Q' + (x - 20) + ' ' + (y + 34) + ' ' + (x - 18) + ' ' + y + 'Z" fill="' + color + '" stroke="' + INK + '" stroke-width="3" stroke-linejoin="round"/>';
   }
+  // ハートの形の葉（あさがお）
+  function heart(x, y, k, rot) {
+    return '<path d="M0 14 Q-22 0 -16 -12 Q-8 -20 0 -10 Q8 -20 16 -12 Q22 0 0 14Z" fill="#79b35f" stroke="' + INK + '" stroke-width="2.5" ' +
+      'transform="translate(' + x + ' ' + y + ') rotate(' + rot + ') scale(' + (k * 1.3) + ')"/>';
+  }
+  // あさがおの花（前から見た形）
+  function asagaoFlower(cx, cy, r, color) {
+    var s = '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="' + color + '" stroke="' + INK + '" stroke-width="3"/>';
+    for (var i = 0; i < 5; i++) {
+      var a = (i * 72 - 90) * Math.PI / 180;
+      s += '<path d="M' + cx + ' ' + cy + ' L' + (cx + Math.cos(a) * r * 0.92).toFixed(1) + ' ' + (cy + Math.sin(a) * r * 0.92).toFixed(1) +
+        '" stroke="#fffdf7" stroke-width="' + (r * 0.12).toFixed(1) + '" stroke-linecap="round" opacity="0.75"/>';
+    }
+    return s + '<circle cx="' + cx + '" cy="' + cy + '" r="' + (r * 0.32) + '" fill="#fffdf7"/>' +
+      '<circle cx="' + cx + '" cy="' + cy + '" r="' + (r * 0.1) + '" fill="#f3e3a1"/>';
+  }
   // SVG の中の絵文字
   function emo(x, y, size, ch) {
     return '<text x="' + x + '" y="' + y + '" font-size="' + size + '" text-anchor="middle" dominant-baseline="central">' + ch + '</text>';
@@ -223,7 +239,195 @@
       }).join('') + '</g>' +
       '<g stroke="#6f9a4e" stroke-width="2.5" opacity="0.7">' + [26, 64, 96, 126, 158, 186].map(function (x) {
         return '<path d="M' + x + ' 200 V184"/>';
-      }).join('') + '</g>'
+      }).join('') + '</g>',
+
+    // ===== 夏 =====
+    // あさがお：ささえの ぼうに つるが まきつく
+    asagao:
+      '<path d="M150 14 V192" stroke="#c9a36c" stroke-width="6" stroke-linecap="round"/>' +
+      '<path d="M150 190 Q120 176 150 160 Q180 144 150 128 Q120 112 150 96 Q180 80 150 64 Q128 52 140 36" fill="none" stroke="#6fa35a" stroke-width="4"/>' +
+      heart(124, 150, 1, -30) + heart(176, 112, 0.9, 30) + heart(128, 82, 0.8, -20) +
+      asagaoFlower(70, 70, 40, '#5b7fd6') + asagaoFlower(84, 150, 32, '#c66bb8'),
+
+    // あじさい：小さな花が まるく あつまる
+    ajisai:
+      '<path d="M100 120 V192" stroke="#6fa35a" stroke-width="6"/>' +
+      '<path d="M100 170 Q50 176 30 140 Q70 130 100 170Z" fill="#6fa35a" stroke="' + INK + '" stroke-width="3"/>' +
+      '<path d="M100 166 Q150 172 170 136 Q130 126 100 166Z" fill="#6fa35a" stroke="' + INK + '" stroke-width="3"/>' +
+      '<g stroke="#5a6fa0" stroke-width="1.2">' + (function () {
+        var s = '';
+        var cols = ['#8fa8e0', '#a38fd6', '#7f9ad8', '#b4a0e0'];
+        var k = 0;
+        for (var y = 34; y <= 124; y += 18) {
+          for (var x = 30; x <= 170; x += 18) {
+            var dx = x - 100, dy = (y - 80) * 1.4;
+            if (dx * dx + dy * dy > 68 * 68) continue;
+            var ox = (y / 18) % 2 ? 9 : 0;
+            s += petals(x + ox, y, 4, 5, 5, 6, cols[k++ % cols.length]);
+          }
+        }
+        return s;
+      })() + '</g>',
+
+    // ゆり：白い大きな花
+    yuri:
+      '<path d="M100 110 Q96 150 100 192" stroke="#6fa35a" stroke-width="6" fill="none"/>' +
+      '<g fill="#79b35f" stroke="' + INK + '" stroke-width="2.5">' +
+        '<path d="M100 150 Q60 140 44 110 Q80 118 100 150Z"/><path d="M100 172 Q140 162 158 132 Q120 140 100 172Z"/>' +
+      '</g>' +
+      '<g fill="#fffdf7" stroke="' + INK + '" stroke-width="3" stroke-linejoin="round">' +
+        [0, 60, 120, 180, 240, 300].map(function (a) {
+          return '<path d="M100 72 Q84 40 100 8 Q116 40 100 72Z" transform="rotate(' + a + ' 100 72)"/>';
+        }).join('') +
+      '</g>' +
+      '<g stroke="#f0c24a" stroke-width="2" opacity="0.8">' +
+        [0, 60, 120, 180, 240, 300].map(function (a) {
+          return '<path d="M100 66 V32" transform="rotate(' + a + ' 100 72)"/>';
+        }).join('') +
+      '</g>' +
+      '<g stroke="#6fa35a" stroke-width="2.5">' + [-50, -25, 0, 25, 50].map(function (a) {
+        return '<path d="M100 72 V44" transform="rotate(' + a + ' 100 72)"/>';
+      }).join('') + '</g>' +
+      '<g fill="#c8743a">' + [-50, -25, 0, 25, 50].map(function (a) {
+        return '<ellipse cx="100" cy="42" rx="3" ry="6" transform="rotate(' + a + ' 100 72)"/>';
+      }).join('') + '</g>',
+
+    // せみ：木の みきに とまる
+    semi:
+      '<rect x="56" y="0" width="88" height="200" fill="#a9845a"/>' +
+      '<g stroke="#8a6a45" stroke-width="3" fill="none"><path d="M70 10 Q66 60 72 110 Q76 160 70 200"/><path d="M128 0 Q134 70 126 130 Q122 170 130 200"/></g>' +
+      '<g transform="translate(100 104) scale(1.45)">' +
+        '<g fill="#d9ecf2" fill-opacity="0.85" stroke="' + INK + '" stroke-width="2.5">' +
+          '<path d="M-6 -30 Q-46 -6 -38 56 Q-24 70 -4 30Z"/><path d="M6 -30 Q46 -6 38 56 Q24 70 4 30Z"/>' +
+        '</g>' +
+        '<g stroke="#7d9aa6" stroke-width="1.5" fill="none"><path d="M-10 -20 Q-30 10 -30 50"/><path d="M10 -20 Q30 10 30 50"/></g>' +
+        '<ellipse cx="0" cy="4" rx="16" ry="34" fill="#4a3b2c" stroke="' + INK + '" stroke-width="2.5"/>' +
+        '<ellipse cx="0" cy="-32" rx="22" ry="12" fill="#5a4632" stroke="' + INK + '" stroke-width="2.5"/>' +
+        '<circle cx="-18" cy="-36" r="6" fill="#2d2620"/><circle cx="18" cy="-36" r="6" fill="#2d2620"/>' +
+        '<path d="M-8 -16 H8" stroke="#7fae6a" stroke-width="3"/>' +
+      '</g>',
+
+    // かぶとむし：大きな つの
+    kabuto:
+      '<path d="M10 176 Q100 166 190 176" stroke="#a7895f" stroke-width="6" fill="none" stroke-linecap="round"/>' +
+      '<g stroke="' + INK + '" stroke-width="4" stroke-linecap="round" fill="none">' +
+        '<path d="M70 140 L58 170"/><path d="M100 146 L100 172"/><path d="M130 140 L146 170"/>' +
+      '</g>' +
+      '<ellipse cx="112" cy="118" rx="62" ry="36" fill="#6b3a22" stroke="' + INK + '" stroke-width="3.5"/>' +
+      '<path d="M112 84 V152" stroke="#4a2614" stroke-width="2.5"/>' +
+      '<path d="M86 94 Q100 88 108 96" stroke="#b07a52" stroke-width="5" fill="none" stroke-linecap="round"/>' +
+      '<ellipse cx="54" cy="112" rx="22" ry="20" fill="#5a2f1b" stroke="' + INK + '" stroke-width="3.5"/>' +
+      '<path d="M60 100 Q70 84 84 86" stroke="#5a2f1b" stroke-width="7" fill="none" stroke-linecap="round"/>' +
+      '<path d="M38 118 Q12 112 12 78" stroke="#5a2f1b" stroke-width="10" fill="none" stroke-linecap="round"/>' +
+      '<path d="M12 80 L4 68 M12 80 L22 68" stroke="#5a2f1b" stroke-width="7" stroke-linecap="round"/>' +
+      '<circle cx="48" cy="116" r="3" fill="#e9d9b6"/>',
+
+    // くわがた：大きな あご（上から見た形）
+    kuwagata:
+      '<rect x="0" y="0" width="200" height="200" rx="24" fill="#e6dcc6"/>' +
+      '<g stroke="' + INK + '" stroke-width="4" stroke-linecap="round" fill="none">' +
+        '<path d="M80 100 L50 84 L40 70"/><path d="M120 100 L150 84 L160 70"/>' +
+        '<path d="M78 122 L46 124 L34 112"/><path d="M122 122 L154 124 L166 112"/>' +
+        '<path d="M80 146 L52 164 L48 182"/><path d="M120 146 L148 164 L152 182"/>' +
+      '</g>' +
+      '<g fill="#3a2a1e" stroke="' + INK + '" stroke-width="3" stroke-linejoin="round">' +
+        '<path d="M82 64 Q60 50 62 18 Q72 30 76 26 Q74 44 92 56Z"/>' +
+        '<path d="M118 64 Q140 50 138 18 Q128 30 124 26 Q126 44 108 56Z"/>' +
+        '<ellipse cx="100" cy="70" rx="24" ry="14"/>' +
+        '<path d="M76 88 Q100 80 124 88 L122 100 Q100 104 78 100Z"/>' +
+        '<ellipse cx="100" cy="140" rx="28" ry="40"/>' +
+      '</g>' +
+      '<path d="M100 102 V178" stroke="#1f1610" stroke-width="2.5"/>' +
+      '<path d="M88 116 Q92 110 96 112" stroke="#8a6a52" stroke-width="4" fill="none" stroke-linecap="round"/>',
+
+    // ほたる：夜に 光る
+    hotaru:
+      '<defs><filter id="kisetsu-hikari" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="4"/></filter></defs>' +
+      '<rect x="0" y="0" width="200" height="200" rx="24" fill="#26324f"/>' +
+      '<g fill="#3d5a3a"><path d="M0 200 Q20 140 14 110 Q34 150 30 200Z"/><path d="M40 200 Q46 150 60 130 Q56 170 62 200Z"/><path d="M150 200 Q160 150 150 120 Q174 150 172 200Z"/><path d="M180 200 Q186 160 200 146 V200Z"/></g>' +
+      [[40, 60], [150, 40], [170, 96], [64, 120], [120, 160]].map(function (p) {
+        return '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="10" fill="#e9f27a" filter="url(#kisetsu-hikari)"/><circle cx="' + p[0] + '" cy="' + p[1] + '" r="4" fill="#f7fbc4"/>';
+      }).join('') +
+      '<g transform="translate(100 96) rotate(-20)">' +
+        '<circle cx="0" cy="26" r="20" fill="#e9f27a" filter="url(#kisetsu-hikari)"/>' +
+        '<ellipse cx="0" cy="6" rx="12" ry="26" fill="#2b2b2b" stroke="#111" stroke-width="2"/>' +
+        '<ellipse cx="0" cy="26" rx="10" ry="9" fill="#f4f7a8"/>' +
+        '<ellipse cx="0" cy="-20" rx="9" ry="7" fill="#d9584a"/>' +
+        '<path d="M-4 -26 L-10 -40 M4 -26 L10 -40" stroke="#2b2b2b" stroke-width="2.5" stroke-linecap="round"/>' +
+      '</g>',
+
+    // 「うみ」：ひろい うみに 日が しずむ
+    umi:
+      '<rect x="0" y="0" width="200" height="200" rx="24" fill="#f6d8a8"/>' +
+      '<circle cx="100" cy="104" r="30" fill="#f2a65a"/>' +
+      '<path d="M0 104 H200 V200 H0Z" fill="#4f8fc4"/>' +
+      '<g fill="none" stroke="#a9cde8" stroke-width="3" stroke-linecap="round">' +
+        '<path d="M86 116 H114"/><path d="M78 128 H122"/><path d="M20 146 Q30 140 40 146 Q50 152 60 146"/><path d="M130 160 Q140 154 150 160 Q160 166 170 160"/><path d="M50 180 Q60 174 70 180 Q80 186 90 180"/>' +
+      '</g>' +
+      emo(150, 92, 34, '⛵') +
+      '<g fill="none" stroke="#7a746a" stroke-width="2.5" stroke-linecap="round"><path d="M36 50 Q42 44 48 50 Q54 44 60 50"/><path d="M60 30 Q65 25 70 30 Q75 25 80 30"/></g>',
+
+    // 「たなばたさま」：ささの葉に たんざく、夜空に 星
+    tanabata:
+      '<rect x="0" y="0" width="200" height="200" rx="24" fill="#2e3a66"/>' +
+      '<path d="M40 0 Q110 90 200 120 V80 Q140 60 90 0Z" fill="#5a6aa0" opacity="0.55"/>' +
+      [[30, 30], [170, 50], [150, 20], [60, 70], [180, 120], [140, 90], [20, 110]].map(function (p) {
+        return '<path d="M' + p[0] + ' ' + (p[1] - 7) + ' L' + (p[0] + 2) + ' ' + (p[1] - 2) + ' L' + (p[0] + 7) + ' ' + p[1] + ' L' + (p[0] + 2) + ' ' + (p[1] + 2) + ' L' + p[0] + ' ' + (p[1] + 7) + ' L' + (p[0] - 2) + ' ' + (p[1] + 2) + ' L' + (p[0] - 7) + ' ' + p[1] + ' L' + (p[0] - 2) + ' ' + (p[1] - 2) + 'Z" fill="#fbe7a6"/>';
+      }).join('') +
+      '<path d="M90 200 Q92 120 104 40" stroke="#6fa35a" stroke-width="6" fill="none"/>' +
+      '<g fill="#79b35f" stroke="#3f6a33" stroke-width="2">' +
+        [[100, 60, -40], [104, 66, 30], [96, 96, -50], [100, 104, 40], [94, 136, -35], [96, 142, 45], [104, 44, 0]].map(function (l) {
+          return '<path d="M' + l[0] + ' ' + l[1] + ' q12 -4 34 2 q-20 8 -34 -2Z" transform="rotate(' + l[2] + ' ' + l[0] + ' ' + l[1] + ')' + (l[2] < 0 ? ' scale(-1 1) translate(' + (-2 * l[0]) + ' 0)' : '') + '"/>';
+        }).join('') +
+      '</g>' +
+      '<g stroke="' + INK + '" stroke-width="1.5">' +
+        '<rect x="122" y="70" width="10" height="28" fill="#f2a6c0"/><rect x="70" y="80" width="10" height="28" fill="#f3cf63"/>' +
+        '<rect x="122" y="128" width="10" height="28" fill="#8fc3e3"/><rect x="66" y="132" width="10" height="28" fill="#a585d6"/>' +
+      '</g>',
+
+    // 「かたつむり」：雨の日の 葉っぱの上
+    katatsumuri:
+      '<rect x="0" y="0" width="200" height="200" rx="24" fill="#dfe6ec"/>' +
+      '<g stroke="#9fb3c4" stroke-width="3" stroke-linecap="round">' +
+        '<path d="M30 14 L22 34"/><path d="M80 10 L72 30"/><path d="M130 18 L122 38"/><path d="M176 12 L168 32"/><path d="M52 50 L44 70"/><path d="M156 56 L148 76"/>' +
+      '</g>' +
+      '<path d="M20 170 Q40 100 110 96 Q170 96 186 150 Q130 196 20 170Z" fill="#79b35f" stroke="' + INK + '" stroke-width="3"/>' +
+      '<path d="M26 166 Q100 140 180 148" fill="none" stroke="#4f7a3d" stroke-width="3"/>' +
+      petals(150, 76, 4, 6, 6, 7, '#a38fd6') + petals(166, 70, 4, 6, 6, 7, '#8fa8e0') + petals(158, 60, 4, 6, 6, 7, '#b4a0e0') +
+      emo(96, 120, 70, '🐌'),
+
+    // 「ほたるこい」：夜の 水べに ほたる
+    hotarukoi:
+      '<defs><filter id="kisetsu-hikari2" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="4"/></filter></defs>' +
+      '<rect x="0" y="0" width="200" height="200" rx="24" fill="#2a3456"/>' +
+      '<circle cx="160" cy="36" r="14" fill="#f7efc4"/>' +
+      '<path d="M0 130 Q60 120 100 136 Q150 150 200 134 V200 H0Z" fill="#35507a"/>' +
+      '<g fill="none" stroke="#5b7aa8" stroke-width="2.5" stroke-linecap="round"><path d="M30 156 H60"/><path d="M110 170 H150"/><path d="M60 186 H90"/></g>' +
+      '<g fill="#3d5a3a"><path d="M0 132 Q10 90 6 70 Q24 100 20 134Z"/><path d="M180 134 Q186 96 200 80 V136Z"/></g>' +
+      [[40, 60], [70, 90], [120, 70], [150, 100], [96, 40], [60, 120], [140, 124]].map(function (p) {
+        return '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="9" fill="#e9f27a" filter="url(#kisetsu-hikari2)"/><circle cx="' + p[0] + '" cy="' + p[1] + '" r="3.5" fill="#f7fbc4"/>';
+      }).join('') +
+      emo(100, 112, 40, '🧒'),
+
+    // 「夏は来ぬ」：卯の花の さく かきねに ほととぎす
+    natsuwakinu:
+      '<rect x="0" y="0" width="200" height="200" rx="24" fill="#e3f0f7"/>' +
+      '<path d="M0 150 H200 V200 H0Z" fill="#a9cf86"/>' +
+      '<g stroke="#6fa35a" stroke-width="3">' + [20, 44, 68, 92, 116, 140, 164, 188].map(function (x) {
+        return '<path d="M' + x + ' 196 V176 M' + (x - 5) + ' 180 L' + x + ' 186 L' + (x + 5) + ' 180"/>';
+      }).join('') + '</g>' +
+      '<g fill="#c9a36c" stroke="' + INK + '" stroke-width="2">' +
+        '<rect x="0" y="96" width="200" height="8"/><rect x="0" y="126" width="200" height="8"/>' +
+        [16, 56, 96, 136, 176].map(function (x) { return '<rect x="' + (x - 4) + '" y="84" width="8" height="66"/>'; }).join('') +
+      '</g>' +
+      '<g fill="#7fae62">' +
+        '<ellipse cx="40" cy="92" rx="34" ry="22"/><ellipse cx="110" cy="88" rx="40" ry="24"/><ellipse cx="176" cy="94" rx="30" ry="20"/>' +
+      '</g>' +
+      '<g fill="#fffdf7" stroke="#cfc8b8" stroke-width="1">' + [[24, 84], [40, 76], [54, 92], [32, 100], [90, 80], [104, 70], [118, 84], [130, 74], [100, 96], [126, 98], [164, 86], [180, 80], [190, 98], [170, 100], [70, 88], [150, 90]].map(function (p) {
+        return '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="4.5"/>';
+      }).join('') + '</g>' +
+      emo(140, 38, 40, '🐦') +
+      '<g fill="none" stroke="#7a746a" stroke-width="2.5" stroke-linecap="round"><path d="M166 22 Q172 18 178 22"/><path d="M168 32 Q174 28 180 32"/></g>'
   };
 
   // ---------- ジャンル ----------
@@ -284,11 +488,42 @@
     {
       id: 'natsu', name: '[夏:なつ]', icon: '🌻', color: '#f3cf63',
       genres: {
-        hana:  [{ name: 'ひまわり' }, { name: '[朝顔:あさ.がお]' }],
-        mushi: [{ name: 'せみ' }, { name: 'かぶと[虫:むし]' }, { name: 'ほたる' }],
-        gyoji: [{ name: '[七夕:たなばた]' }, { name: '[夏:なつ][祭:まつ]り' }],
-        tabe:  [{ name: 'すいか' }, { name: 'とうもろこし' }, { name: 'かき[氷:ごおり]' }],
-        uta:   [{ name: '「うみ」' }, { name: '「たなばたさま」' }]
+        hana: [
+          { name: 'ひまわり',                 pic: '🌻' },
+          { name: '[朝顔:あさ.がお]',          pic: 'svg:asagao' },
+          { name: 'ハイビスカス',             pic: '🌺' },
+          { name: 'あじさい',                 pic: 'svg:ajisai' },
+          { name: 'ゆり',                     pic: 'svg:yuri' }
+        ],
+        mushi: [
+          { name: 'せみ',                     pic: 'svg:semi' },
+          { name: 'かぶと[虫:むし]',           pic: 'svg:kabuto' },
+          { name: 'くわがた',                 pic: 'svg:kuwagata' },
+          { name: 'ほたる',                   pic: 'svg:hotaru' },
+          { name: 'か',                       pic: '🦟' }
+        ],
+        gyoji: [
+          { name: '[七夕:たなばた]',           pic: '🎋' },
+          { name: '[夏:なつ][祭:まつ]り',       pic: '👘🏮' },
+          { name: '[花火大会:はな.び.たい.かい]', pic: '🎆🎇' },
+          { name: '[海水浴:かい.すい.よく]',   pic: '🏖️' },
+          { name: 'ラジオ[体操:たい.そう]',     pic: '📻🙆' }
+        ],
+        tabe: [
+          { name: 'すいか',                   pic: '🍉' },
+          { name: 'とうもろこし',             pic: '🌽' },
+          { name: 'かき[氷:ごおり]',           pic: '🍧' },
+          { name: 'トマト',                   pic: '🍅' },
+          { name: 'きゅうり',                 pic: '🥒' },
+          { name: 'なす',                     pic: '🍆' }
+        ],
+        uta: [
+          { name: '「うみ」',                         pic: 'svg:umi' },
+          { name: '「たなばたさま」',                 pic: 'svg:tanabata' },
+          { name: '「かたつむり」',                   pic: 'svg:katatsumuri' },
+          { name: '「ほたるこい」',                   pic: 'svg:hotarukoi' },
+          { name: '「[夏:なつ]は[来:き]ぬ」',         pic: 'svg:natsuwakinu' }
+        ]
       }
     },
     {
