@@ -46,10 +46,27 @@
       </section>
 
       <section class="panel start-panel">
-        <div class="speed" role="group" aria-label="はやさ">
+        <div class="mode" role="group" aria-label="あそびかた">
+          <button type="button" class="btn mode-btn" data-mode="yubi" aria-pressed="true">
+            <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11V4.5a1.5 1.5 0 0 1 3 0V10"/><path d="M12 9.5a1.5 1.5 0 0 1 3 0V11"/><path d="M15 10.5a1.5 1.5 0 0 1 3 0V15a6 6 0 0 1-6 6h-.5a6 6 0 0 1-4.6-2.2L4.2 15.4a1.6 1.6 0 0 1 2.4-2.1L9 15"/></svg>
+            <span>ゆびで あそぶ</span>
+          </button>
+          <button type="button" class="btn mode-btn" data-mode="koe" aria-pressed="false">
+            <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg>
+            <span>こえで あそぶ</span>
+          </button>
+        </div>
+        <div class="speed" id="speedRow" role="group" aria-label="はやさ">
           <span class="speed-label">はやさ</span>
           <button type="button" class="btn speed-btn" data-speed="slow" aria-pressed="false">ゆっくり</button>
           <button type="button" class="btn speed-btn" data-speed="normal" aria-pressed="true">ふつう</button>
+        </div>
+        <div class="koe-row" id="koeRow" hidden>
+          <p class="koe-note">こえを だすたびに、ひよこが ひだりと みぎで いれかわるよ</p>
+          <button type="button" class="btn koe-test-btn" id="koeTestBtn">
+            <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg>
+            <span>こえテスト</span>
+          </button>
         </div>
         <button type="button" class="btn btn-go btn-start" id="startBtn">スタート</button>
         <div class="best">
@@ -74,6 +91,15 @@
     <p class="toast" id="toast" aria-live="polite"></p>
 
     <p class="hint" id="hint" hidden>ゆびで みぎ ひだりに なぞってね</p>
+
+    <!-- こえモード：こえの おおきさ メーター -->
+    <div class="koe-hud" id="koeHud" hidden>
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg>
+      <div class="meter meter-small" aria-hidden="true">
+        <div class="meter-fill" id="hudMeterFill"></div>
+        <div class="meter-line" id="hudMeterLine"></div>
+      </div>
+    </div>
 
     <!-- みぎ・ひだりの ボタン -->
     <button type="button" class="move-btn move-left" id="leftBtn" aria-label="ひだりへ">
@@ -102,10 +128,56 @@
       <p class="card-title" id="overTitle">おしまい</p>
       <p class="new-rec" id="newRec" hidden>しんきろく！</p>
       <p class="over-score"><b id="overScore">0</b>てん</p>
+      <p class="koe-again" id="koeAgain" hidden>こえを だすと、もういちど あそべるよ</p>
       <ol class="best-list best-small" id="overBest"></ol>
       <div class="card-btns">
         <button type="button" class="btn btn-go" id="againBtn">もういちど</button>
         <a class="btn btn-sub" href="../">もくじ</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- マイクを つかう まえの おしらせ -->
+  <div class="overlay" id="micAsk" hidden>
+    <div class="card mic-card" role="dialog" aria-modal="true" aria-labelledby="micTitle">
+      <svg class="mic-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg>
+      <p class="card-title mic-title" id="micTitle">マイクを つかうね</p>
+      <p class="mic-text">こえの おおきさで ひよこを うごかすために、マイクを つかいます。<br>
+        ことばは ききとりません。こえは ろくおんしないし、どこにも おくりません。</p>
+      <p class="mic-sub">このあと「マイクを つかっても いいですか」と きかれたら、「きょか」を おしてね。</p>
+      <p class="mic-err" id="micErr" role="alert" hidden></p>
+      <div class="card-btns">
+        <button type="button" class="btn btn-go" id="micOkBtn">マイクを つかう</button>
+        <button type="button" class="btn btn-sub" id="micNoBtn">やめる</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- こえテスト -->
+  <div class="overlay" id="koeTest" hidden>
+    <div class="card test-card" role="dialog" aria-modal="true" aria-labelledby="testTitle">
+      <p class="card-title test-title" id="testTitle">こえテスト</p>
+      <p class="test-text">こえを だしてみてね。いろの ぼうが <b>せん</b>を こえると はんのう するよ。</p>
+      <div class="test-meter-row">
+        <div class="meter meter-big" aria-hidden="true">
+          <div class="meter-fill" id="testMeterFill"></div>
+          <div class="meter-line" id="testMeterLine"><span>ここで はんのう</span></div>
+        </div>
+        <div class="test-lamp" id="testLamp" aria-live="polite">
+          <span class="lamp-dot" aria-hidden="true"></span>
+          <span class="lamp-text" id="testLampText">まってるよ</span>
+        </div>
+      </div>
+      <div class="test-adjust">
+        <span class="adj-label">はんのう する おおきさ</span>
+        <button type="button" class="btn adj-btn" id="thDownBtn" aria-label="ちいさい こえでも はんのう するように する">ちいさく ▼</button>
+        <span class="adj-value" id="thValue">50</span>
+        <button type="button" class="btn adj-btn" id="thUpBtn" aria-label="おおきい こえだけ はんのう するように する">おおきく ▲</button>
+      </div>
+      <p class="test-hint">へやの ものおとで はんのう するときは「おおきく」、こえを だしても はんのう しないときは「ちいさく」を おしてね。</p>
+      <p class="mic-err" id="testErr" role="alert" hidden></p>
+      <div class="card-btns">
+        <button type="button" class="btn btn-go" id="testCloseBtn">おわり</button>
       </div>
     </div>
   </div>
@@ -120,6 +192,27 @@
 
       <p class="set-warn" id="saveWarn" hidden>この iPad では きろくを ほぞん できません。ページを とじると もとに もどります。</p>
 
+      <section class="set-sec" aria-labelledby="h-koe">
+        <h3 class="set-h" id="h-koe">こえで あそぶ</h3>
+        <p class="set-note">こえモードの はじめの はやさです。レベルアップしても、はやく なるのは ゆるやかです。</p>
+        <div class="set-row" role="group" aria-label="こえモードの はじめの はやさ">
+          <button type="button" class="btn opt-btn" data-koe-speed="vslow" aria-pressed="true">とても ゆっくり</button>
+          <button type="button" class="btn opt-btn" data-koe-speed="slow" aria-pressed="false">ゆっくり</button>
+          <button type="button" class="btn opt-btn" data-koe-speed="normal" aria-pressed="false">すこし ゆっくり</button>
+        </div>
+        <p class="set-note set-note-gap">声で いれかわったあと、つぎの 声に 反応するまでの 待ち時間です（声が のびて 何度も いれかわらないように）。</p>
+        <div class="set-row" role="group" aria-label="まちじかん">
+          <button type="button" class="btn opt-btn" data-cool="700" aria-pressed="false">0.7びょう</button>
+          <button type="button" class="btn opt-btn" data-cool="1000" aria-pressed="true">1びょう</button>
+          <button type="button" class="btn opt-btn" data-cool="1500" aria-pressed="false">1.5びょう</button>
+          <button type="button" class="btn opt-btn" data-cool="2000" aria-pressed="false">2びょう</button>
+        </div>
+        <p class="set-note set-note-gap" id="thNote"></p>
+        <div class="set-row">
+          <button type="button" class="btn" id="setTestBtn">こえテストを ひらく</button>
+        </div>
+      </section>
+
       <section class="set-sec" aria-labelledby="h-rec">
         <h3 class="set-h" id="h-rec">ハイスコア</h3>
         <p class="set-note" id="recNote"></p>
@@ -132,6 +225,7 @@
     </div>
   </div>
 
+  <script src="../shared/koe-switch.js"></script>
   <script src="./catch.js"></script>
   <script src="../pwa.js"></script>
 </body>

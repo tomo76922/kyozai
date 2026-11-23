@@ -29,6 +29,14 @@
     slow:   { fall: 4.8, gap: 1.55, gapMin: 0.7 },
     normal: { fall: 3.5, gap: 1.15, gapMin: 0.5 }
   };
+  // こえモード：とても ゆっくり はじまり、はやく なるのも ゆるやか
+  var KOE_SPEEDS = {
+    vslow:  { fall: 10, gap: 4.4, gapMin: 3.0 },
+    slow:   { fall: 8,  gap: 3.8, gapMin: 2.6 },
+    normal: { fall: 6.5, gap: 3.2, gapMin: 2.2 }
+  };
+  var KOE_LANES = [0.3, 0.7];   // こえモードの ひだり・みぎの れつ（はばに たいする わりあい）
+  var KOE_SAFE_START = 6;
   var HEART_CHANCE = 0.04;     // ハートは たまにしか でない
   var HEART_MIN_SEC = 12;
   var SAFE_START = 3;          // はじめの 3びょうは よけるものを ださない
@@ -43,7 +51,7 @@
   // ---------- きろく（この iPad の中だけに ほぞん。なまえは いれない） ----------
   var STORE_KEY = 'tabecatch-v1';
   var canSave = true;
-  var rec = { scores: [], speed: 'normal', sound: true };
+  var rec = { scores: [], koeScores: [], speed: 'normal', sound: true, mode: 'yubi', koeSpeed: 'vslow' };
 
   (function load() {
     var raw = null;
@@ -51,20 +59,27 @@
     if (!raw) return;
     try {
       var d = JSON.parse(raw);
-      if (Array.isArray(d.scores)) {
-        d.scores.forEach(function (x) {
-          var s = Number(x && x.s);
-          if (s > 0 && s < 1e7 && /^\d{4}-\d{2}-\d{2}$/.test(x.d)) {
-            rec.scores.push({ s: Math.floor(s), d: x.d, sp: x.sp === 'slow' ? 'slow' : 'normal' });
-          }
-        });
-        rec.scores.sort(function (a, b) { return b.s - a.s; });
-        rec.scores = rec.scores.slice(0, 5);
-      }
+      rec.scores = readScores(d.scores);
+      rec.koeScores = readScores(d.koeScores);
       rec.speed = d.speed === 'slow' ? 'slow' : 'normal';
+      rec.mode = d.mode === 'koe' ? 'koe' : 'yubi';
+      rec.koeSpeed = KOE_SPEEDS[d.koeSpeed] ? d.koeSpeed : 'vslow';
       rec.sound = d.sound !== false;
     } catch (e) {}
   })();
+
+  function readScores(list) {
+    var out = [];
+    if (!Array.isArray(list)) return out;
+    list.forEach(function (x) {
+      var s = Number(x && x.s);
+      if (s > 0 && s < 1e7 && /^\d{4}-\d{2}-\d{2}$/.test(x.d)) {
+        out.push({ s: Math.floor(s), d: x.d, sp: KOE_SPEEDS[x.sp] || x.sp === 'slow' ? x.sp : 'normal' });
+      }
+    });
+    out.sort(function (a, b) { return b.s - a.s; });
+    return out.slice(0, 5);
+  }
 
   function save() {
     if (!canSave) return;
@@ -84,18 +99,22 @@
     return p[0] + 'ねん ' + Number(p[1]) + 'がつ' + Number(p[2]) + 'にち';
   }
 
+  // ハイスコアは「ゆび」と「こえ」で べつべつ
+  function scoreList(m) { return (m || rec.mode) === 'koe' ? rec.koeScores : rec.scores; }
+
   // とくてんを いれる。上位5つに はいったら その じゅんばん（0〜4）、はいらなければ -1
-  function addScore(s) {
+  function addScore(s, m) {
     if (s <= 0) return -1;
+    var list = scoreList(m);
     var i = 0;
-    while (i < rec.scores.length && rec.scores[i].s >= s) i++;
+    while (i < list.length && list[i].s >= s) i++;
     if (i >= 5) return -1;
-    rec.scores.splice(i, 0, { s: s, d: today(), sp: rec.speed });
-    rec.scores = rec.scores.slice(0, 5);
+    list.splice(i, 0, { s: s, d: today(), sp: m === 'koe' ? rec.koeSpeed : rec.speed });
+    if (list.length > 5) list.length = 5;
     save();
     return i;
   }
-  function bestScore() { return rec.scores.length ? rec.scores[0].s : 0; }
+  function bestScore(m) { var l = scoreList(m); return l.length ? l[0].s : 0; }
 
   // ---------- 音（音の ファイルは つかわず、その場で 作る。音量は ひかえめ） ----------
   var AC = window.AudioContext || window.webkitAudioContext;
@@ -148,6 +167,7 @@
 
   function sound(fn) {
     if (!rec.sound || !audio()) return;
+    if (koe && koe.isRunning()) koe.ignoreFor(450);
     try { fn(); } catch (e) {}
   }
 
@@ -364,7 +384,7 @@
   var clock = 0;
 
   function newChick() {
-    return { x: W / 2, vx: 0, tilt: 0, walk: 0, happy: 0, bounce: 0, hurt: 0, catchEmoji: null, catchT: 0, sit: 0 };
+    return { x: W / 2, vx: 0, tilt: 0, walk: 0, happy: 0, bounce: 0, hurt: 0, catchEmoji: null, catchT: 0, sit: 0, lane: 0 };
   }
   P = newChick();
 
@@ -373,8 +393,10 @@
   var hold = { left: false, right: false, t: 0 };
 
   function newGame() {
-    var sp = SPEEDS[rec.speed];
+    var isKoe = rec.mode === 'koe';
+    var sp = isKoe ? KOE_SPEEDS[rec.koeSpeed] : SPEEDS[rec.speed];
     G = {
+      koe: isKoe,
       sp: sp,
       t: 0,
       level: 1,
@@ -382,7 +404,7 @@
       hp: HP_MAX,
       next: 0.8,
       lastHeart: -99,
-      prevBest: bestScore(),
+      prevBest: bestScore(isKoe ? 'koe' : 'yubi'),
       recShown: false,
       over: false,
       overT: 0,
@@ -391,22 +413,33 @@
     items = [];
     pops = [];
     P = newChick();
+    if (isKoe) P.x = laneX(0);
     drag.id = null; drag.x = null;
     hold.left = hold.right = false;
   }
 
-  function speedFactor() { return 1 + 0.07 * (Math.min(G.level, LEVEL_CAP) - 1); }
+  function laneX(i) { return clamp(KOE_LANES[i] * W, minX(), maxX()); }
+
+  // こえモード：ひだりと みぎを いれかわる
+  function switchLane() {
+    if (!canControl() || !G.koe) return;
+    P.lane = 1 - P.lane;
+    P.bounce = 1;
+    hideHint();
+  }
+
+  function speedFactor() { return 1 + (G.koe ? 0.03 : 0.07) * (Math.min(G.level, LEVEL_CAP) - 1); }
   function gapNow() {
-    var g = G.sp.gap / (1 + 0.12 * (Math.min(G.level, LEVEL_CAP) - 1));
+    var g = G.sp.gap / (1 + (G.koe ? 0.05 : 0.12) * (Math.min(G.level, LEVEL_CAP) - 1));
     return Math.max(G.sp.gapMin, g);
   }
 
   function spawn() {
     var kind, type;
-    var avoidRate = Math.min(0.2 + 0.012 * (G.level - 1), 0.32);
+    var avoidRate = G.koe ? Math.min(0.15 + 0.008 * (G.level - 1), 0.22) : Math.min(0.2 + 0.012 * (G.level - 1), 0.32);
     if (G.hp < HP_MAX && G.t - G.lastHeart > HEART_MIN_SEC && Math.random() < HEART_CHANCE) {
       kind = HEART; type = 'heart'; G.lastHeart = G.t;
-    } else if (G.t > SAFE_START && Math.random() < avoidRate) {
+    } else if (G.t > (G.koe ? KOE_SAFE_START : SAFE_START) && Math.random() < avoidRate) {
       kind = pick(AVOIDS); type = 'avoid';
     } else {
       kind = pick(FOODS); type = 'food';
@@ -414,7 +447,7 @@
     // すぐ ちかくに おなじころ でた ものと かさならないように
     var m = itemSize * 0.7;
     var x = 0;
-    for (var tries = 0; tries < 6; tries++) {
+    for (var tries = 0; tries < (G.koe ? 0 : 6); tries++) {
       x = rand(m, W - m);
       var ok = true;
       for (var i = 0; i < items.length; i++) {
@@ -423,9 +456,18 @@
       }
       if (ok) break;
     }
+    var lane = -1;
+    if (G.koe) {
+      // こえモード：ひだりか みぎの れつ。おなじ れつが ながく つづかないように
+      lane = Math.random() < 0.5 ? 0 : 1;
+      if (G.lastLane === lane && G.sameLane >= 2) lane = 1 - lane;
+      G.sameLane = G.lastLane === lane ? (G.sameLane || 0) + 1 : 1;
+      G.lastLane = lane;
+    }
     items.push({
       kind: kind,
       type: type,
+      lane: lane,
       xf: x / W,
       p: 0,
       dur: G.sp.fall / speedFactor() * rand(0.92, 1.08) * (kind.id === 'thunder' ? 1.12 : 1),
@@ -444,6 +486,7 @@
     return top + (end - top) * p;
   }
   function itemX(it) {
+    if (it.lane >= 0) return laneX(it.lane);
     var x = it.xf * W;
     if (it.kind.id === 'thunder') x += Math.sin(it.ph + it.p * 7) * itemSize * 0.25;
     return x;
@@ -465,7 +508,9 @@
   function moveChick(dt) {
     var px = P.x;
     var canMove = mode === 'play' && G && !G.over;
-    if (canMove) {
+    if (canMove && G.koe) {
+      P.x += (laneX(P.lane) - P.x) * Math.min(1, dt * 12);
+    } else if (canMove) {
       var dir = (hold.right ? 1 : 0) - (hold.left ? 1 : 0);
       if (dir !== 0) {
         hold.t += dt;
@@ -643,6 +688,14 @@
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
     clouds.forEach(function (c) { drawCloud(c.x * W, c.y * groundY, c.s * k); });
+
+    // こえモード：ひよこが たてる 2つの ばしょの しるし
+    if (mode === 'play' && G && G.koe) {
+      ctx.fillStyle = 'rgba(255,253,247,0.55)';
+      for (var ln = 0; ln < 2; ln++) {
+        ctx.beginPath(); ctx.ellipse(laneX(ln), groundY + 4, basketHalf * 1.05, 11 * k, 0, 0, 6.2832); ctx.fill();
+      }
+    }
 
     // おちてくる ものの かげ（どこに おちるか わかるように）
     var i, it;
@@ -971,6 +1024,9 @@
   var pauseTitle = document.getElementById('pauseTitle');
   var overEl = document.getElementById('over');
   var leftBtn = document.getElementById('leftBtn');
+  var koeHud = document.getElementById('koeHud');
+  var koeAgainEl = document.getElementById('koeAgain');
+  var bestTitle = document.querySelector('.best .panel-title');
   var rightBtn = document.getElementById('rightBtn');
 
   var HEART_SVG = '<svg class="heart" viewBox="0 0 40 40" aria-hidden="true">' +
@@ -1054,9 +1110,15 @@
     clearToast();
     setScore(false);
     setHearts();
+    clearTimeout(againTimer);
+    koeAgainEl.hidden = true;
+    leftBtn.hidden = rightBtn.hidden = G.koe;
+    koeHud.hidden = !G.koe;
+    if (koe) koe.enabled = true;
+    hintEl.textContent = G.koe ? 'こえを だすと、ひよこが いれかわるよ' : 'ゆびで みぎ ひだりに なぞってね';
     hintEl.hidden = false;
     clearTimeout(hintTimer);
-    hintTimer = setTimeout(hideHint, 4000);
+    hintTimer = setTimeout(hideHint, G.koe ? 7000 : 4000);
     startLoop();
   }
 
@@ -1073,7 +1135,9 @@
     hud.hidden = true;
     pauseEl.hidden = true;
     overEl.hidden = true;
+    clearTimeout(againTimer);
     titleEl.hidden = false;
+    stopKoe();
     renderBest();
     startLoop();
   }
@@ -1084,6 +1148,7 @@
     hold.left = hold.right = false;
     drag.id = null; drag.x = null;
     releaseMoveBtns();
+    if (koe) koe.enabled = false;
     pauseTitle.textContent = title || 'やめる？';
     pauseEl.hidden = false;
     document.getElementById('resumeBtn').focus({ preventScroll: true });
@@ -1091,38 +1156,71 @@
 
   function resume() {
     if (!paused) return;
+    // こえモードで マイクが とまっていたら（ほかの アプリに したとき など）、もういちど つける
+    if (G && G.koe && !(koe && koe.isRunning())) {
+      useKoe(resume2);
+      return;
+    }
+    resume2();
+  }
+  function resume2() {
     paused = false;
     pauseEl.hidden = true;
+    if (koe) koe.enabled = true;
     lastTs = 0;
   }
 
+  var againTimer = 0;
+  var againReady = false;
   function showOver() {
+    var m = G.koe ? 'koe' : 'yubi';
     var prev = G.prevBest;
-    var rank = addScore(G.score);
+    var rank = addScore(G.score, m);
     var isNew = G.score > 0 && G.score > prev;
     document.getElementById('overScore').textContent = G.score;
     document.getElementById('newRec').hidden = !isNew;
-    renderBestList(document.getElementById('overBest'), rank);
+    renderBestList(document.getElementById('overBest'), rank, m);
     overEl.hidden = false;
     hud.hidden = false;
     if (isNew) sRecord(); else sOver();
     document.getElementById('againBtn').focus({ preventScroll: true });
+    // こえモード：すこし まってから、こえで「もういちど」が できる
+    againReady = false;
+    clearTimeout(againTimer);
+    koeAgainEl.hidden = true;
+    if (G.koe && koe && koe.isRunning()) {
+      againTimer = setTimeout(function () {
+        if (overEl.hidden || !koe.isRunning()) return;
+        againReady = true;
+        koeAgainEl.hidden = false;
+      }, 2500);
+    }
   }
 
   // ハイスコアの ひょう
-  function renderBestList(el, newRank) {
-    if (!rec.scores.length) {
+  var KOE_SPEED_NAMES = { vslow: 'とても ゆっくり', slow: 'ゆっくり', normal: 'すこし ゆっくり' };
+  function speedTag(r, m) {
+    if (m === 'koe') return KOE_SPEED_NAMES[r.sp] || '';
+    return r.sp === 'slow' ? 'ゆっくり' : '';
+  }
+  function renderBestList(el, newRank, m) {
+    var list = scoreList(m);
+    if (!list.length) {
       el.innerHTML = '<li class="b-empty">まだ ありません</li>';
       return;
     }
-    el.innerHTML = rec.scores.map(function (r, i) {
+    el.innerHTML = list.map(function (r, i) {
+      var tag = speedTag(r, m);
       return '<li' + (i === newRank ? ' class="is-new"' : '') + '>' +
         '<span class="b-rank">' + (i + 1) + 'い</span>' +
-        '<span class="b-score"><b>' + r.s + '</b>てん' + (r.sp === 'slow' ? '<span class="b-slow">ゆっくり</span>' : '') + '</span>' +
+        '<span class="b-score"><b>' + r.s + '</b>てん' + (tag ? '<span class="b-slow">' + tag + '</span>' : '') + '</span>' +
         '<span class="b-date">' + dateShort(r.d) + '</span></li>';
     }).join('');
   }
-  function renderBest() { renderBestList(document.getElementById('bestList'), -1); }
+  function renderBest() {
+    bestTitle.textContent = rec.mode === 'koe' ? 'ハイスコア（こえ）' : 'ハイスコア（ゆび）';
+    renderBestList(document.getElementById('bestList'), -1, rec.mode);
+  }
 
   // はじめの がめんの 「キャッチ してね」「よけてね」
   (function renderGuide() {
@@ -1137,7 +1235,8 @@
 
   document.getElementById('startBtn').addEventListener('click', function () {
     unlockAudio();
-    startGame();
+    if (rec.mode === 'koe') useKoe(startGame);
+    else startGame();
   });
 
   // ---------- はやさ・音 ----------
@@ -1180,6 +1279,8 @@
     e.preventDefault();
     unlockAudio();
     if (!canControl()) return;
+    // こえモードでも、がめんを タップすると いれかわる（てつだう ひと・スイッチ用）
+    if (G.koe) { switchLane(); return; }
     if (drag.id !== null && drag.id !== e.pointerId) return;
     drag.id = e.pointerId;
     drag.x = e.clientX;
@@ -1231,13 +1332,22 @@
   }
 
   document.addEventListener('keydown', function (e) {
+    // こえモード：スペース・エンター（外づけの スイッチなど）でも いれかわる
+    if (canControl() && G.koe && (e.key === ' ' || e.key === 'Enter' || e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+      if (e.target && e.target.closest && e.target.closest('button, a')) return;
+      e.preventDefault();
+      if (!e.repeat) switchLane();
+      return;
+    }
     if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
       if (!canControl()) return;
       e.preventDefault();
       hold[e.key === 'ArrowLeft' ? 'left' : 'right'] = true;
       drag.x = null;
     } else if (e.key === 'Escape') {
-      if (!settings.hidden) closeSettings();
+      if (!testEl.hidden) closeTest();
+      else if (!micAskEl.hidden) closeMicAsk();
+      else if (!settings.hidden) closeSettings();
       else if (canControl()) pause('やめる？');
     }
   });
@@ -1255,13 +1365,20 @@
   });
   document.getElementById('resumeBtn').addEventListener('click', function () { unlockAudio(); resume(); });
   document.getElementById('toTitleBtn').addEventListener('click', showTitle);
-  document.getElementById('againBtn').addEventListener('click', function () { unlockAudio(); startGame(); });
+  document.getElementById('againBtn').addEventListener('click', function () {
+    unlockAudio();
+    if (G && G.koe) useKoe(startGame);
+    else startGame();
+  });
 
   // ほかの アプリに したとき・向きを かえたときは いちじていし
   var landscape = window.innerWidth > window.innerHeight;
   document.addEventListener('visibilitychange', function () {
     if (document.visibilityState === 'hidden') {
       pause('つづける？');
+      // ほかの アプリの ときは マイクを とめる（もどったら「つづける」で また つける）
+      if (!testEl.hidden) closeTest();
+      stopKoe();
       stopLoop();
     } else {
       startLoop();
@@ -1335,15 +1452,22 @@
   });
 
   function renderSettings() {
-    recNote.textContent = rec.scores.length
-      ? 'この iPad に ほぞん している ハイスコア（上位5つ）です。けすと ぜんぶ きえます（はやさ と 音の せっていは のこります）。'
+    var any = rec.scores.length + rec.koeScores.length > 0;
+    recNote.textContent = any
+      ? 'この iPad に ほぞん している ハイスコア（「ゆび」「こえ」それぞれ 上位5つ）です。けすと ぜんぶ きえます（はやさ・音・こえの せっていは のこります）。'
       : 'ハイスコアは まだ ありません。';
-    setList.innerHTML = rec.scores.map(function (r) {
-      return '<li>' + r.s + 'てん　' + dateLong(r.d) + (r.sp === 'slow' ? '（ゆっくり）' : '（ふつう）') + '</li>';
-    }).join('');
-    setList.hidden = !rec.scores.length;
-    resetBtn.disabled = !rec.scores.length;
+    var html = '';
+    rec.scores.forEach(function (r) {
+      html += '<li>ゆび　' + r.s + 'てん　' + dateLong(r.d) + (r.sp === 'slow' ? '（ゆっくり）' : '（ふつう）') + '</li>';
+    });
+    rec.koeScores.forEach(function (r) {
+      html += '<li>こえ　' + r.s + 'てん　' + dateLong(r.d) + '（' + (KOE_SPEED_NAMES[r.sp] || '') + '）</li>';
+    });
+    setList.innerHTML = html;
+    setList.hidden = !any;
+    resetBtn.disabled = !any;
     saveWarn.hidden = canSave;
+    renderKoeSettings();
   }
 
   var armTimer = 0;
@@ -1376,7 +1500,7 @@
 
   // まちがえて けさないように、2回 おしたときだけ けす
   resetBtn.addEventListener('click', function () {
-    if (!rec.scores.length) return;
+    if (!rec.scores.length && !rec.koeScores.length) return;
     if (!resetBtn.classList.contains('is-armed')) {
       resetBtn.classList.add('is-armed');
       resetBtn.textContent = 'もういちど おすと けします';
@@ -1386,17 +1510,223 @@
     }
     disarmReset();
     rec.scores = [];
+    rec.koeScores = [];
     save();
     renderSettings();
     resetStatus.textContent = 'ハイスコアを けしました';
   });
 
+  // ---------- こえで あそぶ（../shared/koe-switch.js を つかう） ----------
+  var KS = window.KoeSwitch || null;
+  var koeConf = KS ? KS.loadSettings() : { threshold: 0.5, cooldown: 1000 };
+  var koe = null;
+  var micExplained = false;   // この ページを ひらいてから、マイクの せつめいを したか
+  var micNext = null;         // マイクが つかえるように なったら すること
+
+  var micAskEl = document.getElementById('micAsk');
+  var micErr = document.getElementById('micErr');
+  var micOkBtn = document.getElementById('micOkBtn');
+  var testEl = document.getElementById('koeTest');
+  var testErr = document.getElementById('testErr');
+  var testLamp = document.getElementById('testLamp');
+  var testLampText = document.getElementById('testLampText');
+  var thValue = document.getElementById('thValue');
+  var meters = [
+    { fill: document.getElementById('hudMeterFill'), line: document.getElementById('hudMeterLine') },
+    { fill: document.getElementById('testMeterFill'), line: document.getElementById('testMeterLine') }
+  ];
+  meters.forEach(function (m) { m.box = m.fill.parentNode; m.last = -1; m.over = null; });
+
+  if (KS) {
+    koe = KS.create({
+      threshold: koeConf.threshold,
+      cooldown: koeConf.cooldown,
+      onTrigger: onVoice,
+      onLevel: showLevel,
+      onStop: function () { showLevel(0, koe.getThreshold()); }
+    });
+  }
+
+  function onVoice() {
+    if (!testEl.hidden) { flashLamp(); return; }
+    if (mode !== 'play' || !G || !G.koe || paused) return;
+    if (!G.over) switchLane();
+    else if (againReady && !overEl.hidden) { againReady = false; startGame(); }
+  }
+
+  // メーター（いま 見えている ほうだけ うごかす）
+  function showLevel(level, th) {
+    meters.forEach(function (m) {
+      if (m.box.offsetParent === null) return;
+      var v = Math.round(level * 200) / 200;
+      if (v !== m.last) { m.last = v; m.fill.style.transform = 'scaleX(' + v + ')'; }
+      var over = level >= th;
+      if (over !== m.over) { m.over = over; m.box.classList.toggle('is-over', over); }
+    });
+  }
+  function placeLines() {
+    var th = koe ? koe.getThreshold() : koeConf.threshold;
+    meters.forEach(function (m) { m.line.style.left = (th * 100).toFixed(1) + '%'; });
+    thValue.textContent = Math.round(th * 100);
+  }
+
+  // マイクを つかう：はじめての ときは、なぜ つかうかを やさしく せつめいしてから
+  function useKoe(next) {
+    if (koe && koe.isRunning()) { next(); return; }
+    micNext = next;
+    if (!micExplained || !koe) {
+      micErr.hidden = true;
+      micOkBtn.hidden = false;
+      micAskEl.hidden = false;
+      micOkBtn.focus({ preventScroll: true });
+      return;
+    }
+    startMic();
+  }
+  function startMic() {
+    if (!koe) { showMicError(KS ? null : { name: 'NotSupportedError' }); return; }
+    koe.start().then(function () {
+      micAskEl.hidden = true;
+      var fn = micNext;
+      micNext = null;
+      placeLines();
+      if (fn) fn();
+    }, function (err) {
+      showMicError(err);
+    });
+  }
+  function showMicError(err) {
+    micErr.textContent = KS ? KS.errorMessage(err) : 'この ページでは マイクが つかえません。';
+    micErr.hidden = false;
+    micOkBtn.textContent = 'もういちど ためす';
+    micAskEl.hidden = false;
+  }
+  function closeMicAsk() {
+    micAskEl.hidden = true;
+    micNext = null;
+    micOkBtn.textContent = 'マイクを つかう';
+  }
+  micOkBtn.addEventListener('click', function () {
+    unlockAudio();
+    micExplained = true;
+    micErr.hidden = true;
+    startMic();
+  });
+  document.getElementById('micNoBtn').addEventListener('click', closeMicAsk);
+
+  function stopKoe() {
+    if (koe && koe.isRunning()) koe.stop();
+    againReady = false;
+  }
+
+  // ---------- こえテスト ----------
+  var lampTimer = 0;
+  var lampCount = 0;
+  function flashLamp() {
+    lampCount++;
+    testLamp.classList.add('is-on');
+    testLampText.textContent = 'はんのう！（' + lampCount + '）';
+    clearTimeout(lampTimer);
+    lampTimer = setTimeout(function () {
+      testLamp.classList.remove('is-on');
+    }, 600);
+  }
+  function openTest() {
+    useKoe(function () {
+      lampCount = 0;
+      testLamp.classList.remove('is-on');
+      testLampText.textContent = 'まってるよ';
+      testErr.hidden = true;
+      koe.enabled = true;
+      placeLines();
+      testEl.hidden = false;
+      meters.forEach(function (m) { m.last = -1; m.over = null; });
+      document.getElementById('testCloseBtn').focus({ preventScroll: true });
+    });
+  }
+  function closeTest() {
+    if (testEl.hidden) return;
+    testEl.hidden = true;
+    clearTimeout(lampTimer);
+    if (mode === 'title') stopKoe();
+  }
+  function stepThreshold(d) {
+    if (!koe) return;
+    var th = Math.round((koe.getThreshold() + d) * 100) / 100;
+    th = clamp(th, 0.1, 0.9);
+    koe.setThreshold(th);
+    koeConf.threshold = th;
+    if (KS && !KS.saveSettings({ threshold: th })) {
+      testErr.textContent = 'この iPad では せっていを ほぞん できません。ページを とじると もとに もどります。';
+      testErr.hidden = false;
+    }
+    placeLines();
+  }
+  document.getElementById('koeTestBtn').addEventListener('click', function () { unlockAudio(); openTest(); });
+  document.getElementById('testCloseBtn').addEventListener('click', closeTest);
+  document.getElementById('thUpBtn').addEventListener('click', function () { stepThreshold(0.05); });
+  document.getElementById('thDownBtn').addEventListener('click', function () { stepThreshold(-0.05); });
+
+  // ---------- ゆびで あそぶ・こえで あそぶ ----------
+  var modeBtns = Array.prototype.slice.call(document.querySelectorAll('.mode-btn'));
+  var speedRow = document.getElementById('speedRow');
+  var koeRow = document.getElementById('koeRow');
+  function renderMode() {
+    modeBtns.forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.mode === rec.mode)); });
+    speedRow.hidden = rec.mode === 'koe';
+    koeRow.hidden = rec.mode !== 'koe';
+    renderBest();
+  }
+  modeBtns.forEach(function (b) {
+    b.addEventListener('click', function () {
+      unlockAudio();
+      rec.mode = b.dataset.mode === 'koe' ? 'koe' : 'yubi';
+      save();
+      renderMode();
+    });
+  });
+
+  // ---------- せってい：こえ ----------
+  var koeSpeedBtns = Array.prototype.slice.call(document.querySelectorAll('[data-koe-speed]'));
+  var coolBtns = Array.prototype.slice.call(document.querySelectorAll('[data-cool]'));
+  var thNote = document.getElementById('thNote');
+  function renderKoeSettings() {
+    koeSpeedBtns.forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.koeSpeed === rec.koeSpeed)); });
+    var cool = koe ? koe.getCooldown() : koeConf.cooldown;
+    coolBtns.forEach(function (b) { b.setAttribute('aria-pressed', String(Number(b.dataset.cool) === cool)); });
+    var th = koe ? koe.getThreshold() : koeConf.threshold;
+    thNote.textContent = 'はんのう する 声の 大きさ：' + Math.round(th * 100) + '（こえテストで、メーターを 見ながら かえられます）。' +
+      'この 大きさと 待ち時間は、こえで あそぶ ほかの 教材とも 共通です。';
+  }
+  koeSpeedBtns.forEach(function (b) {
+    b.addEventListener('click', function () {
+      rec.koeSpeed = b.dataset.koeSpeed;
+      save();
+      renderKoeSettings();
+    });
+  });
+  coolBtns.forEach(function (b) {
+    b.addEventListener('click', function () {
+      var ms = Number(b.dataset.cool);
+      koeConf.cooldown = ms;
+      if (koe) koe.setCooldown(ms);
+      if (KS) KS.saveSettings({ cooldown: ms });
+      renderKoeSettings();
+    });
+  });
+  document.getElementById('setTestBtn').addEventListener('click', function () {
+    closeSettings();
+    openTest();
+  });
+
   // とちゅうで 新しい版への 自動の 再読み込みを しない
-  window.kyozaiBusy = function () { return (mode === 'play' && G && !G.over) || !settings.hidden; };
+  window.kyozaiBusy = function () { return (mode === 'play' && G && !G.over) || !settings.hidden || !testEl.hidden; };
 
   // ---------- はじめ ----------
   renderSound();
   renderSpeed();
+  renderMode();
+  placeLines();
   renderBest();
   resize();
   startLoop();

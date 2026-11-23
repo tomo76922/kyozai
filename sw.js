@@ -1,7 +1,7 @@
 // きょうざい Service Worker（メニューと全教材で1つ）
 // ファイルを更新したら CACHE_VERSION の数字を上げてください。
 // 教材をふやしたら、そのファイルを ASSETS に足してください。
-var CACHE_VERSION = 'v20';
+var CACHE_VERSION = 'v21';
 var CACHE_PREFIX = 'hiragana-cards-';   // 以前の版の保存を消せるように、名前はそのまま
 var CACHE_NAME = CACHE_PREFIX + CACHE_VERSION;
 
@@ -16,6 +16,8 @@ var ASSETS = [
   './icons/icon-192.png',
   './icons/icon-512.png',
   './icons/apple-touch-icon.png',
+  // 共通の部品
+  './shared/koe-switch.js',
   // ひらがなカード
   './hiragana/',
   './hiragana/index.html',
