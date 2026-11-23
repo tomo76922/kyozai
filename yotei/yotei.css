@@ -1,0 +1,451 @@
+/* よていボード（色・文字・もくじボタンは ../common.css） */
+:root {
+  --now: #e0a24f;
+  --now-bg: #fff4dc;
+  --hanamaru: #e0524a;
+}
+
+/* ---------- 上の帯（ほかの教材と同じ形） ---------- */
+.header {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  grid-template-areas: "home title speed gear";
+  align-items: center;
+  gap: 14px 16px;
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 20px var(--side) 8px;
+}
+.header .home-btn { grid-area: home; }
+
+.title {
+  grid-area: title;
+  margin: 0;
+  font-size: clamp(26px, 4.5vw, 44px);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#speedBtn { grid-area: speed; }
+
+.btn {
+  font: inherit;
+  font-size: clamp(22px, 3vw, 30px);
+  font-weight: 700;
+  color: var(--text);
+  border-radius: 999px;
+  min-height: 64px;
+  padding: 8px 28px;
+  cursor: pointer;
+  white-space: nowrap;
+  background: var(--btn);
+  border: 3px solid var(--btn-border);
+}
+.btn[aria-pressed="true"] { background: var(--btn-on); }
+.btn:active { background: var(--btn-on); }
+.btn:focus-visible, .gear:focus-visible {
+  outline: 4px solid var(--active-border);
+  outline-offset: 3px;
+}
+
+/* せってい（小さく・目立たない。ながおしで ひらく） */
+.gear {
+  grid-area: gear;
+  position: relative;
+  overflow: hidden;
+  align-self: start;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 4px 12px;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--muted);
+  background: transparent;
+  border: 2px solid var(--card-border);
+  border-radius: 12px;
+  cursor: pointer;
+  -webkit-touch-callout: none;
+}
+.gear-text { position: relative; z-index: 1; }
+/* おしている間、左から色が のびる */
+.gear::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--active);
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+.gear.is-pressing::before {
+  transform: scaleX(1);
+  transition: transform var(--hold, 1s) linear;
+}
+
+.gear-hint {
+  position: absolute;
+  right: var(--side);
+  top: calc(100% - 4px);
+  z-index: 2;
+  margin: 0;
+  padding: 6px 12px;
+  font-size: 15px;
+  color: var(--muted);
+  background: var(--card);
+  border: 2px solid var(--card-border);
+  border-radius: 10px;
+}
+
+.notice {
+  max-width: 1000px;
+  margin: 8px auto 0;
+  padding: 12px var(--side);
+  font-size: 20px;
+  color: var(--muted);
+}
+
+/* ---------- よていの カード（うえから じゅんに） ---------- */
+.board {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(12px, 1.8vw, 18px);
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 12px var(--side) 24px;
+}
+
+.card {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: clamp(14px, 2.4vw, 26px);
+  width: 100%;
+  min-height: clamp(104px, 13vh, 132px);
+  padding: 10px clamp(14px, 2.4vw, 24px);
+  font: inherit;
+  color: var(--text);
+  text-align: left;
+  background: var(--card);
+  border: 3px solid var(--card-border);
+  border-left: 16px solid var(--tone, var(--card-border));
+  border-radius: 22px;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  transition: transform 0.12s ease, background-color 0.2s ease, border-color 0.2s ease;
+}
+.card:focus-visible { outline: 4px solid var(--active-border); outline-offset: 3px; }
+.card:active { transform: scale(0.98); }
+
+.card-pic {
+  width: clamp(76px, 11vw, 104px);
+  height: clamp(76px, 11vw, 104px);
+  transition: opacity 0.25s ease;
+}
+.card-pic svg { display: block; width: 100%; height: 100%; }
+
+.card-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-width: 0;
+  transition: opacity 0.25s ease;
+}
+
+.card-time {
+  font-size: clamp(17px, 2.2vw, 22px);
+  color: var(--muted);
+  letter-spacing: 0.04em;
+}
+
+.card-label {
+  max-width: 100%;
+  font-size: clamp(30px, 5.4vw, 50px);
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: 0.06em;
+  overflow-wrap: anywhere;
+}
+
+.card-mark {
+  width: clamp(76px, 11vw, 104px);
+  height: clamp(76px, 11vw, 104px);
+}
+.card-mark svg { display: block; width: 100%; height: 100%; }
+
+/* 「いま」のカード */
+.now-badge {
+  display: none;
+  padding: 2px 16px;
+  font-size: clamp(18px, 2.4vw, 24px);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: #fff;
+  background: var(--now);
+  border-radius: 999px;
+}
+.card.is-now {
+  min-height: clamp(130px, 17vh, 170px);
+  background: var(--now-bg);
+  border-color: var(--now);
+  border-width: 6px;
+  border-left-width: 20px;
+  border-left-color: var(--tone, var(--now));
+  box-shadow: 0 0 0 6px color-mix(in srgb, var(--now) 30%, transparent), var(--shadow);
+}
+.card.is-now .now-badge { display: inline-block; }
+.card.is-now .card-pic {
+  width: clamp(96px, 14vw, 132px);
+  height: clamp(96px, 14vw, 132px);
+}
+.card.is-now .card-label { font-size: clamp(36px, 6.6vw, 62px); }
+
+/* おわった カード：はなまるを つけて、絵と ことばを うすく */
+.card.is-done { background: #f6f3ec; }
+.card.is-done .card-pic,
+.card.is-done .card-text { opacity: 0.4; }
+.card.is-done .card-mark svg { animation: maru-in 0.3s ease-out; }
+@keyframes maru-in {
+  from { transform: scale(0.4) rotate(-40deg); opacity: 0; }
+  to   { transform: none; opacity: 1; }
+}
+
+.empty, .all-done {
+  max-width: 1000px;
+  margin: 8px auto 32px;
+  padding: 0 var(--side);
+  text-align: center;
+  font-size: clamp(24px, 3.4vw, 32px);
+  font-weight: 700;
+}
+.empty { color: var(--muted); }
+.all-done { color: var(--hanamaru); letter-spacing: 0.1em; }
+
+/* ---------- 先生が ならべる 画面 ---------- */
+.settings {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  background: var(--bg);
+  padding: env(safe-area-inset-top) env(safe-area-inset-right)
+           env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+body.is-settings { overflow: hidden; }
+
+.set-inner {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 20px var(--side) 48px;
+}
+
+.set-head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 8px 0 12px;
+  background: var(--bg);
+}
+.set-title {
+  margin: 0;
+  font-size: clamp(22px, 3.4vw, 32px);
+  font-weight: 700;
+}
+
+.set-warn {
+  margin: 0 0 12px;
+  padding: 12px 16px;
+  font-size: 18px;
+  background: #fbe3dc;
+  border-radius: 12px;
+}
+
+.set-sec {
+  margin-top: 20px;
+  padding: 18px clamp(14px, 2.4vw, 24px) 22px;
+  background: var(--card);
+  border: 3px solid var(--card-border);
+  border-radius: 22px;
+}
+.set-h {
+  margin: 0 0 6px;
+  font-size: clamp(22px, 3vw, 28px);
+}
+.set-note {
+  margin: 0 0 12px;
+  font-size: 17px;
+  color: var(--muted);
+}
+.set-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 16px;
+  margin-top: 16px;
+}
+.set-status {
+  min-height: 1.4em;
+  margin: 10px 0 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #4e8a63;
+}
+.set-row .set-status { margin: 0; }
+.btn-reset { background: #fbe9e4; border-color: #e0a99c; }
+.btn-reset:active { background: #f5d2c8; }
+
+/* ならべかえ・けす */
+.edit-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.edit-row {
+  display: grid;
+  grid-template-columns: 30px 56px 1fr auto auto;
+  grid-template-areas: "num pic word time tools";
+  align-items: center;
+  gap: 10px 14px;
+  padding: 8px 12px;
+  background: var(--bg);
+  border-radius: 16px;
+  border-left: 10px solid var(--tone, var(--card-border));
+}
+.edit-num { grid-area: num; font-size: 20px; font-weight: 700; color: var(--muted); text-align: right; }
+.edit-pic { grid-area: pic; width: 56px; height: 56px; }
+.edit-pic svg { display: block; width: 100%; height: 100%; }
+.edit-word {
+  grid-area: word;
+  min-width: 0;
+  font-size: 24px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.edit-word .done-mark { display: inline-block; font-size: 16px; color: var(--hanamaru); margin-left: 6px; white-space: nowrap; }
+.edit-time { grid-area: time; display: flex; align-items: center; gap: 6px; }
+.edit-tools { grid-area: tools; display: flex; gap: 8px; }
+
+.sbtn {
+  min-width: 56px;
+  min-height: 52px;
+  padding: 4px 10px;
+  font: inherit;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+  background: var(--card);
+  border: 2px solid var(--card-border);
+  border-radius: 14px;
+  cursor: pointer;
+}
+.sbtn:active { background: var(--active); border-color: var(--active-border); }
+.sbtn:disabled { opacity: 0.3; cursor: default; }
+.sbtn:focus-visible { outline: 4px solid var(--active-border); outline-offset: 2px; }
+.sbtn-del { color: #b5473b; border-color: #e0a99c; }
+.sbtn-clear { min-width: 44px; font-size: 16px; }
+
+input {
+  -webkit-user-select: text;
+  user-select: text;
+}
+.time-input, .own-input {
+  font: inherit;
+  font-size: 20px;
+  color: var(--text);
+  background: var(--card);
+  border: 2px solid var(--card-border);
+  border-radius: 12px;
+}
+.time-input {
+  min-width: 120px;
+  min-height: 52px;
+  padding: 4px 10px;
+}
+.time-input:focus, .own-input:focus { outline: 3px solid var(--active-border); outline-offset: 1px; }
+
+/* よういされた カード */
+.preset-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+}
+.preset {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 6px 10px;
+  font: inherit;
+  color: var(--text);
+  background: var(--bg);
+  border: 3px solid var(--card-border);
+  border-top: 8px solid var(--tone, var(--card-border));
+  border-radius: 16px;
+  cursor: pointer;
+}
+.preset:active { background: var(--active); border-color: var(--active-border); }
+.preset:focus-visible { outline: 4px solid var(--active-border); outline-offset: 2px; }
+.preset-pic { width: 64px; height: 64px; }
+.preset-pic svg { display: block; width: 100%; height: 100%; }
+.preset-label { font-size: 19px; font-weight: 700; white-space: nowrap; }
+
+/* ことばを いれて つくる */
+.own-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+.own-label { font-size: 20px; font-weight: 700; }
+.own-input {
+  flex: 1 1 220px;
+  min-height: 60px;
+  padding: 6px 14px;
+  font-size: 24px;
+}
+
+/* せまい画面 */
+@media (max-width: 640px) {
+  .header {
+    grid-template-columns: auto 1fr auto;
+    grid-template-areas:
+      "home  .     gear"
+      "title title speed";
+  }
+  .gear { justify-self: end; }
+  .title { font-size: 24px; letter-spacing: 0.04em; }
+  .card { gap: 12px; padding: 8px 12px; border-left-width: 12px; }
+  .card.is-now { border-left-width: 14px; }
+  .card-pic, .card-mark { width: 60px; height: 60px; }
+  .card.is-now .card-pic { width: 72px; height: 72px; }
+  .card-label { font-size: 26px; letter-spacing: 0.02em; }
+  .card.is-now .card-label { font-size: 30px; }
+  .edit-row {
+    grid-template-columns: 26px 48px 1fr;
+    grid-template-areas:
+      "num pic  word"
+      "time time tools";
+  }
+  .edit-pic { width: 48px; height: 48px; }
+  .edit-tools { justify-content: flex-end; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card { transition: background-color 0.2s ease, border-color 0.2s ease; }
+  .card:active { transform: none; }
+  .card.is-done .card-mark svg { animation: none; }
+}
