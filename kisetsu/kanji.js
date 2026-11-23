@@ -24,7 +24,7 @@
   ];
 
   // 小学校では習わないが、中学・高校で使う常用漢字（データで使うものだけ書き足す）
-  var JOYO_EXTRA = '菊餅';
+  var JOYO_EXTRA = '菊餅寿';
 
   var GRADE_OF = {};
   TABLE.forEach(function (s, i) {

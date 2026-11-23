@@ -675,7 +675,282 @@
       }).join('') + '</g>' +
       '<circle cx="100" cy="84" r="46" fill="#fbe7a6"/>' +
       '<g fill="#efd58a"><circle cx="84" cy="70" r="8"/><circle cx="114" cy="96" r="6"/><circle cx="110" cy="66" r="4"/></g>' +
-      '<path d="M-10 160 Q40 110 90 140 Q140 106 210 150 V200 H-10Z" fill="#2c3a2e"/>'
+      '<path d="M-10 160 Q40 110 90 140 Q140 106 210 150 V200 H-10Z" fill="#2c3a2e"/>',
+
+    // ===== 冬 =====
+    // すいせん：白い花びらと 黄色い カップ
+    suisen:
+      '<g fill="#6fa35a" stroke="#4f7a3d" stroke-width="2">' +
+        '<path d="M70 196 Q60 120 40 70 Q74 120 82 196Z"/><path d="M130 196 Q140 120 166 80 Q134 124 120 196Z"/>' +
+      '</g>' +
+      '<path d="M100 196 Q98 140 104 96" stroke="#5f9a4e" stroke-width="5" fill="none"/>' +
+      [[76, 70, 26], [130, 92, 22]].map(function (f) {
+        return petals(f[0], f[1], 6, f[2] * 0.62, f[2] * 0.36, f[2] * 0.62, '#fffdf7', INK) +
+          '<circle cx="' + f[0] + '" cy="' + f[1] + '" r="' + (f[2] * 0.42) + '" fill="#f3c63a" stroke="' + INK + '" stroke-width="2.5"/>' +
+          '<circle cx="' + f[0] + '" cy="' + f[1] + '" r="' + (f[2] * 0.22) + '" fill="#e9a52a"/>';
+      }).join('') +
+      '<path d="M100 100 Q90 84 82 80 M104 102 Q116 100 124 98" stroke="#5f9a4e" stroke-width="3" fill="none"/>',
+
+    // つばき：赤い 花と つやつやの 葉
+    tsubaki:
+      '<path d="M10 180 Q80 150 190 170" stroke="#6b4f2e" stroke-width="7" fill="none" stroke-linecap="round"/>' +
+      '<g fill="#2f6a3e" stroke="' + INK + '" stroke-width="2.5">' +
+        '<ellipse cx="40" cy="150" rx="26" ry="13" transform="rotate(-30 40 150)"/><ellipse cx="160" cy="146" rx="26" ry="13" transform="rotate(30 160 146)"/>' +
+        '<ellipse cx="150" cy="54" rx="24" ry="12" transform="rotate(-40 150 54)"/><ellipse cx="48" cy="60" rx="24" ry="12" transform="rotate(40 48 60)"/>' +
+      '</g>' +
+      '<g fill="none" stroke="#6fa37a" stroke-width="2"><path d="M20 160 L60 140"/><path d="M140 136 L180 156"/></g>' +
+      petals(100, 96, 5, 30, 28, 32, '#d8323a', INK) +
+      '<circle cx="100" cy="96" r="18" fill="#fbf0c4" stroke="' + INK + '" stroke-width="2"/>' +
+      '<g fill="#f0c23a">' + [0, 40, 80, 120, 160, 200, 240, 280, 320].map(function (a) {
+        return '<circle cx="100" cy="84" r="3.5" transform="rotate(' + a + ' 100 96)"/>';
+      }).join('') + '</g>',
+
+    // ポインセチア：赤い とがった葉
+    poinsettia:
+      '<path d="M56 150 H144 L134 196 H66Z" fill="#c9a36c" stroke="' + INK + '" stroke-width="3"/>' +
+      '<rect x="50" y="142" width="100" height="14" rx="4" fill="#b88a50" stroke="' + INK + '" stroke-width="3"/>' +
+      '<g fill="#3f7a4a" stroke="' + INK + '" stroke-width="2.5">' + [20, 70, 120, 170, 220, 270, 320].map(function (a) {
+        return '<path d="M100 80 Q86 40 100 4 Q114 40 100 80Z" transform="rotate(' + a + ' 100 80)"/>';
+      }).join('') + '</g>' +
+      '<g fill="#d8323a" stroke="' + INK + '" stroke-width="2.5">' + [0, 45, 90, 135, 180, 225, 270, 315].map(function (a) {
+        return '<path d="M100 80 Q88 52 100 24 Q112 52 100 80Z" transform="rotate(' + a + ' 100 80)"/>';
+      }).join('') + '</g>' +
+      '<g fill="#f3cf3c" stroke="#7a6a2a" stroke-width="1">' +
+        '<circle cx="100" cy="80" r="4"/><circle cx="92" cy="76" r="3.5"/><circle cx="108" cy="76" r="3.5"/><circle cx="94" cy="86" r="3.5"/><circle cx="106" cy="86" r="3.5"/>' +
+      '</g>',
+
+    // シクラメン：上に そりかえる 花
+    cyclamen:
+      '<path d="M50 150 H150 L140 196 H60Z" fill="#e9e1d1" stroke="' + INK + '" stroke-width="3"/>' +
+      '<g stroke="#8a5a6a" stroke-width="3.5" fill="none">' +
+        '<path d="M80 146 Q74 100 66 76"/><path d="M100 146 V60"/><path d="M120 146 Q128 100 136 78"/>' +
+      '</g>' +
+      [[66, 76, -12], [100, 60, 0], [136, 78, 12]].map(function (f) {
+        return '<g transform="translate(' + f[0] + ' ' + f[1] + ') rotate(' + f[2] + ')" fill="#e0508a" stroke="' + INK + '" stroke-width="2.5" stroke-linejoin="round">' +
+          '<path d="M0 0 Q-20 -14 -16 -48 Q-4 -30 0 0Z"/><path d="M0 0 Q20 -14 16 -48 Q4 -30 0 0Z"/><path d="M0 0 Q-4 -30 0 -54 Q4 -30 0 0Z"/>' +
+          '<ellipse cx="0" cy="2" rx="6" ry="4" fill="#9a2a5a"/></g>';
+      }).join('') +
+      '<g fill="#3f6a3e" stroke="' + INK + '" stroke-width="2.5">' +
+        [[66, 142, -20], [100, 146, 0], [134, 142, 20], [84, 132, -10], [116, 132, 10]].map(function (l) {
+          return '<path d="M0 12 Q-22 0 -16 -12 Q-8 -20 0 -10 Q8 -20 16 -12 Q22 0 0 12Z" transform="translate(' + l[0] + ' ' + l[1] + ') rotate(' + (l[2] + 180) + ')"/>';
+        }).join('') +
+      '</g>' +
+      '<g fill="none" stroke="#a7c3a0" stroke-width="2">' + [[66, 142], [100, 146], [134, 142]].map(function (l) {
+        return '<path d="M' + (l[0] - 6) + ' ' + l[1] + ' Q' + l[0] + ' ' + (l[1] - 6) + ' ' + (l[0] + 6) + ' ' + l[1] + '"/>';
+      }).join('') + '</g>',
+
+    // 福寿草：雪の中に 黄色い 花
+    fukujuso:
+      '<rect x="0" y="0" width="200" height="200" rx="24" fill="#eef3f7"/>' +
+      '<path d="M0 150 Q100 130 200 150 V200 H0Z" fill="#fbfbf7" stroke="#cfd8e0" stroke-width="2"/>' +
+      '<g stroke="#5f9a4e" stroke-width="3" fill="none">' +
+        '<path d="M60 160 V120"/><path d="M130 160 V96"/><path d="M60 140 Q44 128 38 132 M60 136 Q76 124 82 128"/><path d="M130 132 Q112 120 108 124 M130 128 Q148 116 154 120"/>' +
+      '</g>' +
+      [[60, 104, 26], [130, 80, 32]].map(function (f) {
+        return petals(f[0], f[1], 12, f[2] * 0.6, f[2] * 0.2, f[2] * 0.5, '#f6cf2a', '#b8901a') +
+          '<circle cx="' + f[0] + '" cy="' + f[1] + '" r="' + (f[2] * 0.3) + '" fill="#e9a52a" stroke="#a8741a" stroke-width="1.5"/>';
+      }).join(''),
+
+    // ゆき虫：白い わたを つけた 小さな 虫が とぶ
+    yukimushi:
+      '<rect x="0" y="0" width="200" height="200" rx="24" fill="#b9c8d6"/>' +
+      '<path d="M0 170 Q100 150 200 170 V200 H0Z" fill="#8a9a8a"/>' +
+      [[60, 70, 1.4], [130, 50, 1], [150, 120, 1.2], [80, 140, 0.9], [36, 120, 0.8], [110, 100, 0.8], [170, 70, 0.7]].map(function (t) {
+        return '<g transform="translate(' + t[0] + ' ' + t[1] + ') scale(' + t[2] + ')">' +
+          '<ellipse cx="-9" cy="-6" rx="9" ry="5" fill="#f6fbfd" fill-opacity="0.8" stroke="#7d9aa6" stroke-width="1"/>' +
+          '<ellipse cx="9" cy="-6" rx="9" ry="5" fill="#f6fbfd" fill-opacity="0.8" stroke="#7d9aa6" stroke-width="1"/>' +
+          '<circle cx="0" cy="4" r="11" fill="#fffdf7"/>' +
+          '<ellipse cx="0" cy="-2" rx="4" ry="6" fill="#3a3a40"/>' +
+          '</g>';
+      }).join(''),
+
+    // かまきりの 卵：えだに ついた あわの かたまり
+    kamakiriTamago:
+      '<rect x="0" y="0" width="200" height="200" rx="24" fill="#e9eef2"/>' +
+      '<path d="M20 196 Q60 140 90 40 Q96 20 110 8" stroke="#7a5a3a" stroke-width="10" fill="none" stroke-linecap="round"/>' +
+      '<path d="M86 52 Q96 44 104 36" stroke="#fbfbf7" stroke-width="6" stroke-linecap="round"/>' +
+      '<g transform="rotate(-18 92 110)">' +
+        '<ellipse cx="96" cy="110" rx="32" ry="40" fill="#d9c6a0" stroke="' + INK + '" stroke-width="3"/>' +
+        '<g fill="none" stroke="#b49a6c" stroke-width="2.5">' + [80, 92, 104, 116, 128, 140].map(function (y) {
+          return '<path d="M70 ' + y + ' Q96 ' + (y - 6) + ' 122 ' + y + '"/>';
+        }).join('') + '</g>' +
+        '<path d="M96 72 V148" stroke="#b49a6c" stroke-width="3"/>' +
+      '</g>' +
+      '<g fill="#fbfbf7">' + [[30, 30], [160, 40], [150, 120], [40, 110], [170, 170], [120, 180]].map(function (p) {
+        return '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="4"/>';
+      }).join('') + '</g>',
+
+    // さなぎ：くきに 糸で とまる
+    sanagi:
+      '<rect x="0" y="0" width="200" height="200" rx="24" fill="#eef0e6"/>' +
+      '<path d="M120 200 Q110 100 124 0" stroke="#7a5a3a" stroke-width="12" fill="none"/>' +
+      '<g transform="rotate(-8 92 104)">' +
+        '<path d="M100 40 L82 60 Q70 90 74 128 Q80 158 96 170 Q110 150 112 120 Q114 90 108 60Z" fill="#a8b46a" stroke="' + INK + '" stroke-width="3" stroke-linejoin="round"/>' +
+        '<path d="M82 60 L92 44 L100 40" fill="#c2cc84" stroke="' + INK + '" stroke-width="2.5"/>' +
+        '<g fill="none" stroke="#7d8a46" stroke-width="2"><path d="M80 100 Q94 96 110 100"/><path d="M78 120 Q94 116 112 120"/><path d="M82 140 Q94 136 108 140"/><path d="M90 60 Q86 90 90 130"/></g>' +
+      '</g>' +
+      '<path d="M96 76 Q110 70 118 76" stroke="#efe6c8" stroke-width="2" fill="none"/>' +
+      '<path d="M96 168 L114 172" stroke="#efe6c8" stroke-width="2"/>',
+
+    // かぶと虫の よう虫：土の 中で 冬を こす
+    youchu:
+      '<rect x="0" y="0" width="200" height="200" rx="24" fill="#7a5a3a"/>' +
+      '<path d="M0 0 H200 V50 Q100 40 0 52Z" fill="#fbfbf7"/>' +
+      '<path d="M0 50 Q100 40 200 50 V64 Q100 56 0 66Z" fill="#a67c4e"/>' +
+      '<g fill="#5e4630">' + [[30, 90], [170, 100], [40, 170], [160, 170], [100, 186], [20, 140], [180, 140]].map(function (p) {
+        return '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="4"/>';
+      }).join('') + '</g>' +
+      '<path d="M68 96 Q140 80 146 130 Q148 168 104 168 Q76 166 80 140" fill="none" stroke="#f4eedb" stroke-width="34" stroke-linecap="round"/>' +
+      '<g fill="none" stroke="#d9ccaa" stroke-width="2.5">' +
+        '<path d="M96 76 L98 110"/><path d="M118 82 L114 114"/><path d="M136 100 L122 120"/><path d="M144 130 L124 134"/><path d="M138 156 L120 146"/><path d="M114 166 L108 150"/>' +
+      '</g>' +
+      '<circle cx="66" cy="100" r="15" fill="#c8743a" stroke="' + INK + '" stroke-width="2.5"/>' +
+      '<g stroke="#c8743a" stroke-width="3" stroke-linecap="round"><path d="M80 116 L72 128"/><path d="M90 118 L86 132"/></g>',
+
+    // てんとう虫の 冬ごし：木の かわの すきまに あつまる
+    tentoFuyugoshi:
+      '<rect x="0" y="0" width="200" height="200" rx="24" fill="#a9845a"/>' +
+      '<g fill="none" stroke="#7a5a3a" stroke-width="4" stroke-linecap="round">' +
+        '<path d="M20 0 Q30 100 16 200"/><path d="M180 0 Q170 100 184 200"/><path d="M50 10 Q60 40 54 70"/><path d="M150 140 Q140 170 148 196"/>' +
+      '</g>' +
+      '<path d="M40 70 Q100 50 160 76 Q170 110 150 140 Q100 156 50 136 Q30 104 40 70Z" fill="#5e4630"/>' +
+      emo(80, 92, 30, '🐞') + emo(112, 86, 30, '🐞') + emo(136, 108, 30, '🐞') + emo(96, 118, 30, '🐞') + emo(66, 120, 26, '🐞') +
+      '<path d="M0 0 H200 V18 Q100 30 0 16Z" fill="#fbfbf7"/>',
+
+    // もちつき：うすと きね
+    mochitsuki:
+      '<rect x="0" y="0" width="200" height="200" rx="24" fill="#f4ede0"/>' +
+      '<path d="M50 120 H150 Q146 160 134 186 H66 Q54 160 50 120Z" fill="#b88a50" stroke="' + INK + '" stroke-width="3.5"/>' +
+      '<ellipse cx="100" cy="120" rx="50" ry="14" fill="#9a6e3a" stroke="' + INK + '" stroke-width="3.5"/>' +
+      '<ellipse cx="100" cy="116" rx="34" ry="10" fill="#fffdf7" stroke="' + INK + '" stroke-width="2.5"/>' +
+      '<g transform="rotate(30 130 60)">' +
+        '<rect x="96" y="34" width="70" height="30" rx="8" fill="#c9a36c" stroke="' + INK + '" stroke-width="3"/>' +
+        '<rect x="126" y="62" width="10" height="76" rx="4" fill="#d9b880" stroke="' + INK + '" stroke-width="3"/>' +
+      '</g>' +
+      '<g fill="none" stroke="#7a746a" stroke-width="2.5" stroke-linecap="round"><path d="M40 90 L30 80"/><path d="M48 80 L44 66"/><path d="M160 100 L172 92"/></g>',
+
+    // 書き初め：筆と すみ、半紙
+    kakizome:
+      '<rect x="0" y="0" width="200" height="200" rx="24" fill="#c8504a"/>' +
+      '<rect x="40" y="16" width="86" height="170" fill="#fffdf7" stroke="' + INK + '" stroke-width="2.5"/>' +
+      '<g fill="none" stroke="#222" stroke-width="9" stroke-linecap="round" stroke-linejoin="round">' +
+        '<path d="M60 44 H104"/><path d="M82 30 V82"/><path d="M62 70 Q74 62 82 58 Q94 66 104 74"/>' +
+        '<path d="M60 112 H106"/><path d="M84 98 Q80 140 62 166"/><path d="M84 124 Q96 150 108 162"/>' +
+      '</g>' +
+      '<rect x="146" y="120" width="40" height="60" rx="6" fill="#3a3a40" stroke="' + INK + '" stroke-width="2.5"/>' +
+      '<rect x="152" y="152" width="28" height="20" rx="4" fill="#111"/>' +
+      '<g transform="rotate(20 160 60)"><rect x="156" y="14" width="8" height="80" rx="3" fill="#c9a36c" stroke="' + INK + '" stroke-width="2"/>' +
+      '<path d="M156 92 Q160 116 164 92Z" fill="#222" stroke="#222" stroke-width="4" stroke-linejoin="round"/></g>',
+
+    // 冬至：ゆずを うかべた おふろ
+    touji:
+      '<rect x="0" y="0" width="200" height="200" rx="24" fill="#e7eef2"/>' +
+      '<g fill="none" stroke="#b5c2cc" stroke-width="4" stroke-linecap="round">' +
+        '<path d="M60 70 Q50 56 60 44 Q70 32 60 20"/><path d="M100 64 Q90 50 100 38 Q110 26 100 14"/><path d="M140 70 Q130 56 140 44 Q150 32 140 20"/>' +
+      '</g>' +
+      '<path d="M14 100 H186 V160 Q186 186 160 186 H40 Q14 186 14 160Z" fill="#c9a36c" stroke="' + INK + '" stroke-width="3.5"/>' +
+      '<rect x="10" y="92" width="180" height="14" rx="5" fill="#b88a50" stroke="' + INK + '" stroke-width="3"/>' +
+      '<path d="M22 112 H178 V122 H22Z" fill="#9cc8e0"/>' +
+      [[44, 108], [74, 104], [104, 110], [134, 104], [160, 108], [60, 118], [120, 120]].map(function (p) {
+        return '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="12" fill="#f3cf3c" stroke="' + INK + '" stroke-width="2.5"/>' +
+          '<circle cx="' + (p[0] - 3) + '" cy="' + (p[1] - 4) + '" r="3" fill="#fbe7a6"/>';
+      }).join(''),
+
+    // おもち：あみで やいて ぷくっと ふくらむ
+    omochi:
+      '<ellipse cx="100" cy="150" rx="88" ry="30" fill="#e9e1d1" stroke="' + INK + '" stroke-width="3"/>' +
+      [[66, 120], [130, 116]].map(function (p) {
+        return '<rect x="' + (p[0] - 30) + '" y="' + (p[1] - 18) + '" width="60" height="40" rx="10" fill="#fffdf7" stroke="' + INK + '" stroke-width="3"/>' +
+          '<path d="M' + (p[0] - 12) + ' ' + (p[1] - 18) + ' Q' + p[0] + ' ' + (p[1] - 44) + ' ' + (p[0] + 14) + ' ' + (p[1] - 18) + '" fill="#fffdf7" stroke="' + INK + '" stroke-width="3"/>' +
+          '<g fill="#d9a35a"><circle cx="' + (p[0] - 16) + '" cy="' + (p[1] + 8) + '" r="5"/><circle cx="' + (p[0] + 12) + '" cy="' + (p[1] + 2) + '" r="4"/><circle cx="' + p[0] + '" cy="' + (p[1] - 30) + '" r="3"/></g>';
+      }).join('') +
+      '<g fill="none" stroke="#b5ad9e" stroke-width="3" stroke-linecap="round"><path d="M60 64 Q52 52 60 40"/><path d="M130 58 Q122 46 130 34"/></g>',
+
+    // 大根：白くて 長い、上に 葉
+    daikon:
+      '<g fill="#79b35f" stroke="' + INK + '" stroke-width="2.5">' +
+        '<path d="M100 60 Q60 40 52 8 Q84 18 100 56Z"/><path d="M100 60 Q100 20 112 2 Q120 30 104 58Z"/><path d="M100 60 Q140 40 152 12 Q118 22 100 56Z"/>' +
+      '</g>' +
+      '<path d="M76 62 Q100 54 124 62 Q130 110 112 170 Q104 196 100 198 Q96 196 88 170 Q70 110 76 62Z" fill="#fbfbf7" stroke="' + INK + '" stroke-width="3.5"/>' +
+      '<path d="M78 64 Q100 58 122 64 Q122 78 100 76 Q78 78 78 64Z" fill="#cfe3a8"/>' +
+      '<g fill="none" stroke="#cfc8b8" stroke-width="2"><path d="M86 100 H94"/><path d="M108 120 H116"/><path d="M90 146 H98"/></g>',
+
+    // 白菜：たてに 長く、外が 緑
+    hakusai:
+      '<path d="M100 196 Q50 190 46 120 Q44 50 80 14 Q100 30 104 196Z" fill="#8fc070" stroke="' + INK + '" stroke-width="3"/>' +
+      '<path d="M100 196 Q150 190 154 120 Q156 50 120 14 Q100 30 96 196Z" fill="#a9d088" stroke="' + INK + '" stroke-width="3"/>' +
+      '<path d="M100 196 Q70 180 72 110 Q76 50 100 26 Q124 50 128 110 Q130 180 100 196Z" fill="#f4f1df" stroke="' + INK + '" stroke-width="3"/>' +
+      '<path d="M100 40 Q96 120 100 192" fill="none" stroke="#e3dcc0" stroke-width="7"/>' +
+      '<path d="M86 60 Q100 46 114 60" fill="none" stroke="#c8e3a3" stroke-width="5"/>',
+
+    // 「雪」：雪の中を 犬が かけまわり、ねこは こたつ
+    yuki:
+      '<rect x="0" y="0" width="200" height="200" rx="24" fill="#c9d6e2"/>' +
+      '<path d="M0 140 Q100 120 200 140 V200 H0Z" fill="#fbfbf7"/>' +
+      '<path d="M120 60 L170 30 L200 56 V140 H124Z" fill="#c9a36c" stroke="' + INK + '" stroke-width="2.5"/>' +
+      '<path d="M116 64 L170 26 L204 54" fill="#fbfbf7" stroke="' + INK + '" stroke-width="2.5"/>' +
+      '<rect x="140" y="80" width="40" height="34" fill="#f8d98a" stroke="' + INK + '" stroke-width="2.5"/>' +
+      emo(160, 100, 26, '🐈') +
+      emo(60, 150, 46, '🐕') +
+      '<g fill="#fffdf7">' + [[20, 20], [50, 40], [80, 16], [100, 50], [30, 70], [70, 90], [110, 100], [20, 110], [150, 14], [100, 130]].map(function (p) {
+        return '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="4"/>';
+      }).join('') + '</g>',
+
+    // 「たきび」：おち葉を あつめて たきび
+    takibi:
+      '<rect x="0" y="0" width="200" height="200" rx="24" fill="#e9e1d1"/>' +
+      '<g fill="#2f6a3e"><ellipse cx="36" cy="80" rx="34" ry="40"/><ellipse cx="170" cy="76" rx="30" ry="38"/></g>' +
+      '<g fill="#d8323a">' + [[24, 60], [46, 74], [30, 98], [160, 56], [178, 86], [158, 100]].map(function (p) {
+        return '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="6"/>';
+      }).join('') + '</g>' +
+      '<path d="M0 150 H200 V200 H0Z" fill="#c9b48a"/>' +
+      '<g fill="none" stroke="#b5ad9e" stroke-width="4" stroke-linecap="round"><path d="M100 70 Q88 50 100 34 Q112 18 100 4"/></g>' +
+      '<path d="M50 170 Q100 140 150 170Z" fill="#a0603a"/>' +
+      emo(100, 126, 64, '🔥') +
+      emo(58, 172, 22, '🍂') + emo(146, 176, 22, '🍁') + emo(30, 184, 20, '🍂') + emo(176, 160, 20, '🍂'),
+
+    // 「お正月」：たこあげと こままわし
+    oshogatsu:
+      '<rect x="0" y="0" width="200" height="200" rx="24" fill="#dcecf5"/>' +
+      '<circle cx="40" cy="40" r="20" fill="#f2a65a"/>' +
+      '<path d="M0 160 H200 V200 H0Z" fill="#d9c6a0"/>' +
+      emo(130, 54, 56, '🪁') +
+      '<path d="M114 80 Q90 120 70 156" stroke="#7a746a" stroke-width="1.5" fill="none"/>' +
+      '<g transform="translate(140 160)">' +
+        '<path d="M-26 -10 Q0 -22 26 -10 L0 22Z" fill="#d8323a" stroke="' + INK + '" stroke-width="2.5" stroke-linejoin="round"/>' +
+        '<path d="M-20 -8 Q0 -16 20 -8" fill="none" stroke="#f3cf3c" stroke-width="4"/>' +
+        '<path d="M0 -14 V-26" stroke="' + INK + '" stroke-width="4" stroke-linecap="round"/>' +
+      '</g>' +
+      '<g fill="none" stroke="#7a746a" stroke-width="2" stroke-linecap="round"><path d="M104 168 Q96 160 104 152"/><path d="M178 168 Q186 160 178 152"/></g>',
+
+    // 「冬の夜」：雪の夜、あかりの ともる 家
+    fuyunoyoru:
+      '<rect x="0" y="0" width="200" height="200" rx="24" fill="#26324f"/>' +
+      '<path d="M0 156 Q100 140 200 156 V200 H0Z" fill="#e9eef2"/>' +
+      '<path d="M40 100 L100 50 L160 100 V164 H40Z" fill="#8a6a45" stroke="#1d1a16" stroke-width="2.5"/>' +
+      '<path d="M30 104 L100 44 L170 104" fill="none" stroke="#fbfbf7" stroke-width="10" stroke-linejoin="round"/>' +
+      '<rect x="62" y="104" width="44" height="36" fill="#f8c86a" stroke="#1d1a16" stroke-width="2.5"/>' +
+      '<path d="M84 104 V140 M62 122 H106" stroke="#a8743a" stroke-width="2.5"/>' +
+      '<rect x="120" y="116" width="22" height="48" fill="#5e4630" stroke="#1d1a16" stroke-width="2.5"/>' +
+      '<g fill="#fffdf7">' + [[20, 30], [60, 20], [150, 30], [180, 60], [30, 80], [170, 120], [14, 130], [120, 20], [90, 30]].map(function (p) {
+        return '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="3.5"/>';
+      }).join('') + '</g>',
+
+    // 「冬げしき」：朝の きりの 港に 白い 水鳥
+    fuyugeshiki:
+      '<rect x="0" y="0" width="200" height="200" rx="24" fill="#dfe6ea"/>' +
+      '<path d="M0 110 H200 V200 H0Z" fill="#9fb6c6"/>' +
+      '<g fill="#7a8a96">' +
+        '<path d="M40 104 H90 L84 114 H46Z"/><path d="M62 104 V78 L80 100Z"/>' +
+        '<path d="M120 100 H170 L164 110 H126Z"/><path d="M142 100 V70 L160 96Z"/>' +
+      '</g>' +
+      '<g fill="#fbfbf7" opacity="0.75"><rect x="0" y="86" width="200" height="12"/><rect x="0" y="120" width="200" height="10"/></g>' +
+      '<g fill="#fffdf7" stroke="#7a746a" stroke-width="1.5">' + [[50, 150], [100, 160], [150, 146]].map(function (p) {
+        return '<ellipse cx="' + p[0] + '" cy="' + p[1] + '" rx="14" ry="7"/><circle cx="' + (p[0] + 12) + '" cy="' + (p[1] - 8) + '" r="5"/>';
+      }).join('') + '</g>' +
+      '<g fill="#c9b48a">' + [10, 18, 26, 176, 184, 192].map(function (x) {
+        return '<path d="M' + x + ' 200 L' + (x - 2) + ' 150 L' + (x + 2) + ' 200Z"/>';
+      }).join('') + '</g>'
   };
 
   // ---------- ジャンル ----------
@@ -819,11 +1094,44 @@
     {
       id: 'fuyu', name: '[冬:ふゆ]', icon: '⛄', color: '#a9c6dc',
       genres: {
-        hana:  [{ name: 'すいせん' }, { name: 'つばき' }],
-        mushi: [],
-        gyoji: [{ name: 'クリスマス' }, { name: 'お[正月:しょう.がつ]' }, { name: '[節分:せつ.ぶん]' }],
-        tabe:  [{ name: 'みかん' }, { name: 'お[餅:もち]' }, { name: '[大根:だい.こん]' }],
-        uta:   [{ name: '「[雪:ゆき]」' }, { name: '「たきび」' }, { name: '「お[正月:しょう.がつ]」' }]
+        hana: [
+          { name: 'すいせん',                 pic: 'svg:suisen' },
+          { name: 'つばき',                   pic: 'svg:tsubaki' },
+          { name: 'ポインセチア',             pic: 'svg:poinsettia' },
+          { name: 'シクラメン',               pic: 'svg:cyclamen' },
+          { name: '[福寿草:ふく.じゅ.そう]',   pic: 'svg:fukujuso' }
+        ],
+        // 冬は 虫の「冬ごし」
+        mushi: [
+          { name: 'ゆき[虫:むし]',                     pic: 'svg:yukimushi' },
+          { name: 'かまきりの [卵:たまご]',             pic: 'svg:kamakiriTamago' },
+          { name: 'ちょうの さなぎ',                   pic: 'svg:sanagi' },
+          { name: 'かぶと[虫:むし]の [幼虫:よう.ちゅう]', pic: 'svg:youchu' },
+          { name: 'てんとう[虫:むし]の [冬:ふゆ]ごし',   pic: 'svg:tentoFuyugoshi' }
+        ],
+        gyoji: [
+          { name: 'クリスマス',               pic: '🎄🎁' },
+          { name: 'お[正月:しょう.がつ]',      pic: '🎍' },
+          { name: '[節分:せつ.ぶん]',          pic: '👹' },
+          { name: 'もちつき',                 pic: 'svg:mochitsuki' },
+          { name: '[書:か]き[初:ぞ]め',         pic: 'svg:kakizome' },
+          { name: '[冬至:とう.じ]',            pic: 'svg:touji' }
+        ],
+        tabe: [
+          { name: 'みかん',                   pic: '🍊' },
+          { name: 'お[餅:もち]',               pic: 'svg:omochi' },
+          { name: '[大根:だい.こん]',          pic: 'svg:daikon' },
+          { name: 'なべ',                     pic: '🍲' },
+          { name: 'おでん',                   pic: '🍢' },
+          { name: '[白菜:はく.さい]',          pic: 'svg:hakusai' }
+        ],
+        uta: [
+          { name: '「[雪:ゆき]」',                     pic: 'svg:yuki' },
+          { name: '「たきび」',                       pic: 'svg:takibi' },
+          { name: '「お[正月:しょう.がつ]」',          pic: 'svg:oshogatsu' },
+          { name: '「[冬:ふゆ]の[夜:よる]」',          pic: 'svg:fuyunoyoru' },
+          { name: '「[冬:ふゆ]げしき」',               pic: 'svg:fuyugeshiki' }
+        ]
       }
     }
   ];
