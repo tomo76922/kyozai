@@ -259,6 +259,7 @@
   var answer = 0;
   var pic = '';
   var solved = false;
+  var sayTimer = null;   // 「せいかい」を読み上げるまでの まち時間
 
   try { if (localStorage.getItem('kazu-range') === '10') maxN = 10; } catch (e) {}
 
@@ -275,6 +276,8 @@
     answer = pickOther(nums, answer);
     pic = pickOther(PIC_NAMES, pic);
     solved = false;
+    clearTimeout(sayTimer);
+    stopSpeech();
     fillFrame(quizFrame, answer, pic);
     quizFrame.classList.toggle('is-five', maxN === 5);
     quizText.className = 'stage-text';
@@ -320,6 +323,9 @@
       quizText.className = 'stage-text is-ok';
       quizText.textContent = 'せいかい';
       goodSound();
+      // 音と重ならないように、少しあとで読み上げる
+      clearTimeout(sayTimer);
+      sayTimer = setTimeout(function () { speak('せいかい'); }, 500);
     } else {
       // 同じ ボタンを もう一度 おしても 動きが わかるように、いったん外してから つける
       void b.offsetWidth;
@@ -342,6 +348,7 @@
       document.getElementById(t.getAttribute('aria-controls')).hidden = !on;
     });
     stopCount();
+    clearTimeout(sayTimer);
     window.scrollTo(0, 0);
     try { localStorage.setItem('kazu-tab', tab.id); } catch (e) {}
   }
