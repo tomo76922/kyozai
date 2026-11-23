@@ -8,32 +8,33 @@
   // ---------- おちてくる もの ----------
   // w：でてくる わりあい（とくてんが たかい ものほど すくない）
   var FOODS = [
-    { id: 'apple',  emoji: '🍎', name: 'りんご',   pt: 10, w: 30 },
-    { id: 'banana', emoji: '🍌', name: 'バナナ',   pt: 10, w: 28 },
-    { id: 'onigiri', emoji: '🍙', name: 'おにぎり', pt: 20, w: 17 },
-    { id: 'ichigo', emoji: '🍓', name: 'いちご',   pt: 30, w: 10 },
-    { id: 'cake',   emoji: '🍰', name: 'ケーキ',   pt: 50, w: 5 }
+    { id: 'cheese',  emoji: '\uD83E\uDDC0', name: 'チーズ',     pt: 10, w: 30 },
+    { id: 'kanpyo',  emoji: null,             name: 'かんぴょう', pt: 20, w: 25 },   // あう 絵文字が ないので プログラムで かく
+    { id: 'ramen',   emoji: '\uD83C\uDF5C', name: 'ラーメン',   pt: 30, w: 17 },
+    { id: 'gyoza',   emoji: '\uD83E\uDD5F', name: 'ぎょうざ',   pt: 40, w: 11 },
+    { id: 'ichigo',  emoji: '\uD83C\uDF53', name: 'いちご',     pt: 50, w: 6 }
   ];
+  // たいりょくが へる もの（id の thunder は すこし ゆれながら おちる）
   var AVOIDS = [
-    { id: 'stone',   emoji: '🪨', name: 'いし', w: 1 },
-    { id: 'shoe',    emoji: '👟', name: 'くつ', w: 1 },
-    { id: 'thunder', emoji: '⛈️', name: 'かみなりぐも', w: 1 }
+    { id: 'thunder', emoji: '\u26A1', name: 'かみなり', w: 1 },
+    { id: 'rock',    emoji: '\uD83E\uDEA8', name: 'いわ', w: 1 },
+    { id: 'saru',    emoji: '\uD83D\uDC12', name: 'さる', w: 1 }
   ];
   var HEART = { id: 'heart', name: 'ハート' };
 
-  var HP_MAX = 5;
+  var HP_MAX = 3;
   var LEVEL_SEC = 30;          // 30びょう ごとに レベルアップ
   var LEVEL_CAP = 11;          // これより うえは むずかしく しない
   var SPEEDS = {
     // fall：うえから じめんまで おちる びょうすう ／ gap：つぎが でてくるまでの びょうすう
-    slow:   { fall: 4.8, gap: 1.55, gapMin: 0.7 },
-    normal: { fall: 3.5, gap: 1.15, gapMin: 0.5 }
+    slow:   { fall: 4.8, gap: 1.3, gapMin: 0.65 },
+    normal: { fall: 3.5, gap: 0.95, gapMin: 0.48 }
   };
   // こえモード：とても ゆっくり はじまり、はやく なるのも ゆるやか
   var KOE_SPEEDS = {
-    vslow:  { fall: 10, gap: 4.4, gapMin: 3.0 },
-    slow:   { fall: 8,  gap: 3.8, gapMin: 2.6 },
-    normal: { fall: 6.5, gap: 3.2, gapMin: 2.2 }
+    vslow:  { fall: 10, gap: 3.7, gapMin: 2.8 },
+    slow:   { fall: 8,  gap: 3.2, gapMin: 2.4 },
+    normal: { fall: 6.5, gap: 2.7, gapMin: 2.0 }
   };
   var KOE_LANES = [0.3, 0.7];   // こえモードの ひだり・みぎの れつ（はばに たいする わりあい）
   var KOE_SAFE_START = 6;
@@ -253,7 +254,7 @@
     k = clamp(vmin / 780, 0.6, 1.4);
     var btn = clamp(vmin * 0.11, 80, 104);
     groundY = H - (btn + 36);
-    itemSize = Math.round(62 * k);
+    itemSize = Math.round(72 * k);
     chickS = 1.35 * k;
     basketHalf = 44 * chickS;
     // ひよこの いちは、はばに たいする わりあいを たもつ
@@ -274,35 +275,35 @@
     var b = bg.getContext('2d');
     b.setTransform(dpr, 0, 0, dpr, 0, 0);
     var g = b.createLinearGradient(0, 0, 0, groundY);
-    g.addColorStop(0, '#dcebf0');
-    g.addColorStop(1, '#f5f0e3');
+    g.addColorStop(0, '#a9bfc8');
+    g.addColorStop(1, '#cdcabb');
     b.fillStyle = g;
     b.fillRect(0, 0, W, H);
 
     // おひさま
-    b.fillStyle = 'rgba(248,227,163,0.55)';
+    b.fillStyle = 'rgba(234,214,154,0.35)';
     b.beginPath(); b.arc(W * 0.86, H * 0.2, 74 * k, 0, 6.2832); b.fill();
-    b.fillStyle = '#f8e3a3';
+    b.fillStyle = '#e2cc8e';
     b.beginPath(); b.arc(W * 0.86, H * 0.2, 48 * k, 0, 6.2832); b.fill();
 
     // とおくの おか・ちかくの おか
-    hills(b, '#cddfc6', groundY - 70 * k, 34 * k, 0.004 / k, 0.4);
-    hills(b, '#b6d0ad', groundY - 26 * k, 20 * k, 0.007 / k, 2.1);
+    hills(b, '#9fb59b', groundY - 70 * k, 34 * k, 0.004 / k, 0.4);
+    hills(b, '#87a183', groundY - 26 * k, 20 * k, 0.007 / k, 2.1);
 
     // じめん
-    b.fillStyle = '#e6d6b8';
+    b.fillStyle = '#c4b08a';
     b.fillRect(0, groundY, W, H - groundY);
-    b.fillStyle = '#d8c49f';
+    b.fillStyle = '#b29d76';
     for (var x = 18; x < W; x += 46) {
       var y = groundY + 26 + ((x * 37) % 53);
       if (y < H - 6) { b.beginPath(); b.ellipse(x, y, 5, 2.6, 0, 0, 6.2832); b.fill(); }
     }
-    b.fillStyle = '#9fc28f';
+    b.fillStyle = '#7d9c6f';
     b.fillRect(0, groundY - 4, W, 14);
-    b.fillStyle = '#86ad78';
+    b.fillStyle = '#668559';
     b.fillRect(0, groundY + 8, W, 3);
     // くさ
-    b.strokeStyle = '#86ad78';
+    b.strokeStyle = '#668559';
     b.lineWidth = 2.5;
     b.lineCap = 'round';
     b.beginPath();
@@ -327,46 +328,114 @@
   }
 
   // ---------- おちてくる ものの 絵 ----------
+  // 白くて ふとい ふちの 丸に のせて、うしろから めだつように する。
+  // へる もの（よける もの）は、ふちを こい はいいろに して 見わけやすく する。
   function makeSprites() {
     sprites = {};
-    FOODS.concat(AVOIDS).forEach(function (it) { sprites[it.id] = emojiSprite(it.emoji); });
-    sprites.heart = heartSprite();
+    FOODS.forEach(function (it) { sprites[it.id] = plateSprite(it, 'food', itemSize * dpr); });
+    AVOIDS.forEach(function (it) { sprites[it.id] = plateSprite(it, 'avoid', itemSize * dpr); });
+    sprites.heart = plateSprite(HEART, 'heart', itemSize * dpr);
   }
 
-  function emojiSprite(ch) {
-    var px = itemSize * dpr;
+  function plateSprite(it, type, px) {
     var c = document.createElement('canvas');
     c.width = c.height = Math.ceil(px * 1.3);
     var g = c.getContext('2d');
-    g.font = Math.round(px) + 'px ' + EMOJI_FONT;
-    g.textAlign = 'center';
-    g.textBaseline = 'middle';
-    g.fillText(ch, c.width / 2, c.height / 2 + px * 0.06);
+    var cx = c.width / 2, cy = c.height / 2;
+    var r = px * 0.5;
+    var ri = r * 0.8;          // 中の 丸
+    // かげ
+    g.fillStyle = 'rgba(30,28,25,0.3)';
+    g.beginPath(); g.arc(cx, cy + r * 0.1, r * 1.03, 0, 6.2832); g.fill();
+    // ふち（たべもの・ハート：しろ ／ よける もの：こい はいいろ）
+    g.fillStyle = type === 'avoid' ? '#4a4845' : '#ffffff';
+    g.beginPath(); g.arc(cx, cy, r, 0, 6.2832); g.fill();
+    g.lineWidth = Math.max(1.5, r * 0.06);
+    g.strokeStyle = type === 'avoid' ? '#2b2a28' : '#3d3a35';
+    g.stroke();
+    // 中
+    g.fillStyle = type === 'avoid' ? '#f4f3f0' : '#ffffff';
+    g.beginPath(); g.arc(cx, cy, ri, 0, 6.2832); g.fill();
+    if (type === 'food' || type === 'avoid') {
+      g.strokeStyle = type === 'avoid' ? '#2b2a28' : 'rgba(61,58,53,0.35)';
+      g.lineWidth = Math.max(1, r * 0.03);
+      g.stroke();
+    }
+    // 中身
+    if (type === 'heart') drawHeartIn(g, cx, cy, ri);
+    else if (it.id === 'kanpyo') drawKanpyo(g, cx, cy, ri);
+    else {
+      g.font = Math.round(ri * 1.45) + 'px ' + EMOJI_FONT;
+      g.textAlign = 'center';
+      g.textBaseline = 'middle';
+      g.fillText(it.emoji, cx, cy + ri * 0.08);
+    }
     return c;
   }
 
-  function heartSprite() {
-    var px = itemSize * dpr;
-    var c = document.createElement('canvas');
-    c.width = c.height = Math.ceil(px * 1.3);
-    var g = c.getContext('2d');
-    var s = px / 38;
-    g.translate(c.width / 2 - 20 * s, c.height / 2 - 20 * s);
+  function drawHeartIn(g, cx, cy, ri) {
+    if (!heartPath) return;
+    var s = ri * 1.5 / 40;
+    g.save();
+    g.translate(cx - 20 * s, cy - 19 * s);
     g.scale(s, s);
-    // まわりの ふんわりした ひかり
-    g.fillStyle = 'rgba(255,240,235,0.9)';
-    g.beginPath(); g.arc(20, 20, 19, 0, 6.2832); g.fill();
-    if (heartPath) {
-      g.fillStyle = '#ef9c96';
-      g.strokeStyle = INK;
-      g.lineWidth = 2.4;
-      g.lineJoin = 'round';
-      g.fill(heartPath);
-      g.stroke(heartPath);
-    }
+    g.fillStyle = '#e8746d';
+    g.strokeStyle = INK;
+    g.lineWidth = 2.4;
+    g.lineJoin = 'round';
+    g.fill(heartPath);
+    g.stroke(heartPath);
     g.fillStyle = 'rgba(255,253,247,0.85)';
     g.beginPath(); g.ellipse(12, 13, 3.6, 2.4, -0.6, 0, 6.2832); g.fill();
-    return c;
+    g.restore();
+  }
+
+  // かんぴょう：クリームいろの ながい おびを なんぼんか たばねて、まんなかを ひもで しばった かたち
+  function drawKanpyo(g, cx, cy, ri) {
+    var top = cy - ri * 0.86, bot = cy + ri * 0.36, mid = cy - ri * 0.25;
+    var n = 5;
+    g.lineCap = 'round';
+    for (var pass = 0; pass < 2; pass++) {
+      for (var i = 0; i < n; i++) {
+        var o = i - (n - 1) / 2;
+        var xt = cx + o * ri * 0.25, xm = cx + o * ri * 0.07, xb = cx + o * ri * 0.26;
+        g.beginPath();
+        g.moveTo(xt, top + Math.abs(o) * ri * 0.05);
+        g.quadraticCurveTo(xm - (xt - xm) * 0.6, mid, xm, mid);
+        g.quadraticCurveTo(xm - (xb - xm) * 0.6, mid, xb, bot - Math.abs(o) * ri * 0.04);
+        g.lineWidth = pass === 0 ? ri * 0.24 : ri * 0.16;
+        g.strokeStyle = pass === 0 ? '#9c8450' : (i % 2 ? '#f6ecc8' : '#efe0b0');
+        g.stroke();
+      }
+    }
+    // ひも
+    g.fillStyle = '#8a6a45';
+    g.strokeStyle = '#4e3b26';
+    g.lineWidth = Math.max(1, ri * 0.04);
+    roundRectOn(g, cx - ri * 0.36, mid - ri * 0.1, ri * 0.72, ri * 0.2, ri * 0.08);
+    g.fill(); g.stroke();
+    // なまえ（子どもに わかりやすいように）
+    var fs = Math.max(8, ri * 0.28);
+    g.font = '700 ' + Math.round(fs) + 'px ' + FONT;
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    var tw = g.measureText('かんぴょう').width;
+    var ly = cy + ri * 0.68;
+    g.fillStyle = '#3d3a35';
+    roundRectOn(g, cx - tw / 2 - fs * 0.35, ly - fs * 0.62, tw + fs * 0.7, fs * 1.24, fs * 0.6);
+    g.fill();
+    g.fillStyle = '#ffffff';
+    g.fillText('かんぴょう', cx, ly + fs * 0.04);
+  }
+
+  function roundRectOn(g, x, y, w, h, r) {
+    g.beginPath();
+    g.moveTo(x + r, y);
+    g.arcTo(x + w, y, x + w, y + h, r);
+    g.arcTo(x + w, y + h, x, y + h, r);
+    g.arcTo(x, y + h, x, y, r);
+    g.arcTo(x, y, x + w, y, r);
+    g.closePath();
   }
 
   // ---------- ゲームの ようす ----------
@@ -402,7 +471,7 @@
       level: 1,
       score: 0,
       hp: HP_MAX,
-      next: 0.8,
+      next: 0.5,
       lastHeart: -99,
       prevBest: bestScore(isKoe ? 'koe' : 'yubi'),
       recShown: false,
@@ -471,7 +540,7 @@
       xf: x / W,
       p: 0,
       dur: G.sp.fall / speedFactor() * rand(0.92, 1.08) * (kind.id === 'thunder' ? 1.12 : 1),
-      rot: rand(-0.3, 0.3),
+      rot: kind.id === 'kanpyo' ? 0 : rand(-0.2, 0.2),   // おちる ときは ほぼ まっすぐ（もじが さかさに ならないように）
       spin: rand(-1.2, 1.2),
       ph: rand(0, 6.28),
       state: 'fall',
@@ -571,7 +640,6 @@
       it.t += dt;
       if (it.state === 'fall') {
         it.p += dt / it.dur;
-        it.rot += it.spin * dt * 0.6;
         var x = itemX(it), y = itemY(it.p);
         var live = mode === 'play' && G && !G.over;
         if (live && y + r > catchTop && y < catchBot && Math.abs(x - P.x) < basketHalf + r * 0.35) {
@@ -699,7 +767,7 @@
 
     // おちてくる ものの かげ（どこに おちるか わかるように）
     var i, it;
-    ctx.fillStyle = 'rgba(61,58,53,0.12)';
+    ctx.fillStyle = 'rgba(40,36,30,0.2)';
     for (i = 0; i < items.length; i++) {
       it = items[i];
       if (it.state !== 'fall' || it.p < 0.15) continue;
@@ -724,7 +792,7 @@
   }
 
   function drawCloud(x, y, s) {
-    ctx.fillStyle = 'rgba(255,253,247,0.85)';
+    ctx.fillStyle = 'rgba(235,236,230,0.5)';
     ctx.beginPath();
     ctx.arc(x - 34 * s, y + 6 * s, 22 * s, 0, 6.2832);
     ctx.arc(x, y - 6 * s, 32 * s, 0, 6.2832);
@@ -1224,12 +1292,16 @@
 
   // はじめの がめんの 「キャッチ してね」「よけてね」
   (function renderGuide() {
-    var heartIcon = '<svg viewBox="0 0 40 40" aria-hidden="true"><path d="' + HEART_D + '" fill="#ef9c96" stroke="#3d3a35" stroke-width="2.6" stroke-linejoin="round"/></svg>';
+    function pic(it, type) {
+      var url = '';
+      try { url = plateSprite(it, type, 96).toDataURL('image/png'); } catch (e) {}
+      return '<img class="g-img" src="' + url + '" alt="">';
+    }
     document.getElementById('foodList').innerHTML = FOODS.map(function (f) {
-      return '<li><span class="g-pic" aria-hidden="true">' + f.emoji + '</span><span>' + f.pt + 'てん</span><span class="sr">（' + f.name + '）</span></li>';
-    }).join('') + '<li><span class="g-pic">' + heartIcon + '</span><span>げんき＋1</span></li>';
+      return '<li><span class="g-pic" aria-hidden="true">' + pic(f, 'food') + '</span><span class="g-name">' + f.name + '</span><span class="g-pt">' + f.pt + 'てん</span></li>';
+    }).join('') + '<li><span class="g-pic" aria-hidden="true">' + pic(HEART, 'heart') + '</span><span class="g-name">ハート</span><span class="g-pt">げんき＋1</span></li>';
     document.getElementById('avoidList').innerHTML = AVOIDS.map(function (f) {
-      return '<li><span class="g-pic" aria-hidden="true">' + f.emoji + '</span><span>' + f.name + '</span></li>';
+      return '<li><span class="g-pic" aria-hidden="true">' + pic(f, 'avoid') + '</span><span class="g-name">' + f.name + '</span></li>';
     }).join('');
   })();
 
