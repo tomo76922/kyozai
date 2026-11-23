@@ -1,0 +1,77 @@
+/* もくじ（メニュー）のページ */
+.menu-header {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 28px var(--side) 8px;
+}
+
+.menu-title {
+  margin: 0;
+  font-size: clamp(32px, 5vw, 48px);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.menu {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+  gap: clamp(16px, 3vw, 32px);
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 16px var(--side) 40px;
+}
+
+.menu-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  min-height: clamp(240px, 30vh, 340px);
+  padding: 28px 20px;
+  border-radius: 28px;
+  background: var(--card);
+  border: 3px solid var(--card-border);
+  box-shadow: 0 4px 0 #d9d2c3;
+  color: var(--text);
+  text-decoration: none;
+  transition: transform 0.12s ease, background-color 0.2s ease, border-color 0.2s ease;
+}
+.menu-item:active {
+  background: var(--active);
+  border-color: var(--active-border);
+  transform: scale(0.97);
+}
+.menu-item:focus-visible {
+  outline: 4px solid var(--active-border);
+  outline-offset: 4px;
+}
+
+.menu-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 140px;
+  height: 140px;
+  border-radius: 32px;
+  background: color-mix(in srgb, var(--accent, var(--card-border)) 45%, var(--card));
+  border: 3px solid var(--accent, var(--card-border));
+}
+.menu-icon svg { width: 104px; height: 104px; }
+.menu-icon-text {
+  font-size: 92px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.menu-label {
+  font-size: clamp(28px, 4vw, 38px);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-align: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .menu-item { transition: background-color 0.2s ease, border-color 0.2s ease; }
+  .menu-item:active { transform: none; }
+}

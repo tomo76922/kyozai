@@ -3,42 +3,45 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>ひらがなカード</title>
-  <meta name="description" content="タップすると読み上げる、ひらがな46文字のカード">
+  <title>きょうざい</title>
+  <meta name="description" content="ひらがなカード・みえるタイマーなどの きょうざい">
   <meta name="theme-color" content="#f3efe6">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="ひらがな">
+  <meta name="apple-mobile-web-app-title" content="きょうざい">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="format-detection" content="telephone=no">
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./icons/icon-192.png" type="image/png">
   <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
-  <link rel="stylesheet" href="./style.css">
+  <link rel="stylesheet" href="./common.css">
+  <link rel="stylesheet" href="./menu.css">
 </head>
 <body>
-  <header class="header">
-    <h1 class="title">ひらがな カード</h1>
-    <div class="tabs" role="tablist" aria-label="ひょうじする もじ">
-      <button type="button" class="tab" role="tab" id="tab-seion"
-              aria-controls="sec-seion" aria-selected="true">あ〜ん</button>
-      <button type="button" class="tab" role="tab" id="tab-dakuon"
-              aria-controls="sec-dakuon" aria-selected="false" tabindex="-1">が・ざ・だ・ば・ぱ</button>
-    </div>
-    <button type="button" class="btn" id="speedBtn" aria-pressed="false">ゆっくり</button>
+  <header class="menu-header">
+    <h1 class="menu-title">きょうざい</h1>
   </header>
 
-  <p class="notice" id="notice" hidden></p>
-
   <main>
-    <section class="section" id="sec-seion" role="tabpanel" aria-labelledby="tab-seion">
-      <div class="grid" id="grid-seion" data-cols="11"></div>
-    </section>
-    <section class="section" id="sec-dakuon" role="tabpanel" aria-labelledby="tab-dakuon" hidden>
-      <div class="grid" id="grid-dakuon" data-cols="5"></div>
-    </section>
+    <!-- 教材をふやすときは、ここに <a class="menu-item"> を1つ足す -->
+    <nav class="menu" aria-label="きょうざい いちらん">
+      <a class="menu-item" href="./hiragana/" style="--accent: #a8bfa6">
+        <span class="menu-icon" aria-hidden="true"><span class="menu-icon-text">あ</span></span>
+        <span class="menu-label">ひらがな カード</span>
+      </a>
+      <a class="menu-item" href="./timer/" style="--accent: #a9bccb">
+        <span class="menu-icon" aria-hidden="true">
+          <svg viewBox="-50 -50 100 100">
+            <circle r="44" fill="#fffdf7" stroke="#3d3a35" stroke-width="5"/>
+            <path d="M0 0 L-37.4 -21.6 A 43.2 43.2 0 0 1 0 -43.2 Z" fill="#c99b80"/>
+            <circle r="5" fill="#3d3a35"/>
+          </svg>
+        </span>
+        <span class="menu-label">みえる タイマー</span>
+      </a>
+    </nav>
   </main>
 
-  <script src="./app.js"></script>
+  <script src="./pwa.js"></script>
 </body>
 </html>

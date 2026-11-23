@@ -1,0 +1,181 @@
+/* みえる タイマー */
+:root {
+  --wedge: #c99b80;      /* のこり時間の いろ（やわらかい れんが色） */
+  --face: #fffdf7;
+  --face-line: #d9d2c3;
+  --tick: #b9b1a2;
+  --start: #e6efe9;  --start-border: #a9c2b3;
+  --stop:  #f6e7c8;  --stop-border:  #c9a96b;
+  --reset: #fffdf7;  --reset-border: #e2dccf;
+}
+
+body {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 16px var(--side) 4px;
+}
+.title {
+  margin: 0;
+  font-size: clamp(26px, 4vw, 40px);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+/* ---------- たて向き：上に円、下に数字とボタン ---------- */
+.timer {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(12px, 2.5vh, 28px);
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 8px var(--side) 24px;
+}
+
+.dial-box {
+  width: min(100%, 52vh, 620px);
+  width: min(100%, 52dvh, 620px);
+  aspect-ratio: 1 / 1;
+}
+.dial { display: block; width: 100%; height: 100%; overflow: visible; }
+
+.face  { fill: var(--face); stroke: var(--face-line); stroke-width: 3; }
+.wedge { fill: var(--wedge); }
+.ticks line { stroke: var(--tick); stroke-width: 2.5; stroke-linecap: round; }
+.ticks line.major { stroke: #8f8779; stroke-width: 4; }
+.hub   { fill: var(--text); }
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(12px, 2vh, 22px);
+  width: 100%;
+  max-width: 640px;
+}
+
+.readout {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.5em;
+  margin: 0;
+  font-weight: 700;
+  line-height: 1;
+}
+.part { display: inline-flex; align-items: baseline; gap: 0.12em; }
+.num {
+  font-size: clamp(56px, 9vh, 104px);
+  font-variant-numeric: tabular-nums;
+  min-width: 1.2ch;
+  text-align: right;
+}
+.unit { font-size: clamp(26px, 3.6vh, 40px); color: var(--muted); }
+
+.done {
+  margin: 0;
+  min-height: 1.3em;
+  font-size: clamp(26px, 3.6vh, 38px);
+  font-weight: 700;
+  color: #9a6b4f;
+  letter-spacing: 0.1em;
+}
+.timer:not([data-state="done"]) .done { visibility: hidden; }
+
+.presets, .controls {
+  display: grid;
+  gap: 12px;
+  width: 100%;
+}
+.presets  { grid-template-columns: repeat(4, 1fr); }
+.controls { grid-template-columns: repeat(3, 1fr); }
+
+.preset, .ctrl {
+  font: inherit;
+  font-weight: 700;
+  color: var(--text);
+  border-radius: 999px;
+  min-height: 72px;
+  padding: 6px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  min-width: 0;
+  transition: transform 0.12s ease, background-color 0.2s ease, opacity 0.2s ease;
+}
+.preset:focus-visible, .ctrl:focus-visible {
+  outline: 4px solid var(--active-border);
+  outline-offset: 3px;
+}
+.preset:active, .ctrl:active:not(:disabled) { transform: scale(0.96); }
+
+.preset {
+  font-size: clamp(30px, 4vh, 40px);
+  background: var(--card);
+  border: 3px solid var(--card-border);
+}
+.preset small { font-size: 0.6em; margin-left: 0.1em; }
+.preset[aria-pressed="true"] {
+  background: var(--tab-on, #e9dcc2);
+  border-color: var(--tab-on-border, #b89e72);
+}
+
+.ctrl { font-size: clamp(26px, 3.6vh, 34px); border: 3px solid; }
+.ctrl-start { background: var(--start); border-color: var(--start-border); }
+.ctrl-stop  { background: var(--stop);  border-color: var(--stop-border); }
+.ctrl-reset { background: var(--reset); border-color: var(--reset-border); }
+.ctrl:disabled { opacity: 0.4; cursor: default; }
+
+@media (max-width: 480px) {
+  .presets, .controls { gap: 8px; }
+  .preset { font-size: 26px; padding: 6px 4px; }
+  .ctrl { font-size: 22px; padding: 6px 4px; }
+}
+
+/* 時間になったら、円をふわっと光らせる（1回だけ・ゆっくり） */
+.timer[data-state="done"] .face { animation: glow 2.4s ease-in-out 2; }
+@keyframes glow {
+  0%, 100% { fill: var(--face); }
+  50% { fill: #f6e7c8; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .preset, .ctrl { transition: none; }
+  .preset:active, .ctrl:active:not(:disabled) { transform: none; }
+  .timer[data-state="done"] .face { animation: none; fill: #f6e7c8; }
+}
+
+/* ---------- 横向き：左に円、右に数字とボタン ---------- */
+@media (orientation: landscape) {
+  body { height: 100vh; height: 100dvh; overflow: hidden; }
+  .bar { max-width: none; padding-top: 10px; }
+  .timer {
+    flex-direction: row;
+    min-height: 0;
+    max-width: none;
+    gap: clamp(20px, 4vw, 56px);
+    padding: 4px var(--side) 16px;
+  }
+  .dial-box {
+    width: auto;
+    height: min(100%, 620px);
+    max-width: 50vw;
+  }
+  .panel { max-width: 520px; flex: 0 1 520px; }
+  .num { font-size: clamp(56px, 12vh, 110px); }
+  .presets { grid-template-columns: repeat(2, 1fr); }
+  .preset, .ctrl { min-height: clamp(60px, 10vh, 76px); }
+}

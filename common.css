@@ -1,0 +1,72 @@
+/* メニューと全教材で共通の色・文字・「もくじ」ボタン */
+:root {
+  --bg: #f3efe6;
+  --text: #3d3a35;
+  --muted: #7a746a;
+  --card: #fffdf7;
+  --card-border: #e2dccf;
+  --shadow: 0 2px 0 #d9d2c3;
+  --active: #f6e7c8;
+  --active-border: #c9a96b;
+  --btn: #e6efe9;
+  --btn-border: #a9c2b3;
+  --btn-on: #b9d3c4;
+  --side: 20px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+}
+
+body {
+  font-family: "Hiragino Maru Gothic ProN", "Hiragino Sans", "Hiragino Kaku Gothic ProN",
+               "Yu Gothic", "Meiryo", system-ui, sans-serif;
+  -webkit-text-size-adjust: 100%;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right)
+           env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+[hidden] { display: none !important; }
+
+/* もくじ（メニュー）に もどるボタン */
+.home-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 64px;
+  padding: 6px 22px 6px 16px;
+  border-radius: 999px;
+  background: var(--card);
+  border: 3px solid var(--card-border);
+  color: var(--text);
+  font-size: clamp(20px, 2.6vw, 26px);
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.home-btn svg {
+  width: 1.4em;
+  height: 1.4em;
+  flex: none;
+}
+.home-btn:active { background: var(--active); border-color: var(--active-border); }
+.home-btn:focus-visible {
+  outline: 4px solid var(--active-border);
+  outline-offset: 3px;
+}
+
+/* せまい画面では、もくじボタンを家のマークだけにする */
+@media (max-width: 560px) {
+  .home-btn { padding: 6px 16px; }
+  .home-text { display: none; }
+}

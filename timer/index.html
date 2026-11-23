@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>みえる タイマー</title>
+  <meta name="description" content="のこりの じかんが いろで みえる タイマー">
+  <meta name="theme-color" content="#f3efe6">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="きょうざい">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="format-detection" content="telephone=no">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <link rel="icon" href="../icons/icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="../common.css">
+  <link rel="stylesheet" href="./timer.css">
+</head>
+<body>
+  <header class="bar">
+    <a class="home-btn" href="../" aria-label="もくじに もどる">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/></svg>
+      <span class="home-text">もくじ</span>
+    </a>
+    <h1 class="title">みえる タイマー</h1>
+  </header>
+
+  <main class="timer" id="timer" data-state="idle">
+    <div class="dial-box">
+      <svg class="dial" viewBox="-110 -110 220 220" role="img" aria-labelledby="readout">
+        <circle class="face" r="104"/>
+        <path class="wedge" id="wedge" d=""/>
+        <g class="ticks" id="ticks"></g>
+        <circle class="hub" r="9"/>
+      </svg>
+    </div>
+
+    <div class="panel">
+      <p class="readout" id="readout" aria-live="off">
+        <span class="part"><span class="num" id="min">5</span><span class="unit" id="minUnit">ふん</span></span>
+        <span class="part"><span class="num" id="sec">0</span><span class="unit">びょう</span></span>
+      </p>
+      <p class="done" id="done" role="status"></p>
+
+      <div class="presets" role="group" aria-label="じかんを えらぶ">
+        <button type="button" class="preset" data-min="1">1<small>ぷん</small></button>
+        <button type="button" class="preset" data-min="3">3<small>ぷん</small></button>
+        <button type="button" class="preset" data-min="5">5<small>ふん</small></button>
+        <button type="button" class="preset" data-min="10">10<small>ぷん</small></button>
+      </div>
+
+      <div class="controls">
+        <button type="button" class="ctrl ctrl-start" id="startBtn">スタート</button>
+        <button type="button" class="ctrl ctrl-stop" id="stopBtn" disabled>とめる</button>
+        <button type="button" class="ctrl ctrl-reset" id="resetBtn" disabled>もどす</button>
+      </div>
+    </div>
+  </main>
+
+  <script src="./timer.js"></script>
+  <script src="../pwa.js"></script>
+</body>
+</html>
