@@ -57,6 +57,10 @@
             <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg>
             <span>こえで あそぶ</span>
           </button>
+          <button type="button" class="btn mode-btn" data-mode="me" aria-pressed="false">
+            <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3.2"/></svg>
+            <span>めで あそぶ</span>
+          </button>
         </div>
         <div class="speed" id="speedRow" role="group" aria-label="はやさ">
           <span class="speed-label">はやさ</span>
@@ -69,6 +73,10 @@
             <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg>
             <span>こえテスト</span>
           </button>
+        </div>
+        <div class="koe-row" id="meRow" hidden>
+          <p class="koe-note">いきたい ほうを じっと みると、ひよこが うごくよ。ひよこも たべものも おおきく なるよ</p>
+          <p class="me-sub">iPad の「しせん トラッキング」で あそべます（ゆびで タップしても うごきます）</p>
         </div>
         <button type="button" class="btn btn-go btn-start" id="startBtn">スタート</button>
         <div class="best">
@@ -195,9 +203,9 @@
       <p class="set-warn" id="saveWarn" hidden>この iPad では きろくを ほぞん できません。ページを とじると もとに もどります。</p>
 
       <section class="set-sec" aria-labelledby="h-koe">
-        <h3 class="set-h" id="h-koe">こえで あそぶ</h3>
-        <p class="set-note">こえモードの はじめの はやさです。レベルアップしても、はやく なるのは ゆるやかです。</p>
-        <div class="set-row" role="group" aria-label="こえモードの はじめの はやさ">
+        <h3 class="set-h" id="h-koe">こえで あそぶ・めで あそぶ</h3>
+        <p class="set-note">「こえで あそぶ」と「めで あそぶ」の はじめの はやさです。レベルアップしても、はやく なるのは ゆるやかです。</p>
+        <div class="set-row" role="group" aria-label="こえ・め モードの はじめの はやさ">
           <button type="button" class="btn opt-btn" data-koe-speed="vslow" aria-pressed="true">とても ゆっくり</button>
           <button type="button" class="btn opt-btn" data-koe-speed="slow" aria-pressed="false">ゆっくり</button>
           <button type="button" class="btn opt-btn" data-koe-speed="normal" aria-pressed="false">すこし ゆっくり</button>

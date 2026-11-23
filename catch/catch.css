@@ -719,3 +719,13 @@ body {
 .g-name { white-space: nowrap; }
 .g-pt { margin-left: 4px; white-space: nowrap; color: #b4583f; }
 .guide-avoid .g-name { color: var(--text); }
+
+/* めで あそぶ（しせんモード） */
+.me-sub {
+  margin: 0;
+  font-size: clamp(15px, 1.8vw, 17px);
+  color: var(--muted);
+  text-align: center;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
