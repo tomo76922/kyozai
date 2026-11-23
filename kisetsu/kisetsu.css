@@ -1,0 +1,433 @@
+/* きせつクイズ（色・文字・もくじボタンは ../common.css） */
+:root {
+  --ok: #e3efe2;
+  --ok-border: #8fb58c;
+  --retry: #f7ead6;
+  --retry-border: #d2ad74;
+  --sel: #e9dcc2;
+  --sel-border: #b89e72;
+  --gap: clamp(10px, 1.8vw, 18px);
+}
+
+/* 画面いっぱいに使う（入りきらない せまい画面では スクロールできる） */
+body {
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ふりがな */
+ruby { ruby-position: over; }
+rt {
+  font-size: 0.45em;
+  font-weight: 700;
+  color: var(--muted);
+  letter-spacing: 0;
+}
+
+/* ---------- 上の帯（ほかの教材と同じ形） ---------- */
+.header {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  align-items: center;
+  gap: 14px 12px;
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 20px var(--side) 8px;
+}
+
+.title {
+  margin: 0;
+  font-size: clamp(28px, 4.5vw, 44px);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 1.5;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font: inherit;
+  font-size: clamp(22px, 3vw, 30px);
+  font-weight: 700;
+  color: var(--text);
+  background: var(--btn);
+  border: 3px solid var(--btn-border);
+  border-radius: 999px;
+  min-height: 64px;
+  padding: 8px 24px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btn[aria-pressed="true"] { background: var(--btn-on); }
+.btn:active { background: var(--btn-on); }
+.btn:focus-visible, .card:focus-visible, .choice:focus-visible {
+  outline: 4px solid var(--active-border);
+  outline-offset: 3px;
+}
+.btn svg { width: 1.1em; height: 1.1em; flex: none; }
+
+/* もどる と 見出し */
+.bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 6px var(--side) 4px;
+}
+.back-btn {
+  background: var(--card);
+  border-color: var(--card-border);
+  padding: 6px 22px 6px 14px;
+}
+.back-btn:active { background: var(--active); border-color: var(--active-border); }
+.heading {
+  margin: 0;
+  font-size: clamp(26px, 3.6vw, 36px);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1.6;
+}
+.crumb {
+  margin: 0 0 0 auto;
+  padding: 4px 18px;
+  border-radius: 999px;
+  background: var(--card);
+  border: 2px solid var(--card-border);
+  font-size: clamp(18px, 2.4vw, 24px);
+  font-weight: 700;
+  color: var(--muted);
+  line-height: 1.7;
+  white-space: nowrap;
+}
+.crumb:empty { display: none; }
+
+.notice {
+  max-width: 1100px;
+  margin: 8px auto 0;
+  padding: 12px var(--side);
+  font-size: 20px;
+  color: var(--muted);
+}
+
+/* ---------- 中身 ---------- */
+main {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  min-height: 0;
+}
+
+.screen {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+  min-height: 0;
+  padding: 10px var(--side) 24px;
+}
+
+/* 選ぶ カード（学年・季節・ジャンル） */
+.cards {
+  display: grid;
+  gap: var(--gap);
+}
+.cards-grade { grid-template-columns: repeat(4, 1fr); }
+.cards-season { grid-template-columns: repeat(2, 1fr); }
+.cards-genre { grid-template-columns: repeat(3, 1fr); }
+
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 0;
+  min-height: 120px;
+  padding: 14px 10px;
+  font: inherit;
+  font-size: clamp(30px, 4.4vw, 46px);
+  font-weight: 700;
+  line-height: 1.6;
+  letter-spacing: 0.04em;
+  color: var(--text);
+  background: var(--card);
+  border: 3px solid var(--card-border);
+  border-radius: 26px;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  transition: transform 0.12s ease, background-color 0.2s ease, border-color 0.2s ease;
+}
+.card:active { transform: scale(0.97); background: var(--active); }
+.card[aria-pressed="true"] { background: var(--sel); border-color: var(--sel-border); }
+
+.card-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.9em;
+  height: 1.9em;
+  border-radius: 28%;
+  background: color-mix(in srgb, var(--accent, var(--card-border)) 40%, var(--card));
+  border: 3px solid var(--accent, var(--card-border));
+  font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+  font-size: 1.25em;
+  line-height: 1;
+}
+.cards-grade .card { font-size: clamp(26px, 3.6vw, 40px); white-space: nowrap; }
+.cards-season .card { min-height: 200px; }
+.cards-season .card-icon { font-size: 1.5em; }
+.cards-genre .card { min-height: 180px; }
+
+.card:disabled {
+  cursor: default;
+  color: var(--muted);
+  background: #ece7dc;
+  box-shadow: none;
+  transform: none;
+}
+.card:disabled .card-icon { filter: grayscale(1); opacity: 0.45; }
+.card-note {
+  font-size: 0.5em;
+  font-weight: 700;
+  color: var(--muted);
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 2px dashed var(--card-border);
+  line-height: 1.8;
+}
+
+/* ---------- クイズ ---------- */
+.quiz { gap: var(--gap); }
+
+.stage {
+  flex: 1 1 0;
+  min-height: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(10px, 2vw, 24px);
+  background: var(--card);
+  border: 3px solid var(--card-border);
+  border-radius: 28px;
+  box-shadow: var(--shadow);
+}
+.pic {
+  position: relative;
+  flex: 1 1 auto;
+  align-self: stretch;
+  min-width: 0;
+}
+/* 絵は 枠の大きさに合わせる（絵の大きさで 枠が のびないように） */
+.pic svg {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.pic .emoji {
+  font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+}
+.pic.pop > * { animation: pop 0.35s ease-out; }
+
+@keyframes pop {
+  0%   { transform: scale(0.6); opacity: 0; }
+  70%  { transform: scale(1.04); opacity: 1; }
+  100% { transform: scale(1); }
+}
+
+.side {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+}
+
+.q-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+.question {
+  margin: 0;
+  font-size: clamp(30px, 4.4vw, 44px);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1.6;
+  text-align: center;
+}
+.listen-btn { padding: 8px 18px; }
+.listen-btn svg { width: 1.3em; height: 1.3em; }
+
+.choices {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--gap);
+}
+.choice {
+  min-width: 0;
+  min-height: 84px;
+  padding: 6px 14px;
+  font: inherit;
+  font-size: clamp(28px, 4vw, 40px);
+  font-weight: 700;
+  line-height: 1.6;
+  letter-spacing: 0.04em;
+  color: var(--text);
+  background: var(--card);
+  border: 3px solid var(--card-border);
+  border-radius: 22px;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  transition: transform 0.12s ease, background-color 0.2s ease, border-color 0.2s ease;
+}
+.choice:active { transform: scale(0.97); background: var(--active); }
+.choice.is-ok { background: var(--ok); border-color: var(--ok-border); }
+.choice.is-ng { animation: shake 0.4s ease; color: var(--muted); }
+.choices.is-done .choice:not(.is-ok) { opacity: 0.45; }
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-6px); }
+  75% { transform: translateX(6px); }
+}
+
+.q-foot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  min-height: 76px;
+}
+.feedback {
+  margin: 0;
+  min-height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 28px;
+  border-radius: 999px;
+  border: 3px solid transparent;
+  font-size: clamp(28px, 4vw, 40px);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1.6;
+}
+.feedback:empty { display: none; }
+.feedback.is-ok { background: var(--ok); border-color: var(--ok-border); }
+.feedback.is-retry { background: var(--retry); border-color: var(--retry-border); }
+.next-btn { padding: 8px 40px; }
+
+.dots {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+.dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--card);
+  border: 3px solid var(--card-border);
+}
+.dot.is-now { border-color: var(--active-border); background: var(--active); }
+.dot.is-ok { border-color: var(--ok-border); background: #a9cfa5; }
+.dot.is-miss { border-color: #cfc8b8; background: #e2dccf; }
+.dot.is-now { transform: scale(1.25); }
+
+/* ---------- けっか ---------- */
+.result {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  padding: 28px 16px;
+  background: var(--card);
+  border: 3px solid var(--card-border);
+  border-radius: 28px;
+  box-shadow: var(--shadow);
+  text-align: center;
+}
+.stars {
+  display: flex;
+  gap: 8px;
+}
+.stars svg { width: clamp(48px, 9vw, 88px); height: clamp(48px, 9vw, 88px); }
+.stars .is-pop { animation: pop 0.35s ease-out both; }
+.score {
+  margin: 0;
+  font-size: clamp(32px, 5vw, 52px);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1.6;
+}
+.result-btns {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 16px;
+}
+.big-btn { min-height: 76px; padding: 8px 36px; line-height: 1.5; }
+
+@media (prefers-reduced-motion: reduce) {
+  .card, .choice { transition: background-color 0.2s ease, border-color 0.2s ease; }
+  .card:active, .choice:active { transform: none; }
+  .pic.pop > *, .choice.is-ng, .stars .is-pop { animation: none; }
+}
+
+/* せまい画面 */
+@media (max-width: 560px) {
+  .header { grid-template-columns: auto 1fr auto; }
+  .title { display: none; }
+  .btn { padding: 8px 16px; font-size: 20px; }
+  .cards-grade { grid-template-columns: repeat(2, 1fr); }
+  .cards-genre { grid-template-columns: repeat(2, 1fr); }
+  .crumb { margin-left: 0; }
+}
+
+/* ---------- 横向き：上の帯を1段に、クイズは 絵と答えを 横に並べる ---------- */
+@media (orientation: landscape) and (min-height: 500px) {
+  .header {
+    max-width: none;
+    padding: 10px var(--side);
+  }
+  .bar { max-width: none; padding-top: 2px; }
+  main { max-width: none; }
+  .title { font-size: 30px; letter-spacing: 0.04em; }
+  .btn { min-height: 60px; font-size: 24px; padding: 6px 22px; }
+  .header .home-btn { min-height: 60px; font-size: 22px; padding: 6px 18px 6px 14px; }
+
+  .cards-season { grid-template-columns: repeat(4, 1fr); }
+  .cards-season .card { min-height: 300px; }
+  .cards-genre { grid-template-columns: repeat(5, 1fr); }
+  .cards-genre .card { min-height: 280px; }
+
+  .quiz {
+    flex-direction: row;
+    padding-bottom: 16px;
+  }
+  .quiz .stage { min-height: 0; }
+  .quiz .side {
+    width: min(44%, 460px);
+    justify-content: center;
+  }
+  .choice { min-height: 80px; }
+}
