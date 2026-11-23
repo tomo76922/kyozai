@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>おかね</title>
+  <meta name="description" content="おかねを かぞえたり、かいものや おつりを れんしゅうしたりする きょうざい">
+  <meta name="theme-color" content="#f3efe6">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="きょうざい">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="format-detection" content="telephone=no">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <link rel="icon" href="../icons/icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="../common.css">
+  <link rel="stylesheet" href="./okane.css">
+</head>
+<body>
+  <header class="header">
+    <a class="home-btn" href="../" aria-label="もくじに もどる">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/></svg>
+      <span class="home-text">もくじ</span>
+    </a>
+    <h1 class="title">おかね</h1>
+    <button type="button" class="btn" id="speedBtn" aria-pressed="false">ゆっくり</button>
+    <!-- 先生用：ながおし したときだけ ひらく -->
+    <button type="button" class="gear" id="gearBtn" aria-label="せってい（ながおしで ひらく）">
+      <span class="gear-text">せってい</span>
+    </button>
+    <p class="gear-hint" id="gearHint" role="status" hidden>ながく おして ください</p>
+  </header>
+
+  <p class="notice" id="notice" hidden></p>
+
+  <main>
+    <div class="toolbar">
+      <div class="levels" id="levels" role="group" aria-label="レベル"></div>
+      <div class="toolbar-end">
+        <div class="stars" id="stars" role="img" aria-label="ほし 0こ"></div>
+        <button type="button" class="btn next-btn" id="nextBtn">つぎ</button>
+      </div>
+    </div>
+
+    <div class="play" id="play">
+      <div class="stage">
+        <div class="ask-row">
+          <p class="ask" id="ask">いくら？</p>
+          <p class="count-chip" id="countChip" hidden>
+            <span id="countText"></span>
+            <button type="button" class="count-reset" id="countReset">かぞえなおす</button>
+          </p>
+        </div>
+        <div class="scene" id="scene"></div>
+        <p class="stage-text" id="result" aria-live="polite"></p>
+      </div>
+      <div class="side" id="side"></div>
+    </div>
+  </main>
+
+  <!-- レベルアップ -->
+  <div class="levelup" id="levelup" hidden>
+    <div class="lu-card" role="dialog" aria-modal="true" aria-labelledby="luTitle">
+      <div class="lu-stars" id="luStars" aria-hidden="true"></div>
+      <p class="lu-title" id="luTitle">レベルアップ！</p>
+      <p class="lu-text" id="luText"></p>
+      <div class="lu-btns">
+        <button type="button" class="btn lu-go" id="luGo"></button>
+        <button type="button" class="btn lu-stay" id="luStay">このまま</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 先生用の せってい -->
+  <div class="settings" id="settings" role="dialog" aria-modal="true" aria-labelledby="setTitle" hidden>
+    <div class="set-inner">
+      <div class="set-head">
+        <h2 class="set-title" id="setTitle">せってい（せんせい よう）</h2>
+        <button type="button" class="btn" id="closeBtn">とじる</button>
+      </div>
+
+      <p class="set-warn" id="saveWarn" hidden>この iPad では きろくを ほぞん できません。ページを とじると もとに もどります。</p>
+
+      <section class="set-sec" aria-labelledby="h-level">
+        <h3 class="set-h" id="h-level">レベルを えらぶ</h3>
+        <p class="set-note">ここでは、まだ ひらいていない レベルも えらべます。</p>
+        <div class="set-levels" id="setLevels"></div>
+      </section>
+
+      <section class="set-sec" aria-labelledby="h-rec">
+        <h3 class="set-h" id="h-rec">きろく</h3>
+        <p class="set-note" id="recNote"></p>
+        <div class="set-row">
+          <button type="button" class="btn btn-reset" id="resetBtn">きろくを リセット</button>
+          <span class="set-status" id="resetStatus" role="status"></span>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script src="./okane.js"></script>
+  <script src="../pwa.js"></script>
+</body>
+</html>

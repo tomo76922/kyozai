@@ -1,7 +1,7 @@
 // きょうざい Service Worker（メニューと全教材で1つ）
 // ファイルを更新したら CACHE_VERSION の数字を上げてください。
 // 教材をふやしたら、そのファイルを ASSETS に足してください。
-var CACHE_VERSION = 'v11';
+var CACHE_VERSION = 'v12';
 var CACHE_PREFIX = 'hiragana-cards-';   // 以前の版の保存を消せるように、名前はそのまま
 var CACHE_NAME = CACHE_PREFIX + CACHE_VERSION;
 
@@ -45,7 +45,12 @@ var ASSETS = [
   './yotei/',
   './yotei/index.html',
   './yotei/yotei.css',
-  './yotei/yotei.js'
+  './yotei/yotei.js',
+  // おかね
+  './okane/',
+  './okane/index.html',
+  './okane/okane.css',
+  './okane/okane.js'
 ];
 
 // 新しい版を入れるときは、ブラウザのHTTPキャッシュを通さずに取り直す
