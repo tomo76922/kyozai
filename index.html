@@ -20,6 +20,11 @@
 <body>
   <header class="menu-header">
     <h1 class="menu-title">きょうざい</h1>
+    <!-- 先生用：ながおし したときだけ ひらく（ゲームの パスワードを かえる） -->
+    <button type="button" class="gear" id="gearBtn" aria-label="せってい（ながおしで ひらく）">
+      <span class="gear-text">せってい</span>
+    </button>
+    <p class="gear-hint" id="gearHint" role="status" hidden>ながく おして ください</p>
   </header>
 
   <main>
@@ -151,7 +156,7 @@
         </span>
         <span class="menu-label">なぞりがき</span>
       </a>
-      <a class="menu-item" href="./game/" style="--accent: #e3c06a">
+      <a class="menu-item" href="./game/" data-lock="game" data-lock-name="ぴよぴよ ラン" style="--accent: #e3c06a">
         <span class="menu-icon" aria-hidden="true">
           <svg viewBox="0 0 100 100">
             <rect x="0" y="74" width="100" height="26" fill="#e6d6b8"/>
@@ -171,8 +176,12 @@
           </svg>
         </span>
         <span class="menu-label">ぴよぴよ ラン</span>
+        <span class="menu-lock">
+          <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+          パスワード
+        </span>
       </a>
-      <a class="menu-item" href="./catch/" style="--accent: #e0a39a">
+      <a class="menu-item" href="./catch/" data-lock="catch" data-lock-name="たべもの キャッチ" style="--accent: #e0a39a">
         <span class="menu-icon" aria-hidden="true">
           <svg viewBox="0 0 100 100">
             <rect x="0" y="84" width="100" height="16" fill="#e6d6b8"/>
@@ -192,10 +201,16 @@
           </svg>
         </span>
         <span class="menu-label">たべもの キャッチ</span>
+        <span class="menu-lock">
+          <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+          パスワード
+        </span>
       </a>
     </nav>
   </main>
 
+  <script src="./shared/game-lock.js"></script>
+  <script src="./menu.js"></script>
   <script src="./pwa.js"></script>
 </body>
 </html>

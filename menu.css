@@ -75,3 +75,87 @@
   .menu-item { transition: background-color 0.2s ease, border-color 0.2s ease; }
   .menu-item:active { transform: none; }
 }
+
+/* せってい（先生用：ながおしで ひらく。小さく・目立たない） */
+.menu-header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.gear {
+  position: relative;
+  overflow: hidden;
+  flex: none;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 4px 12px;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--muted);
+  background: rgba(255, 253, 247, 0.7);
+  border: 2px solid var(--card-border);
+  border-radius: 12px;
+  cursor: pointer;
+  -webkit-touch-callout: none;
+}
+.gear:focus-visible {
+  outline: 4px solid var(--active-border);
+  outline-offset: 3px;
+}
+.gear-text { position: relative; z-index: 1; }
+.gear::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--active);
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+.gear.is-pressing::before {
+  transform: scaleX(1);
+  transition: transform var(--hold, 1s) linear;
+}
+.gear-hint {
+  position: absolute;
+  right: var(--side);
+  top: calc(100% - 4px);
+  z-index: 3;
+  margin: 0;
+  padding: 6px 12px;
+  font-size: 15px;
+  color: var(--muted);
+  background: var(--card);
+  border: 2px solid var(--card-border);
+  border-radius: 10px;
+}
+
+/* パスワードが いる ゲーム */
+.menu-lock {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: -10px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--muted);
+}
+.menu-lock svg { width: 18px; height: 18px; }
+
+/* パスワードを かえた ときの おしらせ */
+.menu-toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(24px + env(safe-area-inset-bottom));
+  z-index: 50;
+  margin: 0;
+  padding: 10px 24px;
+  font-size: 20px;
+  font-weight: 700;
+  background: var(--card);
+  border: 3px solid var(--btn-border);
+  border-radius: 999px;
+  transform: translateX(-50%);
+}
