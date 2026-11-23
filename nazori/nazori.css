@@ -1,0 +1,417 @@
+/* なぞりがき（色・文字・もくじボタンは ../common.css） */
+:root {
+  --tab: #fffdf7;
+  --tab-on: #e9dcc2;
+  --tab-on-border: #b89e72;
+  --ok: #e3efe2;
+  --ok-border: #8fb58c;
+  --retry: #f7ead6;
+  --retry-border: #d2ad74;
+  --gap: clamp(10px, 1.8vw, 18px);
+
+  /* なぞる ところの 色 */
+  --guide: #e6dfd1;      /* うすい おてほん */
+  --guide-now: #f3d9a6;  /* いま なぞる 画 */
+  --guide-done: #cfe0d4; /* なぞれた 画 */
+  --ink: #3d3a35;        /* じぶんで かいた 線 */
+  --dot: #e07a6a;        /* かきはじめの 点 */
+  --demo: #5b8db8;       /* おてほんの アニメーション */
+  --hana: #e0524a;       /* はなまる */
+}
+
+body {
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---------- 上の帯（ほかの教材と同じ形） ---------- */
+.header {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-areas:
+    "home title thick"
+    "tabs tabs  tabs";
+  align-items: center;
+  gap: 14px 16px;
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 20px var(--side) 8px;
+}
+.header .home-btn { grid-area: home; }
+.title {
+  grid-area: title;
+  margin: 0;
+  font-size: clamp(28px, 4.5vw, 44px);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+.tabs { grid-area: tabs; display: flex; gap: 12px; }
+.thick { grid-area: thick; }
+
+.btn, .tab, .seg-btn {
+  font: inherit;
+  font-size: clamp(22px, 3vw, 30px);
+  font-weight: 700;
+  color: var(--text);
+  border-radius: 999px;
+  min-height: 64px;
+  padding: 8px 28px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btn:focus-visible, .tab:focus-visible, .seg-btn:focus-visible,
+.char:focus-visible, .char-label:focus-visible {
+  outline: 4px solid var(--active-border);
+  outline-offset: 3px;
+}
+.btn { background: var(--btn); border: 3px solid var(--btn-border); }
+.btn:active { background: var(--btn-on); }
+.btn.is-on { background: var(--btn-on); }
+
+.tab, .seg-btn {
+  background: var(--tab);
+  border: 3px solid var(--card-border);
+  color: var(--muted);
+}
+.tab { flex: 1 1 0; }
+.tab[aria-selected="true"], .seg-btn[aria-pressed="true"] {
+  background: var(--tab-on);
+  border-color: var(--tab-on-border);
+  color: var(--text);
+}
+.seg { display: flex; gap: 8px; }
+.seg-btn { padding: 8px 20px; }
+
+/* なぞる がめんの あいだは、上の 切り替えを うすくする（おすと いちらんに もどる） */
+body.is-trace .tab:not([aria-selected="true"]) { opacity: 0.7; }
+
+.notice {
+  max-width: 1100px;
+  margin: 8px auto 0;
+  padding: 12px var(--side);
+  font-size: 20px;
+  color: var(--muted);
+}
+
+/* ---------- 中身 ---------- */
+main {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  min-height: 0;
+}
+
+.section {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+  min-height: 0;
+  padding: 8px var(--side) 12px;
+}
+
+/* ---------- いちらん ---------- */
+.list-card {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  padding: clamp(12px, 2vw, 22px);
+  background: var(--card);
+  border: 3px solid var(--card-border);
+  border-radius: 28px;
+  box-shadow: var(--shadow);
+}
+
+/* たて向き：1行に あいうえお（5こ）。行は 上から あ・か・さ… */
+.chars {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: var(--gap);
+}
+.char {
+  grid-row: calc(var(--g) + 1);
+  grid-column: calc(var(--d) + 1);
+  position: relative;
+  min-width: 0;
+  height: clamp(72px, 9vh, 110px);
+  padding: 0;
+  font: inherit;
+  font-size: clamp(40px, 6vw, 60px);
+  font-weight: 700;
+  line-height: 1;
+  color: var(--text);
+  background: #fbf8f0;
+  border: 3px solid var(--card-border);
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  transition: transform 0.12s ease, background-color 0.2s ease;
+}
+.char:active { transform: scale(0.95); background: var(--active); }
+
+/* なぞれた もじには 小さな はなまる */
+.char.is-done::after {
+  content: "";
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 3px solid var(--hana);
+  opacity: 0.8;
+}
+
+/* すうじ：5こずつ 2だん */
+.chars.is-num .char { height: clamp(110px, 16vh, 170px); font-size: clamp(56px, 8vw, 84px); }
+
+/* ---------- なぞる がめん ---------- */
+.trace { flex-direction: column; align-items: center; }
+
+.board-wrap {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  container-type: size;
+}
+.board {
+  width: min(100cqw, 100cqh);
+  height: min(100cqw, 100cqh);
+  display: block;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.paper {
+  fill: var(--card);
+  stroke: var(--card-border);
+  stroke-width: 1;
+}
+.cross {
+  fill: none;
+  stroke: #e6dfd1;
+  stroke-width: 0.6;
+  stroke-dasharray: 2 2;
+}
+
+.guide path {
+  fill: none;
+  stroke: var(--guide);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: stroke 0.3s ease;
+}
+.guide path.is-now { stroke: var(--guide-now); }
+.guide path.is-done { stroke: var(--guide-done); }
+
+.mark { transition: opacity 0.3s ease; }
+.mark text {
+  font-size: 7px;
+  font-weight: 700;
+  fill: var(--muted);
+  font-family: inherit;
+}
+.mark circle { fill: #b9b1a2; }
+.mark.is-now text { fill: var(--dot); font-size: 9px; }
+.mark.is-now circle { fill: var(--dot); animation: dot 1.2s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+.mark.is-done { opacity: 0; }
+
+@keyframes dot {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.35); }
+}
+
+.ink path {
+  fill: none;
+  stroke: var(--ink);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.ink path.is-ng {
+  stroke: #c9a96b;
+  opacity: 0;
+  transition: opacity 0.6s ease 0.25s;
+}
+
+.demo path {
+  fill: none;
+  stroke: var(--demo);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.demo.is-fade { opacity: 0; transition: opacity 0.6s ease; }
+
+.hana path {
+  fill: none;
+  stroke: var(--hana);
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.85;
+}
+
+/* 右（たて向きでは 下）の ボタンと ことば */
+.panel {
+  flex: none;
+  width: 100%;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-areas:
+    "label msg"
+    "btns  btns";
+  align-items: center;
+  gap: var(--gap);
+}
+.char-label {
+  grid-area: label;
+  width: 92px;
+  height: 92px;
+  padding: 0;
+  font: inherit;
+  font-size: 60px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--text);
+  background: var(--card);
+  border: 3px solid var(--card-border);
+  border-radius: 22px;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+}
+.char-label:active { background: var(--active); }
+
+.stage-text {
+  grid-area: msg;
+  margin: 0;
+  min-height: 92px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 24px;
+  border-radius: 28px;
+  border: 3px solid transparent;
+  font-size: clamp(26px, 3.6vw, 36px);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  text-align: center;
+}
+.stage-text small {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.62em;
+  letter-spacing: 0.02em;
+}
+.stage-text.is-ok {
+  color: var(--text);
+  background: var(--ok);
+  border-color: var(--ok-border);
+}
+.stage-text.is-retry {
+  color: var(--text);
+  background: var(--retry);
+  border-color: var(--retry-border);
+}
+
+.panel-btns {
+  grid-area: btns;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--gap);
+}
+.panel-btns .btn { padding: 8px 12px; }
+
+/* ---------- 出典 ---------- */
+.credit {
+  flex: none;
+  max-width: 1100px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 2px var(--side) 10px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--muted);
+  text-align: center;
+}
+.credit a { color: var(--muted); }
+
+@media (prefers-reduced-motion: reduce) {
+  .char { transition: background-color 0.2s ease; }
+  .char:active { transform: none; }
+  .mark.is-now circle { animation: none; }
+}
+
+/* せまい画面 */
+@media (max-width: 560px) {
+  .btn, .tab, .seg-btn { padding: 8px 14px; font-size: 20px; }
+  .title { font-size: 24px; letter-spacing: 0.02em; }
+  .char-label { width: 72px; height: 72px; font-size: 46px; }
+  .panel-btns { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ---------- 横向き ---------- */
+@media (orientation: landscape) and (min-height: 500px) {
+  body { overflow: hidden; }
+
+  .header {
+    grid-template-columns: auto auto 1fr auto;
+    grid-template-areas: "home title tabs thick";
+    max-width: none;
+    padding: 10px var(--side);
+  }
+  .title { font-size: 26px; letter-spacing: 0.04em; }
+  .tabs { justify-content: center; }
+  .tab { flex: 0 1 auto; }
+  .btn, .tab, .seg-btn { min-height: 60px; font-size: 24px; padding: 6px 22px; }
+  .seg-btn { padding: 6px 16px; }
+  .header .home-btn { min-height: 60px; font-size: 22px; padding: 6px 18px 6px 14px; }
+
+  main { max-width: none; }
+
+  /* 五十音表と同じ ならび：右から あ行・か行…、上から あいうえお */
+  .list-card { overflow: hidden; display: flex; }
+  .chars {
+    flex: 1 1 auto;
+    grid-template-columns: repeat(var(--cols), 1fr);
+    grid-template-rows: repeat(5, 1fr);
+  }
+  .char {
+    grid-column: calc(var(--cols) - var(--g));
+    grid-row: calc(var(--d) + 1);
+    height: auto;
+    min-height: 0;
+    font-size: clamp(32px, 6.4vh, 56px);
+  }
+  .chars.is-num { grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(2, 1fr); }
+  .chars.is-num .char {
+    grid-row: calc(var(--g) + 1);
+    grid-column: calc(var(--d) + 1);
+    height: auto;
+    font-size: clamp(64px, 14vh, 120px);
+  }
+
+  /* なぞる がめん：左に 大きな マス、右に ボタン */
+  .trace { flex-direction: row; align-items: stretch; }
+  .board-wrap { flex: 1 1 auto; width: auto; }
+  .panel {
+    width: clamp(260px, 30vw, 360px);
+    grid-template-columns: 1fr;
+    grid-template-areas: "label" "msg" "btns";
+    align-content: center;
+    justify-items: center;
+  }
+  .char-label { width: 110px; height: 110px; font-size: 76px; }
+  .stage-text { width: 100%; min-height: 120px; }
+  .panel-btns { width: 100%; grid-template-columns: 1fr 1fr; }
+}

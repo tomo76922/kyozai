@@ -1,7 +1,7 @@
 // きょうざい Service Worker（メニューと全教材で1つ）
 // ファイルを更新したら CACHE_VERSION の数字を上げてください。
 // 教材をふやしたら、そのファイルを ASSETS に足してください。
-var CACHE_VERSION = 'v17';
+var CACHE_VERSION = 'v18';
 var CACHE_PREFIX = 'hiragana-cards-';   // 以前の版の保存を消せるように、名前はそのまま
 var CACHE_NAME = CACHE_PREFIX + CACHE_VERSION;
 
@@ -58,6 +58,12 @@ var ASSETS = [
   './kisetsu/kanji.js',
   './kisetsu/data.js',
   './kisetsu/kisetsu.js',
+  // なぞりがき
+  './nazori/',
+  './nazori/index.html',
+  './nazori/nazori.css',
+  './nazori/strokes.js',
+  './nazori/nazori.js',
   // ぴよぴよ ラン
   './game/',
   './game/index.html',
