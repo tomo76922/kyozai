@@ -66,6 +66,13 @@
             <span>めで あそぶ（カメラ）</span>
           </button>
         </div>
+        <div class="speed time-row" id="timeRow" role="group" aria-label="せいげん じかん">
+          <span class="speed-label">じかん</span>
+          <button type="button" class="btn speed-btn" data-time="60" aria-pressed="true">60びょう</button>
+          <button type="button" class="btn speed-btn" data-time="90" aria-pressed="false">90びょう</button>
+          <button type="button" class="btn speed-btn" data-time="120" aria-pressed="false">120びょう</button>
+          <button type="button" class="btn speed-btn" data-time="0" aria-pressed="false">じかん なし</button>
+        </div>
         <div class="speed" id="speedRow" role="group" aria-label="はやさ">
           <span class="speed-label">はやさ</span>
           <button type="button" class="btn speed-btn" data-speed="slow" aria-pressed="false">ゆっくり</button>
@@ -93,7 +100,7 @@
         <div class="name-chip" id="nameChip"></div>
         <button type="button" class="btn btn-go btn-start" id="startBtn">スタート</button>
         <div class="best">
-          <h2 class="panel-title">ハイスコア</h2>
+          <h2 class="panel-title">ランキング</h2>
           <ol class="best-list" id="bestList"></ol>
         </div>
       </section>
@@ -107,11 +114,17 @@
         <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/></svg>
         <span class="home-text">もくじ</span>
       </a>
-      <div class="hearts" id="hearts" role="img" aria-label="たいりょく 5"></div>
+      <div class="hearts" id="hearts" role="img" aria-label="たいりょく 3"></div>
+      <p class="timer" id="timer" hidden aria-live="off">
+        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9.5 2.5h5"/></svg>
+        <span id="timeNum">60</span><small>びょう</small>
+      </p>
       <p class="score" aria-live="off"><span id="scoreNum">0</span><small>てん</small></p>
       <button type="button" class="btn sound-btn" aria-pressed="true"></button>
     </div>
     <p class="toast" id="toast" aria-live="polite"></p>
+    <!-- レベルが あがった ときに まんなかに 大きく -->
+    <p class="level-big" id="levelBig" aria-live="polite"></p>
 
     <p class="hint" id="hint" hidden>ゆびで みぎ ひだりに なぞってね</p>
 
@@ -153,8 +166,10 @@
   <div class="overlay" id="over" hidden>
     <div class="card over-card" role="dialog" aria-modal="true" aria-labelledby="overTitle">
       <p class="card-title" id="overTitle">おしまい</p>
+      <p class="over-why" id="overWhy"></p>
       <p class="new-rec" id="newRec" hidden>しんきろく！</p>
       <p class="over-score"><b id="overScore">0</b>てん</p>
+      <ul class="ate-list" id="ateList" aria-label="とった たべもの"></ul>
       <p class="koe-again" id="koeAgain" hidden>こえを だすと、もういちど あそべるよ</p>
       <ol class="best-list best-small" id="overBest"></ol>
       <div class="card-btns">
@@ -270,11 +285,11 @@
       </section>
 
       <section class="set-sec" aria-labelledby="h-rec">
-        <h3 class="set-h" id="h-rec">ハイスコア</h3>
+        <h3 class="set-h" id="h-rec">ランキング</h3>
         <p class="set-note" id="recNote"></p>
         <ol class="set-list" id="setList"></ol>
         <div class="set-row">
-          <button type="button" class="btn btn-reset" id="resetBtn">ハイスコアを けす</button>
+          <button type="button" class="btn btn-reset" id="resetBtn">ランキングを けす</button>
           <span class="set-status" id="resetStatus" role="status"></span>
         </div>
       </section>

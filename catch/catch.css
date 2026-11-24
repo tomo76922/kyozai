@@ -769,3 +769,94 @@ body {
 }
 .send-btn svg { width: 1.4em; height: 1.4em; flex: none; }
 .opt-btn small { font-size: 0.7em; margin-left: 4px; color: var(--muted); }
+
+/* ---------- せいげん じかん ---------- */
+.time-row { flex-wrap: wrap; justify-content: center; row-gap: 8px; }
+.time-row .speed-btn { padding: 6px 16px; }
+
+/* のこり じかん（画面の 上に 大きく。のこり 10びょうで いろが かわる） */
+.timer {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  flex: none;
+  margin: 0;
+  padding: 2px 18px 4px 12px;
+  font-size: clamp(34px, 4.6vw, 46px);
+  font-weight: 700;
+  line-height: 1.1;
+  background: rgba(255, 253, 247, 0.9);
+  border: 3px solid var(--card-border);
+  border-radius: 999px;
+  font-variant-numeric: tabular-nums;
+}
+.timer svg { width: 0.7em; height: 0.7em; align-self: center; flex: none; }
+.timer small { font-size: 0.45em; }
+.timer span { display: inline-block; min-width: 1.3em; text-align: right; }
+.timer.is-low { color: #fffdf7; background: #c8665a; border-color: #a9493e; }
+.timer.is-low span { animation: tick 1s ease-in-out infinite; }
+
+/* レベルが あがった とき：まんなかに 大きく */
+.level-big {
+  position: absolute;
+  left: 50%;
+  top: 40%;
+  margin: 0;
+  padding: 10px 44px;
+  font-size: clamp(56px, 10vw, 110px);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--text);
+  background: rgba(255, 253, 247, 0.94);
+  border: 5px solid #e0a92a;
+  border-radius: 999px;
+  box-shadow: 0 8px 0 rgba(61, 58, 53, 0.18);
+  white-space: nowrap;
+  transform: translate(-50%, -50%) scale(0.6);
+  opacity: 0;
+  pointer-events: none;
+}
+.level-big.is-show { animation: level-in 1.8s ease forwards; }
+
+/* おしまい：わけ と とった たべもの */
+.over-why { margin: -6px 0 0; font-size: clamp(19px, 2.4vw, 23px); font-weight: 700; color: var(--muted); }
+.ate-list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.ate-list li {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 12px 2px 4px;
+  font-size: clamp(17px, 2vw, 20px);
+  font-weight: 700;
+  background: #f6f2e9;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.ate-list img { width: 40px; height: 40px; }
+.ate-list b { font-size: 1.3em; margin-left: 4px; }
+.ate-list li.is-zero { color: #b9b1a2; }
+.ate-list li.is-zero img { opacity: 0.45; }
+
+@keyframes level-in {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.6); }
+  15% { opacity: 1; transform: translate(-50%, -50%) scale(1.08); }
+  25% { transform: translate(-50%, -50%) scale(1); }
+  80% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
+}
+@keyframes tick {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .level-big.is-show { animation: none; opacity: 1; transform: translate(-50%, -50%); }
+  .timer.is-low span { animation: none; }
+}
