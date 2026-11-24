@@ -1,7 +1,7 @@
 // きょうざい Service Worker（メニューと全教材で1つ）
 // ファイルを更新したら CACHE_VERSION の数字を上げてください。
 // 教材をふやしたら、そのファイルを ASSETS に足してください。
-var CACHE_VERSION = 'v23';
+var CACHE_VERSION = 'v24';
 var CACHE_PREFIX = 'hiragana-cards-';   // 以前の版の保存を消せるように、名前はそのまま
 var CACHE_NAME = CACHE_PREFIX + CACHE_VERSION;
 
@@ -20,6 +20,7 @@ var ASSETS = [
   // 共通の部品
   './shared/koe-switch.js',
   './shared/game-lock.js',
+  './shared/shisen.js',
   // ひらがなカード
   './hiragana/',
   './hiragana/index.html',
@@ -85,6 +86,39 @@ var ASSETS = [
   './catch/catch.js'
 ];
 
+// しせん（カメラで 目の 向きを よむ）用の MediaPipe（ぜんぶで 約25MB）。
+// 大きいので、教材の 版を 上げる たびに 取り直さないよう、べつの 保存場所に 入れる。
+// 「めで あそぶ（カメラ）」を はじめて つかった ときに まとめて 保存し、そのあとは オフラインでも 動く。
+// MediaPipe の ファイルを 入れかえた ときだけ、SHISEN_CACHE の 名前を 変えてください。
+var SHISEN_CACHE = 'kyozai-shisen-mp0.10.35-1';
+var SHISEN_DIR = '/shared/mediapipe/';
+var SHISEN_ASSETS = [
+  './shared/mediapipe/vision_bundle.mjs',
+  './shared/mediapipe/wasm/vision_wasm_internal.js',
+  './shared/mediapipe/wasm/vision_wasm_internal.wasm',
+  './shared/mediapipe/wasm/vision_wasm_nosimd_internal.js',
+  './shared/mediapipe/wasm/vision_wasm_nosimd_internal.wasm',
+  './shared/mediapipe/face_landmarker.task'
+];
+function isShisen(url) { return new URL(url).pathname.indexOf(SHISEN_DIR) !== -1; }
+
+self.addEventListener('message', function (event) {
+  if (!event.data || event.data.type !== 'cache-shisen') return;
+  event.waitUntil(
+    caches.open(SHISEN_CACHE).then(function (cache) {
+      return Promise.all(SHISEN_ASSETS.map(function (url) {
+        var full = new URL(url, self.registration.scope).href;
+        return cache.match(full).then(function (hit) {
+          if (hit) return;
+          return fetch(full, { cache: 'reload' }).then(function (res) {
+            if (res && res.ok) return cache.put(full, res);
+          }).catch(function () {});
+        });
+      }));
+    })
+  );
+});
+
 // 新しい版を入れるときは、ブラウザのHTTPキャッシュを通さずに取り直す
 self.addEventListener('install', function (event) {
   event.waitUntil(
@@ -103,6 +137,10 @@ self.addEventListener('activate', function (event) {
     caches.keys().then(function (keys) {
       return Promise.all(keys.map(function (key) {
         if (key.indexOf(CACHE_PREFIX) === 0 && key !== CACHE_NAME) {
+          return caches.delete(key);
+        }
+        // しせん用は、名前が 変わった（MediaPipe を 入れかえた）ときだけ けす
+        if (key.indexOf('kyozai-shisen-') === 0 && key !== SHISEN_CACHE) {
           return caches.delete(key);
         }
       }));
@@ -136,7 +174,7 @@ function networkFirst(request) {
       key.search = '';
       key.hash = '';
       var copy = res.clone();
-      caches.open(CACHE_NAME).then(function (cache) { cache.put(key.href, copy); });
+      caches.open(isShisen(request.url) ? SHISEN_CACHE : CACHE_NAME).then(function (cache) { cache.put(key.href, copy); });
     }
     return res;
   }).catch(function () {
@@ -148,6 +186,17 @@ self.addEventListener('fetch', function (event) {
   var req = event.request;
   if (req.method !== 'GET') return;
   if (new URL(req.url).origin !== self.location.origin) return;
+
+  // しせん用の 大きな ファイルは、保存してあれば それを つかう（中身は 版の 名前で きまっている）
+  if (isShisen(req.url)) {
+    event.respondWith(caches.open(SHISEN_CACHE).then(function (cache) {
+      var key = new URL(req.url);
+      key.search = '';
+      key.hash = '';
+      return cache.match(key.href).then(function (hit) { return hit || networkFirst(req); });
+    }));
+    return;
+  }
 
   // ページ（メニュー・各教材）も CSS・JS も、同じくネット優先（版がずれないように）
   event.respondWith(networkFirst(req));

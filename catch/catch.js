@@ -53,10 +53,13 @@
   var EMOJI_FONT = '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif';
   var HEART_D = 'M20 35C8 27 3 20 3 13.5 3 8.5 7 5 11.5 5 15 5 18 7 20 10 22 7 25 5 28.5 5 33 5 37 8.5 37 13.5 37 20 32 27 20 35Z';
 
+  // あそびかた：ゆび・こえ・め（iPad の 視線トラッキング）・カメラ（じぶんたちで 目の 向きを よむ）
+  var MODES = { yubi: 'ゆび', koe: 'こえ', me: 'め', cam: 'カメラ' };
+
   // ---------- きろく（この iPad の中だけに ほぞん。なまえは いれない） ----------
   var STORE_KEY = 'tabecatch-v1';
   var canSave = true;
-  var rec = { scores: [], koeScores: [], meScores: [], speed: 'normal', sound: true, mode: 'yubi', koeSpeed: 'vslow' };
+  var rec = { scores: [], koeScores: [], meScores: [], camScores: [], speed: 'normal', sound: true, mode: 'yubi', koeSpeed: 'vslow' };
 
   (function load() {
     var raw = null;
@@ -67,8 +70,9 @@
       rec.scores = readScores(d.scores);
       rec.koeScores = readScores(d.koeScores);
       rec.meScores = readScores(d.meScores);
+      rec.camScores = readScores(d.camScores);
       rec.speed = d.speed === 'slow' ? 'slow' : 'normal';
-      rec.mode = d.mode === 'koe' || d.mode === 'me' ? d.mode : 'yubi';
+      rec.mode = MODES[d.mode] ? d.mode : 'yubi';
       rec.koeSpeed = KOE_SPEEDS[d.koeSpeed] ? d.koeSpeed : 'vslow';
       rec.sound = d.sound !== false;
     } catch (e) {}
@@ -108,7 +112,7 @@
   // ハイスコアは「ゆび」と「こえ」で べつべつ
   function scoreList(m) {
     m = m || rec.mode;
-    return m === 'koe' ? rec.koeScores : m === 'me' ? rec.meScores : rec.scores;
+    return m === 'koe' ? rec.koeScores : m === 'me' ? rec.meScores : m === 'cam' ? rec.camScores : rec.scores;
   }
 
   // とくてんを いれる。上位5つに はいったら その じゅんばん（0〜4）、はいらなければ -1
@@ -118,7 +122,7 @@
     var i = 0;
     while (i < list.length && list[i].s >= s) i++;
     if (i >= 5) return -1;
-    list.splice(i, 0, { s: s, d: today(), sp: m === 'koe' || m === 'me' ? rec.koeSpeed : rec.speed });
+    list.splice(i, 0, { s: s, d: today(), sp: m === 'yubi' ? rec.speed : rec.koeSpeed });
     if (list.length > 5) list.length = 5;
     save();
     return i;
@@ -474,12 +478,15 @@
   function newGame() {
     var isKoe = rec.mode === 'koe';
     var isMe = rec.mode === 'me';
-    var sp = isKoe || isMe ? KOE_SPEEDS[rec.koeSpeed] : SPEEDS[rec.speed];
+    var isCam = rec.mode === 'cam';
+    var sp = isKoe || isMe || isCam ? KOE_SPEEDS[rec.koeSpeed] : SPEEDS[rec.speed];
     G = {
       m: rec.mode,
       koe: isKoe,
       me: isMe,
-      lanes: isKoe || isMe,     // ひだり・みぎ 2れつ
+      cam: isCam,
+      big: isMe || isCam,       // ひよこと 物を 大きく
+      lanes: isKoe || isMe || isCam,     // ひだり・みぎ 2れつ
       sp: sp,
       t: 0,
       level: 1,
@@ -496,7 +503,7 @@
     items = [];
     pops = [];
     P = newChick();
-    if (isKoe || isMe) P.x = laneX(0);
+    if (isKoe || isMe || isCam) P.x = laneX(0);
     gaze.x = null; gaze.t = 0;
     drag.id = null; drag.x = null;
     hold.left = hold.right = false;
@@ -513,10 +520,13 @@
 
   // しせんモード：見ている ところ（ポインタの いち）
   var gaze = { x: null, t: 0 };
+  // みつづけている ほう（わを かく ため）
+  var dwell = { lane: -1, t: 0, max: 1 };
+  var camWant = -1, camT = 0;
 
   // しせんモード：その れつへ うごく
   function goLane(l) {
-    if (!canControl() || !G.me || P.lane === l) return;
+    if (!canControl() || !(G.me || G.cam) || P.lane === l) return;
     P.lane = l;
     P.bounce = 1;
     gaze.t = 0;
@@ -626,11 +636,27 @@
     var canMove = mode === 'play' && G && !G.over;
     if (canMove && G.lanes) {
       // しせんモード：おなじ ほうを しばらく 見つめると、そちらへ うごく
+      dwell.lane = -1;
       if (G.me && gaze.x !== null && laneAt(gaze.x) !== P.lane) {
         gaze.t += dt;
+        dwell.lane = laneAt(gaze.x); dwell.t = gaze.t; dwell.max = ME_DWELL;
         if (gaze.t >= ME_DWELL) goLane(laneAt(gaze.x));
       } else {
         gaze.t = 0;
+      }
+      // めで あそぶ（カメラ）：ひだり・みぎ を みつづけたら うごく。まんなかの ときは その ばに とどまる
+      if (G.cam && eye) {
+        var d = eye.getDir();
+        var want = d === 'left' ? 0 : d === 'right' ? 1 : -1;
+        if (want >= 0 && want !== P.lane) {
+          if (want !== camWant) { camWant = want; camT = 0; }
+          camT += dt;
+          var lim = camDwell;   // せっていで 0.3〜1.5びょう
+          dwell.lane = want; dwell.t = camT; dwell.max = lim;
+          if (camT >= lim) { goLane(want); camT = 0; }
+        } else {
+          camWant = -1; camT = 0;
+        }
       }
       P.x += (laneX(P.lane) - P.x) * Math.min(1, dt * 12);
     } else if (canMove) {
@@ -818,11 +844,11 @@
         ctx.beginPath(); ctx.ellipse(laneX(ln), groundY + 4, basketHalf * 1.05, 11 * k * chickScale, 0, 0, 6.2832); ctx.fill();
       }
       // しせんモード：見つめている ほうに、たまっていく わ
-      if (G.me && gaze.t > 0 && gaze.x !== null && !G.over && !paused) {
-        var gl = laneAt(gaze.x);
+      if (dwell.lane >= 0 && dwell.t > 0 && !G.over && !paused) {
+        var gl = dwell.lane;
         var gr = Math.min(basketHalf * 0.55, 60 * k);
         var gy = groundY - 112 * chickS;
-        var ga = Math.min(1, gaze.t / ME_DWELL);
+        var ga = Math.min(1, dwell.t / dwell.max);
         ctx.lineCap = 'round';
         ctx.lineWidth = 9 * k;
         ctx.strokeStyle = 'rgba(255,253,247,0.75)';
@@ -1129,12 +1155,14 @@
     rafId = requestAnimationFrame(frame);
     var dt = lastTs ? Math.min((ts - lastTs) / 1000, 1 / 20) : 0;
     lastTs = ts;
-    if (!paused && dt > 0) {
+    var frozen = camFrozen();
+    if (!paused && !frozen && dt > 0) {
       // こまかく わけて けいさんすると、はやく おちても すりぬけない
       var n = Math.ceil(dt / MAX_STEP);
       for (var i = 0; i < n; i++) step(dt / n);
     }
     draw();
+    showCamMsg(frozen);
   }
   function startLoop() {
     if (running) return;
@@ -1244,7 +1272,7 @@
   }
 
   function startGame() {
-    setScale(rec.mode === 'me');
+    setScale(rec.mode === 'me' || rec.mode === 'cam');
     newGame();
     mode = 'play';
     paused = false;
@@ -1262,7 +1290,11 @@
     if (koe) koe.enabled = true;
     hintEl.textContent = G.koe ? 'こえを だすと、ひよこが いれかわるよ'
       : G.me ? 'いきたい ほうを じっと みてね'
+      : G.cam ? 'ひだり か みぎ を じっと みてね'
       : 'ゆびで みぎ ひだりに なぞってね';
+    camWant = -1; camT = 0;
+    camDwell = eye ? Shisen.loadSettings().dwell : 0.5;
+    showCamPreview(G.cam);
     hintEl.hidden = false;
     clearTimeout(hintTimer);
     hintTimer = setTimeout(hideHint, G.lanes ? 7000 : 4000);
@@ -1286,6 +1318,7 @@
     clearTimeout(againTimer);
     titleEl.hidden = false;
     stopKoe();
+    stopCam();
     renderBest();
     startLoop();
   }
@@ -1307,6 +1340,11 @@
     // こえモードで マイクが とまっていたら（ほかの アプリに したとき など）、もういちど つける
     if (G && G.koe && !(koe && koe.isRunning())) {
       useKoe(resume2);
+      return;
+    }
+    // カメラも おなじ（あわせた けっかは そのまま つかう）
+    if (G && G.cam && !(eye && eye.isRunning())) {
+      useCam(resume2, false);
       return;
     }
     resume2();
@@ -1348,7 +1386,7 @@
   // ハイスコアの ひょう
   var KOE_SPEED_NAMES = { vslow: 'とても ゆっくり', slow: 'ゆっくり', normal: 'すこし ゆっくり' };
   function speedTag(r, m) {
-    if (m === 'koe' || m === 'me') return KOE_SPEED_NAMES[r.sp] || '';
+    if (m !== 'yubi') return KOE_SPEED_NAMES[r.sp] || '';
     return r.sp === 'slow' ? 'ゆっくり' : '';
   }
   function renderBestList(el, newRank, m) {
@@ -1366,7 +1404,7 @@
     }).join('');
   }
   function renderBest() {
-    bestTitle.textContent = 'ハイスコア（' + ({ koe: 'こえ', me: 'め' }[rec.mode] || 'ゆび') + '）';
+    bestTitle.textContent = 'ハイスコア（' + (MODES[rec.mode] || 'ゆび') + '）';
     renderBestList(document.getElementById('bestList'), -1, rec.mode);
   }
 
@@ -1388,6 +1426,7 @@
   document.getElementById('startBtn').addEventListener('click', function () {
     unlockAudio();
     if (rec.mode === 'koe') useKoe(startGame);
+    else if (rec.mode === 'cam') useCam(startGame, true);
     else startGame();
   });
 
@@ -1535,6 +1574,7 @@
   document.getElementById('againBtn').addEventListener('click', function () {
     unlockAudio();
     if (G && G.koe) useKoe(startGame);
+    else if (G && G.cam) useCam(startGame, false);
     else startGame();
   });
 
@@ -1546,6 +1586,9 @@
       // ほかの アプリの ときは マイクを とめる（もどったら「つづける」で また つける）
       if (!testEl.hidden) closeTest();
       stopKoe();
+      // カメラも とめる（「つづける」で また つける）
+      if (camTest) camTest.close();
+      stopCam();
       stopLoop();
     } else {
       startLoop();
@@ -1619,7 +1662,7 @@
   });
 
   function renderSettings() {
-    var any = rec.scores.length + rec.koeScores.length + rec.meScores.length > 0;
+    var any = rec.scores.length + rec.koeScores.length + rec.meScores.length + rec.camScores.length > 0;
     recNote.textContent = any
       ? 'この iPad に ほぞん している ハイスコア（「ゆび」「こえ」それぞれ 上位5つ）です。けすと ぜんぶ きえます（はやさ・音・こえの せっていは のこります）。'
       : 'ハイスコアは まだ ありません。';
@@ -1633,11 +1676,15 @@
     rec.meScores.forEach(function (r) {
       html += '<li>め　' + r.s + 'てん　' + dateLong(r.d) + '（' + (KOE_SPEED_NAMES[r.sp] || '') + '）</li>';
     });
+    rec.camScores.forEach(function (r) {
+      html += '<li>カメラ　' + r.s + 'てん　' + dateLong(r.d) + '（' + (KOE_SPEED_NAMES[r.sp] || '') + '）</li>';
+    });
     setList.innerHTML = html;
     setList.hidden = !any;
     resetBtn.disabled = !any;
     saveWarn.hidden = canSave;
     renderKoeSettings();
+    renderCamSettings();
   }
 
   var armTimer = 0;
@@ -1670,7 +1717,7 @@
 
   // まちがえて けさないように、2回 おしたときだけ けす
   resetBtn.addEventListener('click', function () {
-    if (!rec.scores.length && !rec.koeScores.length && !rec.meScores.length) return;
+    if (!rec.scores.length && !rec.koeScores.length && !rec.meScores.length && !rec.camScores.length) return;
     if (!resetBtn.classList.contains('is-armed')) {
       resetBtn.classList.add('is-armed');
       resetBtn.textContent = 'もういちど おすと けします';
@@ -1682,6 +1729,7 @@
     rec.scores = [];
     rec.koeScores = [];
     rec.meScores = [];
+    rec.camScores = [];
     save();
     renderSettings();
     resetStatus.textContent = 'ハイスコアを けしました';
@@ -1843,17 +1891,19 @@
   var speedRow = document.getElementById('speedRow');
   var koeRow = document.getElementById('koeRow');
   var meRow = document.getElementById('meRow');
+  var camRow = document.getElementById('camRow');
   function renderMode() {
     modeBtns.forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.mode === rec.mode)); });
     speedRow.hidden = rec.mode !== 'yubi';
     koeRow.hidden = rec.mode !== 'koe';
     meRow.hidden = rec.mode !== 'me';
+    camRow.hidden = rec.mode !== 'cam';
     renderBest();
   }
   modeBtns.forEach(function (b) {
     b.addEventListener('click', function () {
       unlockAudio();
-      rec.mode = b.dataset.mode === 'koe' || b.dataset.mode === 'me' ? b.dataset.mode : 'yubi';
+      rec.mode = MODES[b.dataset.mode] ? b.dataset.mode : 'yubi';
       save();
       renderMode();
     });
@@ -1893,7 +1943,95 @@
   });
 
   // とちゅうで 新しい版への 自動の 再読み込みを しない
-  window.kyozaiBusy = function () { return (mode === 'play' && G && !G.over) || !settings.hidden || !testEl.hidden; };
+  // ---------- めで あそぶ（カメラ）（../shared/shisen.js を つかう） ----------
+  var camMsg = document.getElementById('camMsg');
+  var camPrev = document.getElementById('camPrev');
+  var camDwell = 0.5;
+  var camTest = null;
+  var lastCamMsg = '';
+  var eye = window.Shisen ? Shisen.create({}) : null;
+
+  // かおが みえない・へやが くらい ときは、ゲームを とめて まつ（みえたら そのまま つづく）
+  function camFrozen() {
+    return !!(mode === 'play' && G && G.cam && !G.over && !paused && eye && eye.isRunning() && eye.getStatus() !== 'ok');
+  }
+  function showCamMsg(frozen) {
+    var st = frozen ? eye.getStatus() : '';
+    var text = st === 'dark' ? 'へやを あかるくしてね' : st === 'noface' ? 'かおが みえないよ' : st === 'loading' ? 'じゅんびしています…' : '';
+    if (text === lastCamMsg) return;
+    lastCamMsg = text;
+    camMsg.textContent = text;
+    camMsg.hidden = !text;
+    if (text) hideHint();
+  }
+  function showCamPreview(on) {
+    var show = !!(on && eye && Shisen.loadSettings().preview);
+    camPrev.hidden = !show;
+    if (eye) eye.showPreview(show ? camPrev : null);
+  }
+
+  // カメラを つかう：はじめは なぜ つかうかを せつめい → きょか → （calib が true なら）めの じゅんび
+  function useCam(next, calib) {
+    if (!eye) { alert('この ブラウザでは つかえません。'); return; }
+    eye.setSource(Shisen.loadSettings().source);
+    Shisen.explain({
+      eye: eye,
+      onOk: function () {
+        if (!calib && eye.canJudge()) { next(); return; }
+        Shisen.calibrate(eye, {
+          speak: rec.sound,
+          onDone: function () { next(); },
+          onCancel: function () { if (mode === 'title') stopCam(); }
+        });
+      },
+      onCancel: function () {}
+    });
+  }
+  function stopCam() {
+    showCamPreview(false);
+    if (eye && eye.isRunning()) eye.stop();
+    lastCamMsg = '';
+    camMsg.hidden = true;
+  }
+  function openCamTest() {
+    useCam(function () {
+      camTest = Shisen.openTest(eye, {
+        speak: rec.sound,
+        onClose: function () { camTest = null; if (mode === 'title') stopCam(); }
+      });
+    }, !eye || !Shisen.loadCalib());
+  }
+  document.getElementById('camTestBtn').addEventListener('click', function () { unlockAudio(); openCamTest(); });
+
+  // せってい：はんだんに つかう もの・みつづける じかん
+  var camSrcBtns = Array.prototype.slice.call(document.querySelectorAll('[data-cam-src]'));
+  var dwellBtns = Array.prototype.slice.call(document.querySelectorAll('[data-dwell]'));
+  function renderCamSettings() {
+    var c = window.Shisen ? Shisen.loadSettings() : { source: 'both', dwell: 0.5 };
+    camSrcBtns.forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.camSrc === c.source)); });
+    dwellBtns.forEach(function (b) { b.setAttribute('aria-pressed', String(Number(b.dataset.dwell) === c.dwell)); });
+  }
+  camSrcBtns.forEach(function (b) {
+    b.addEventListener('click', function () {
+      if (!window.Shisen) return;
+      Shisen.saveSettings({ source: b.dataset.camSrc });
+      if (eye) eye.setSource(b.dataset.camSrc);
+      renderCamSettings();
+    });
+  });
+  dwellBtns.forEach(function (b) {
+    b.addEventListener('click', function () {
+      if (!window.Shisen) return;
+      Shisen.saveSettings({ dwell: Number(b.dataset.dwell) });
+      renderCamSettings();
+    });
+  });
+  document.getElementById('setCamTestBtn').addEventListener('click', function () {
+    closeSettings();
+    openCamTest();
+  });
+
+  window.kyozaiBusy = function () { return (mode === 'play' && G && !G.over) || !settings.hidden || !testEl.hidden || !!camTest; };
 
   // ---------- はじめ ----------
   renderSound();

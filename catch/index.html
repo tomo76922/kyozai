@@ -59,7 +59,11 @@
           </button>
           <button type="button" class="btn mode-btn" data-mode="me" aria-pressed="false">
             <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3.2"/></svg>
-            <span>めで あそぶ</span>
+            <span>めで あそぶ（iPadの きのう）</span>
+          </button>
+          <button type="button" class="btn mode-btn" data-mode="cam" aria-pressed="false">
+            <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5A2.5 2.5 0 0 1 5.5 6h1.8l1.4-2h6.6l1.4 2h1.8A2.5 2.5 0 0 1 21 8.5v8a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 16.5z"/><circle cx="12" cy="12.5" r="3.6"/></svg>
+            <span>めで あそぶ（カメラ）</span>
           </button>
         </div>
         <div class="speed" id="speedRow" role="group" aria-label="はやさ">
@@ -77,6 +81,13 @@
         <div class="koe-row" id="meRow" hidden>
           <p class="koe-note">いきたい ほうを じっと みると、ひよこが うごくよ。ひよこも たべものも おおきく なるよ</p>
           <p class="me-sub">iPad の「しせん トラッキング」で あそべます（ゆびで タップしても うごきます）</p>
+        </div>
+        <div class="koe-row" id="camRow" hidden>
+          <p class="koe-note">ひだりを みると ひだり、みぎを みると みぎに ひよこが うごくよ。iPad の まえの カメラで しらべるよ</p>
+          <button type="button" class="btn koe-test-btn" id="camTestBtn">
+            <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3.2"/></svg>
+            <span>しせんテスト</span>
+          </button>
         </div>
         <button type="button" class="btn btn-go btn-start" id="startBtn">スタート</button>
         <div class="best">
@@ -101,6 +112,10 @@
     <p class="toast" id="toast" aria-live="polite"></p>
 
     <p class="hint" id="hint" hidden>ゆびで みぎ ひだりに なぞってね</p>
+
+    <!-- めで あそぶ（カメラ）：かおが みえない ときなど -->
+    <p class="cam-msg" id="camMsg" role="status" hidden></p>
+    <div class="cam-prev" id="camPrev" hidden></div>
 
     <!-- こえモード：こえの おおきさ メーター -->
     <div class="koe-hud" id="koeHud" hidden>
@@ -223,6 +238,28 @@
         </div>
       </section>
 
+      <section class="set-sec" aria-labelledby="h-cam">
+        <h3 class="set-h" id="h-cam">めで あそぶ（カメラ）</h3>
+        <p class="set-note">どこを みて はんだん するか です。目を うごかすのが むずかしい ときは「かお」（かおを すこし ひだり・みぎに むける）に します。</p>
+        <div class="set-row" role="group" aria-label="はんだんに つかう もの">
+          <button type="button" class="btn opt-btn" data-cam-src="eye" aria-pressed="false">め</button>
+          <button type="button" class="btn opt-btn" data-cam-src="face" aria-pressed="false">かお</button>
+          <button type="button" class="btn opt-btn" data-cam-src="both" aria-pressed="true">りょうほう</button>
+        </div>
+        <p class="set-note set-note-gap">おなじ ほうを この じかん みつづけたら、ひよこが うごきます（ちらっと みただけで うごかないように）。</p>
+        <div class="set-row" role="group" aria-label="みつづける じかん">
+          <button type="button" class="btn opt-btn" data-dwell="0.3" aria-pressed="false">0.3びょう</button>
+          <button type="button" class="btn opt-btn" data-dwell="0.5" aria-pressed="true">0.5びょう</button>
+          <button type="button" class="btn opt-btn" data-dwell="0.8" aria-pressed="false">0.8びょう</button>
+          <button type="button" class="btn opt-btn" data-dwell="1" aria-pressed="false">1びょう</button>
+          <button type="button" class="btn opt-btn" data-dwell="1.5" aria-pressed="false">1.5びょう</button>
+        </div>
+        <p class="set-note set-note-gap">はやさは「こえで あそぶ・めで あそぶ」の はじめの はやさ と おなじです。あわせた けっかや この せっていは、この iPad の なかだけに ほぞんします。</p>
+        <div class="set-row">
+          <button type="button" class="btn" id="setCamTestBtn">しせんテストを ひらく</button>
+        </div>
+      </section>
+
       <section class="set-sec" aria-labelledby="h-rec">
         <h3 class="set-h" id="h-rec">ハイスコア</h3>
         <p class="set-note" id="recNote"></p>
@@ -236,6 +273,7 @@
   </div>
 
   <script src="../shared/koe-switch.js"></script>
+  <script src="../shared/shisen.js"></script>
   <script src="./catch.js"></script>
   <script src="../pwa.js"></script>
 </body>
