@@ -92,6 +92,12 @@ var ASSETS = [
   './nurie/nurie.css',
   './nurie/art.js',
   './nurie/nurie.js',
+  // かざりつけ
+  './kazari/',
+  './kazari/index.html',
+  './kazari/kazari.css',
+  './kazari/art.js',
+  './kazari/kazari.js',
   // がっき
   './gakki/',
   './gakki/index.html',
