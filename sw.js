@@ -2,7 +2,7 @@
 // ファイルを更新したら CACHE_VERSION の数字を上げてください。
 // 教材をふやしたら、そのファイルを ASSETS に足してください。
 // 教材を追加・修正したら、news.json に おしらせを1件 足してください（くわしくは CLAUDE.md）。
-var CACHE_VERSION = 'v30';
+var CACHE_VERSION = 'v31';
 var CACHE_PREFIX = 'hiragana-cards-';   // 以前の版の保存を消せるように、名前はそのまま
 var CACHE_NAME = CACHE_PREFIX + CACHE_VERSION;
 
@@ -92,6 +92,12 @@ var ASSETS = [
   './nurie/nurie.css',
   './nurie/art.js',
   './nurie/nurie.js',
+  // かざりつけ
+  './kazari/',
+  './kazari/index.html',
+  './kazari/kazari.css',
+  './kazari/art.js',
+  './kazari/kazari.js',
   // がっき
   './gakki/',
   './gakki/index.html',

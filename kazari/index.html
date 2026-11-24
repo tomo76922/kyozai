@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>かざりつけ</title>
+  <meta name="description" content="きせつの ばめんに シールを はって かざりつけを する きょうざい">
+  <meta name="theme-color" content="#f3efe6">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="きょうざい">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="format-detection" content="telephone=no">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <link rel="icon" href="../icons/icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="../common.css">
+  <link rel="stylesheet" href="./kazari.css">
+</head>
+<body>
+  <header class="header" id="header">
+    <a class="home-btn" id="homeBtn" href="../" aria-label="もくじに もどる">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/></svg>
+      <span class="home-text">もくじ</span>
+    </a>
+    <button type="button" class="btn back-btn" id="backBtn" hidden>
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+      <span>もどる</span>
+    </button>
+    <h1 class="title" id="title">かざりつけ</h1>
+    <button type="button" class="btn done-btn" id="doneBtn" hidden>
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg>
+      <span>できた！</span>
+    </button>
+  </header>
+
+  <!-- はじめの がめん：ばめんを えらぶ -->
+  <main class="screen start" id="startEl">
+    <h2 class="sec-h">どこを かざる？</h2>
+    <div class="scenes" id="scenes"></div>
+    <button type="button" class="btn works-btn" id="worksBtn">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-9 9"/></svg>
+      <span>さくひん</span><b class="works-count" id="worksCount"></b>
+    </button>
+    <p class="note warn" id="saveWarn" hidden>この iPad では さくひんを ほぞん できません。</p>
+  </main>
+
+  <!-- かざる -->
+  <main class="screen deco" id="decoEl" hidden>
+    <div class="stage" id="stage">
+      <svg class="board" id="board" viewBox="0 0 800 600" role="img" aria-label="かざりつけの ばめん">
+        <g id="bgG"></g>
+        <g id="itemsG"></g>
+        <g id="selG" pointer-events="none"></g>
+      </svg>
+      <p class="hint" id="hint" aria-live="polite" hidden></p>
+    </div>
+
+    <div class="edit" id="edit" role="group" aria-label="えらんだ シール">
+      <button type="button" class="btn edit-btn" id="bigBtn" disabled>
+        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v9M7.5 12h9"/></svg>
+        <span>おおきく</span>
+      </button>
+      <button type="button" class="btn edit-btn" id="smallBtn" disabled>
+        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M7.5 12h9"/></svg>
+        <span>ちいさく</span>
+      </button>
+      <button type="button" class="btn edit-btn del-btn" id="delBtn" disabled>
+        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>
+        <span>けす</span>
+      </button>
+    </div>
+
+    <div class="tray" id="tray" role="radiogroup" aria-label="シール"></div>
+  </main>
+
+  <!-- さくひん -->
+  <main class="screen works" id="worksEl" hidden>
+    <p class="note" id="worksEmpty" hidden>まだ さくひんは ないよ。かざって「できた！」を おしてね。</p>
+    <div class="grid" id="worksList"></div>
+  </main>
+
+  <!-- できた！ -->
+  <div class="overlay" id="doneEl" hidden>
+    <div class="dlg done-dlg" role="dialog" aria-modal="true" aria-labelledby="doneTitle">
+      <div class="done-top">
+        <div class="hanamaru" id="maru" aria-hidden="true"></div>
+        <div class="done-thumb" id="doneThumb"></div>
+      </div>
+      <p class="dlg-title" id="doneTitle">できたね！</p>
+      <p class="dlg-sub" id="doneSub">「さくひん」に ほぞん したよ。</p>
+      <div class="dlg-btns">
+        <button type="button" class="btn btn-main" id="donePhotoBtn">
+          <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-9 9"/></svg>
+          <span>しゃしんに ほぞん</span>
+        </button>
+        <button type="button" class="btn" id="doneMoreBtn">つづきを かざる</button>
+        <button type="button" class="btn" id="doneNextBtn">ほかの ばめんに する</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- さくひんを 大きく 見る -->
+  <div class="overlay" id="viewEl" hidden>
+    <div class="dlg view-dlg" role="dialog" aria-modal="true" aria-labelledby="viewTitle">
+      <p class="dlg-title" id="viewTitle"></p>
+      <div class="view-pic" id="viewPic"></div>
+      <div class="dlg-btns">
+        <button type="button" class="btn btn-main" id="viewPhotoBtn">
+          <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-9 9"/></svg>
+          <span>しゃしんに ほぞん</span>
+        </button>
+        <button type="button" class="btn" id="viewEditBtn">つづきを かざる</button>
+        <button type="button" class="btn" id="viewDelBtn">けす</button>
+        <button type="button" class="btn" id="viewCloseBtn">とじる</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- しゃしんに ほぞん（iPad の「共有」が つかえない ときの かわり） -->
+  <div class="overlay" id="photoEl" hidden>
+    <div class="dlg photo-dlg" role="dialog" aria-modal="true" aria-labelledby="photoTitle">
+      <p class="dlg-title" id="photoTitle">しゃしんに ほぞん</p>
+      <p class="dlg-sub">えを ながく おして「“写真”に保存」を えらんでね。</p>
+      <img class="photo-img" id="photoImg" alt="かざりつけの え">
+      <div class="dlg-btns">
+        <a class="btn" id="photoDl" download="kazari.png">ファイルに ほぞん</a>
+        <button type="button" class="btn btn-main" id="photoClose">とじる</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- かくにん（やめる・さくひんを けす） -->
+  <div class="overlay" id="askEl" hidden>
+    <div class="dlg" role="dialog" aria-modal="true" aria-labelledby="askTitle">
+      <p class="dlg-title" id="askTitle"></p>
+      <p class="dlg-sub" id="askSub"></p>
+      <div class="dlg-btns">
+        <button type="button" class="btn" id="askNo"></button>
+        <button type="button" class="btn btn-warn" id="askYes"></button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" hidden></div>
+
+  <script src="./art.js"></script>
+  <script src="./kazari.js"></script>
+  <script src="../pwa.js"></script>
+</body>
+</html>
