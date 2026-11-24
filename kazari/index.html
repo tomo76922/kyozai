@@ -32,6 +32,10 @@
       <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg>
       <span>できた！</span>
     </button>
+
+    <!-- 先生用：ながおし したときだけ ひらく -->
+    <button type="button" class="gear" id="gearBtn" aria-label="せってい（ながおしで ひらく）">せってい</button>
+    <p class="gear-hint" id="gearHint" role="status" hidden>ながく おして ください</p>
   </header>
 
   <!-- はじめの がめん：ばめんを えらぶ -->
@@ -68,6 +72,10 @@
       <button type="button" class="btn edit-btn del-btn" id="delBtn" disabled>
         <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>
         <span>けす</span>
+      </button>
+      <button type="button" class="btn edit-btn undo-btn" id="undoBtn" disabled>
+        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg>
+        <span>もどす</span>
       </button>
     </div>
 
@@ -138,6 +146,21 @@
       <div class="dlg-btns">
         <button type="button" class="btn" id="askNo"></button>
         <button type="button" class="btn btn-warn" id="askYes"></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- せってい（せんせい よう） -->
+  <div class="overlay" id="setEl" hidden>
+    <div class="dlg set-dlg" role="dialog" aria-modal="true" aria-labelledby="setTitle">
+      <p class="dlg-title" id="setTitle">せってい（せんせい よう）</p>
+      <h3 class="set-h">おと（シールを はる・できた！の おと）</h3>
+      <div class="opts">
+        <button type="button" class="btn opt-btn" data-sound="1" aria-pressed="false">あり</button>
+        <button type="button" class="btn opt-btn" data-sound="0" aria-pressed="false">なし</button>
+      </div>
+      <div class="dlg-btns">
+        <button type="button" class="btn btn-main" id="setClose">とじる</button>
       </div>
     </div>
   </div>

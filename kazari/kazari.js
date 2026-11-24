@@ -1,6 +1,8 @@
 // かざりつけ
 // ・ばめんを えらぶ → 下の シールを タップして えらぶ → ばめんの すきな ところを タップして はる
 // ・はった シールは ゆびで うごかせる。「おおきく」「ちいさく」「けす」は えらんで いる シールに きく
+// ・「もどす」で 1つ前に もどせる（はる・うごかす・大きさ・けす）
+// ・先生用の「せってい」（ながおし）で 音を けせる
 // ・できた かざりつけは この iPad の中（ブラウザの 保存領域）の「さくひん」に 保存する。外部には 送らない
 // ・「しゃしんに ほぞん」は、iPad の「共有」から 写真に 保存する（使えない ときは 画像を 長おしで 保存）
 (function () {
@@ -13,9 +15,10 @@
   var MAX_ITEMS = 60;          // 1つの ばめんに はれる シールの かず
   var S_MIN = 0.4, S_MAX = 2.6, S_STEP = 1.25;
   var PHOTO_W = 1600;          // しゃしんの 大きさ（よこ）
+  var MAX_UNDO = 50;           // もどせる かいすう
 
   // ---------- ほぞん（この iPad の中だけ） ----------
-  var rec = { works: [] };
+  var rec = { works: [], sound: true };
   var canSave = true;
   function cleanItems(a) {
     if (!Array.isArray(a)) return [];
@@ -28,6 +31,7 @@
   (function load() {
     try {
       var d = JSON.parse(localStorage.getItem(STORE_KEY) || 'null');
+      if (d && d.sound === false) rec.sound = false;
       if (d && Array.isArray(d.works)) {
         rec.works = d.works.filter(function (w) { return w && ART.scene(w.scene); }).map(function (w) {
           return { id: String(w.id), scene: w.scene, items: cleanItems(w.items), t: +w.t || Date.now() };
@@ -73,7 +77,7 @@
     tone(t, freq * 2, vol * 0.15, 0.6);
   }
   function play(fn) {
-    if (!AC) return;
+    if (!rec.sound || !AC) return;
     try {
       if (!ctx) ctx = new AC();
       var go = function () { fn(ctx.currentTime + 0.02); };
@@ -85,6 +89,7 @@
   function sPick() { play(function (t) { tone(t, 880, 0.05, 0.1, 'sine'); }); }
   function sSize(up) { play(function (t) { tone(t, up ? 660 : 520, 0.05, 0.08, 'sine'); tone(t + 0.06, up ? 880 : 390, 0.05, 0.1, 'sine'); }); }
   function sDel() { play(function (t) { tone(t, 440, 0.05, 0.1, 'triangle'); tone(t + 0.07, 330, 0.05, 0.14, 'triangle'); }); }
+  function sUndo() { play(function (t) { tone(t, 700, 0.05, 0.08, 'sine'); tone(t + 0.06, 520, 0.05, 0.12, 'sine'); }); }
   function sDone() { play(function (t) { [523, 659, 784, 1047].forEach(function (f, i) { bell(t + i * 0.17, f, 0.12); }); }); }
 
   // ---------- べんりな もの ----------
@@ -224,6 +229,7 @@
     $('backBtn').hidden = m === 'start';
     $('doneBtn').hidden = m !== 'deco';
     document.body.classList.toggle('is-deco', m === 'deco');
+    $('gearHint').hidden = true;
     endDrag();
   }
   // かざっている とちゅうに 新しい 版へ きりかわっても、ページを よみなおさない
@@ -253,7 +259,7 @@
   }
 
   // ---------- かざる ----------
-  var D = null;          // { scene, items, workId, dirty }
+  var D = null;          // { scene, items, workId, dirty, hist }
   var pick = null;       // えらんで いる シール（下の ならび）
   var sel = -1;          // えらんで いる はった シール
   var board = $('board');
@@ -261,7 +267,7 @@
   var selG = $('selG');
 
   function openDeco(scene, items, workId) {
-    D = { scene: scene, items: items ? cleanItems(items) : [], workId: workId || null, dirty: false };
+    D = { scene: scene, items: items ? cleanItems(items) : [], workId: workId || null, dirty: false, hist: [] };
     pick = null;
     sel = -1;
     show('deco');
@@ -307,10 +313,28 @@
     h.hidden = !t;
   }
 
+  // ---------- もどす ----------
+  function snap() { return D.items.map(function (it) { return { k: it.k, x: it.x, y: it.y, s: it.s }; }); }
+  function pushHist(before) {
+    D.hist.push(before);
+    if (D.hist.length > MAX_UNDO) D.hist.shift();
+    renderUndo();
+  }
+  function renderUndo() { $('undoBtn').disabled = !D || !D.hist.length; }
+  $('undoBtn').addEventListener('click', function () {
+    if (!D || !D.hist.length || drag) return;
+    D.items = D.hist.pop();
+    sel = -1;
+    D.dirty = true;
+    renderItems();
+    sUndo();
+  });
+
   function renderItems() {
     itemsG.innerHTML = D.items.map(function (it, i) { return itemSvg(it, i); }).join('');
     renderSel();
     renderHint();
+    renderUndo();
   }
   function renderSel() {
     var it = sel >= 0 ? D.items[sel] : null;
@@ -353,8 +377,9 @@
     var p = toBoard(e);
     if (!p) return;
     var hit = e.target.closest ? e.target.closest('.it') : null;
-    var i;
+    var i, pre = null;
     if (hit) {
+      pre = snap();   // うごかしたら、この じょうたいに もどせる
       i = Number(hit.getAttribute('data-i'));
       // さわった シールを いちばん 上に
       if (i !== D.items.length - 1) {
@@ -370,6 +395,7 @@
     } else if (pick) {
       if (p.x < 0 || p.y < 0 || p.x > W || p.y > H) return;
       if (D.items.length >= MAX_ITEMS) { toast('もう はれないよ（' + MAX_ITEMS + 'こ まで）'); return; }
+      pushHist(snap());
       D.items.push({ k: pick, x: r1(p.x), y: r1(p.y), s: 1 });
       D.dirty = true;
       i = sel = D.items.length - 1;
@@ -381,7 +407,7 @@
       return;
     }
     var cur = D.items[i];
-    drag = { id: e.pointerId, i: i, dx: cur.x - p.x, dy: cur.y - p.y, sx: e.clientX, sy: e.clientY, moved: false };
+    drag = { id: e.pointerId, i: i, dx: cur.x - p.x, dy: cur.y - p.y, sx: e.clientX, sy: e.clientY, moved: false, pre: pre };
     try { board.setPointerCapture(e.pointerId); } catch (err) {}
   });
   board.addEventListener('pointermove', function (e) {
@@ -399,7 +425,10 @@
   });
   function endDrag(e) {
     if (!drag || (e && e.pointerId !== drag.id)) return;
-    if (drag.moved && D) D.dirty = true;
+    if (drag.moved && D) {
+      D.dirty = true;
+      if (drag.pre) pushHist(drag.pre);
+    }
     drag = null;
   }
   board.addEventListener('pointerup', endDrag);
@@ -413,6 +442,7 @@
     var s = up ? it.s * S_STEP : it.s / S_STEP;
     s = Math.round(clamp(s, S_MIN, S_MAX) * 1000) / 1000;
     if (s === it.s) return;
+    pushHist(snap());
     it.s = s;
     D.dirty = true;
     moveItem(sel);
@@ -423,6 +453,7 @@
   $('smallBtn').addEventListener('click', function () { resize(false); });
   $('delBtn').addEventListener('click', function () {
     if (sel < 0 || !D.items[sel]) return;
+    pushHist(snap());
     D.items.splice(sel, 1);
     sel = -1;
     D.dirty = true;
@@ -564,6 +595,65 @@
       leaveDeco(function () { D = null; location.href = $('homeBtn').href; });
     }
   });
+
+  // ---------- せってい（ながおしで ひらく） ----------
+  var gearBtn = $('gearBtn');
+  var gearHint = $('gearHint');
+  var HOLD_MS = 1000;
+  var holdTimer = 0, hintTimer = 0, opened = false;
+  function startHold() {
+    clearTimeout(holdTimer);
+    opened = false;
+    gearHint.hidden = true;
+    gearBtn.classList.add('is-pressing');
+    holdTimer = setTimeout(function () {
+      opened = true;
+      gearBtn.classList.remove('is-pressing');
+      openSettings();
+    }, HOLD_MS);
+  }
+  function endHold() {
+    if (!holdTimer) return;
+    clearTimeout(holdTimer);
+    holdTimer = 0;
+    gearBtn.classList.remove('is-pressing');
+    if (!opened) {
+      gearHint.hidden = false;
+      clearTimeout(hintTimer);
+      hintTimer = setTimeout(function () { gearHint.hidden = true; }, 1800);
+    }
+  }
+  gearBtn.addEventListener('pointerdown', function (e) {
+    if (e.button !== undefined && e.button !== 0) return;
+    e.preventDefault();
+    try { gearBtn.setPointerCapture(e.pointerId); } catch (err) {}
+    startHold();
+  });
+  gearBtn.addEventListener('pointerup', endHold);
+  gearBtn.addEventListener('pointercancel', endHold);
+  gearBtn.addEventListener('lostpointercapture', endHold);
+  gearBtn.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+  gearBtn.addEventListener('click', function (e) { e.preventDefault(); });
+  gearBtn.addEventListener('keydown', function (e) {
+    if ((e.key === 'Enter' || e.key === ' ') && !e.repeat) { e.preventDefault(); startHold(); }
+  });
+  gearBtn.addEventListener('keyup', function (e) { if (e.key === 'Enter' || e.key === ' ') endHold(); });
+
+  function openSettings() { renderSettings(); openOverlay($('setEl')); }
+  function renderSettings() {
+    Array.prototype.forEach.call(document.querySelectorAll('[data-sound]'), function (b) {
+      b.setAttribute('aria-pressed', String((b.dataset.sound === '1') === rec.sound));
+    });
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('[data-sound]'), function (b) {
+    b.addEventListener('click', function () {
+      rec.sound = b.dataset.sound === '1';
+      save();
+      renderSettings();
+      if (rec.sound) { unlockAudio(); sPick(); }
+    });
+  });
+  $('setClose').addEventListener('click', function () { closeOverlay($('setEl')); });
 
   showStart();
 })();

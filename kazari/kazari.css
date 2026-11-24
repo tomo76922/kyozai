@@ -18,6 +18,7 @@ body {
 
 /* ---------- 上の帯 ---------- */
 .header {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 10px 12px;
@@ -65,7 +66,51 @@ body {
 .done-btn { flex: none; background: #fbe9b7; border-color: var(--gold); }
 .done-btn:active { background: #f6da86; }
 
-.btn:focus-visible, .scene-btn:focus-visible, .stk:focus-visible, .thumb:focus-visible {
+/* せってい（小さく・目立たない。ながおしで ひらく） */
+.gear {
+  position: relative;
+  overflow: hidden;
+  flex: none;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 4px 12px;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--muted);
+  background: transparent;
+  border: 2px solid var(--card-border);
+  border-radius: 12px;
+  cursor: pointer;
+  -webkit-touch-callout: none;
+}
+.gear::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--active);
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+.gear.is-pressing::before { transform: scaleX(1); transition: transform 1s linear; }
+.gear-hint {
+  position: absolute;
+  right: var(--side);
+  top: calc(100% - 4px);
+  z-index: 5;
+  margin: 0;
+  padding: 6px 12px;
+  font-size: 15px;
+  color: var(--muted);
+  background: var(--card);
+  border: 2px solid var(--card-border);
+  border-radius: 10px;
+}
+/* かざっている ときは せっていを かくす（まちがえて おさないように） */
+body.is-deco .gear { display: none; }
+
+.btn:focus-visible, .gear:focus-visible, .scene-btn:focus-visible, .stk:focus-visible, .thumb:focus-visible {
   outline: 4px solid var(--active-border);
   outline-offset: 3px;
 }
@@ -148,6 +193,7 @@ body {
 .edit-btn { flex-direction: column; gap: 2px; min-width: 120px; min-height: 92px; padding: 8px 14px; border-radius: 22px; }
 .edit-btn svg { width: 1.7em; height: 1.7em; }
 .del-btn { background: var(--warn-bg); border-color: var(--warn); }
+.undo-btn { margin-top: 10px; background: var(--card); border-color: var(--card-border); }
 
 .tray {
   grid-area: tray;
@@ -268,6 +314,13 @@ body {
   user-select: auto;
 }
 
+.set-dlg { width: min(640px, 100%); align-items: stretch; text-align: left; }
+.set-dlg .dlg-title { text-align: center; }
+.set-h { margin: 8px 0 0; font-size: clamp(17px, 2vw, 20px); color: var(--muted); }
+.opts { display: flex; flex-wrap: wrap; gap: 10px; }
+.opt-btn { min-height: 56px; padding: 4px 22px; font-size: clamp(18px, 2.2vw, 22px); background: var(--card); border-color: var(--card-border); }
+.opt-btn[aria-pressed="true"] { background: var(--active); border-color: var(--active-border); }
+
 .toast {
   position: fixed;
   left: 50%;
@@ -296,6 +349,7 @@ body.is-deco .title { font-size: clamp(20px, 2.8vw, 32px); }
   .edit { flex-direction: row; justify-content: center; }
   .edit-btn { flex-direction: row; gap: 8px; min-height: 64px; min-width: 0; padding: 6px 22px; border-radius: 999px; }
   .edit-btn svg { width: 1.4em; height: 1.4em; }
+  .undo-btn { margin-top: 0; margin-left: 10px; }
   .tray { display: grid; grid-template-columns: repeat(5, auto); justify-content: center; }
   .stk { width: clamp(96px, 15vw, 130px); }
   .stk svg { width: clamp(60px, 9vw, 80px); height: clamp(60px, 9vw, 80px); }
@@ -308,6 +362,9 @@ body.is-deco .title { font-size: clamp(20px, 2.8vw, 32px); }
   .back-btn span { display: none; }
   .back-btn { padding: 6px 16px; }
   .edit-btn span { font-size: 0.85em; }
+  .edit { gap: 8px; }
+  .edit-btn { padding: 6px 14px; }
+  .undo-btn { margin-left: 0; }
 }
 @media (max-width: 520px) {
   .scenes { grid-template-columns: 1fr; }
