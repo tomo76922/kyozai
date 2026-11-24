@@ -59,7 +59,10 @@
   // ---------- きろく（この iPad の中だけに ほぞん。なまえは いれない） ----------
   var STORE_KEY = 'tabecatch-v1';
   var canSave = true;
-  var rec = { scores: [], koeScores: [], meScores: [], camScores: [], speed: 'normal', sound: true, mode: 'yubi', koeSpeed: 'vslow' };
+  // せいげん じかん（びょう）。0 は「じかん なし」（ランキングに いれない）
+  var TIMES = [60, 90, 120, 0];
+  // best：ランキング。「あそびかた - せいげん じかん」ごとに 上位5つ（ちがう じょうけんの てんが まざらないように）
+  var rec = { best: {}, speed: 'normal', sound: true, mode: 'yubi', koeSpeed: 'vslow', time: 60 };
 
   (function load() {
     var raw = null;
@@ -67,10 +70,12 @@
     if (!raw) return;
     try {
       var d = JSON.parse(raw);
-      rec.scores = readScores(d.scores);
-      rec.koeScores = readScores(d.koeScores);
-      rec.meScores = readScores(d.meScores);
-      rec.camScores = readScores(d.camScores);
+      if (d.best && typeof d.best === 'object') {
+        Object.keys(d.best).forEach(function (key) {
+          if (/^(yubi|koe|me|cam)-(60|90|120)$/.test(key)) rec.best[key] = readScores(d.best[key]);
+        });
+      }
+      rec.time = TIMES.indexOf(Number(d.time)) >= 0 ? Number(d.time) : 60;
       rec.speed = d.speed === 'slow' ? 'slow' : 'normal';
       rec.mode = MODES[d.mode] ? d.mode : 'yubi';
       rec.koeSpeed = KOE_SPEEDS[d.koeSpeed] ? d.koeSpeed : 'vslow';
@@ -109,16 +114,18 @@
     return p[0] + 'ねん ' + Number(p[1]) + 'がつ' + Number(p[2]) + 'にち';
   }
 
-  // ハイスコアは「ゆび」と「こえ」で べつべつ
-  function scoreList(m) {
-    m = m || rec.mode;
-    return m === 'koe' ? rec.koeScores : m === 'me' ? rec.meScores : m === 'cam' ? rec.camScores : rec.scores;
+  // ランキングの なまえ（あそびかた - せいげん じかん）。「じかん なし」は ランキングに いれない（null）
+  function rankKey(m, t) { return t ? m + '-' + t : null; }
+  function scoreList(key) {
+    if (!key) return [];
+    if (!rec.best[key]) rec.best[key] = [];
+    return rec.best[key];
   }
 
   // とくてんを いれる。上位5つに はいったら その じゅんばん（0〜4）、はいらなければ -1
-  function addScore(s, m) {
-    if (s <= 0) return -1;
-    var list = scoreList(m);
+  function addScore(s, key, m) {
+    if (s <= 0 || !key) return -1;
+    var list = scoreList(key);
     var i = 0;
     while (i < list.length && list[i].s >= s) i++;
     if (i >= 5) return -1;
@@ -127,7 +134,7 @@
     save();
     return i;
   }
-  function bestScore(m) { var l = scoreList(m); return l.length ? l[0].s : 0; }
+  function bestScore(key) { var l = scoreList(key); return l.length ? l[0].s : 0; }
 
   // ---------- 音（音の ファイルは つかわず、その場で 作る。音量は ひかえめ） ----------
   var AC = window.AudioContext || window.webkitAudioContext;
@@ -212,6 +219,13 @@
   function sLevel() {
     sound(function () {
       [523, 659, 784].forEach(function (f, i) { tone(i * 0.07, 'triangle', f, f, 0.18, 0.05); });
+    });
+  }
+  // のこり 10びょう：やさしい 2つの 音
+  function sTick() {
+    sound(function () {
+      tone(0, 'triangle', 988, 988, 0.14, 0.05);
+      tone(0.18, 'triangle', 988, 988, 0.14, 0.05);
     });
   }
   function sOver() {
@@ -489,12 +503,17 @@
       lanes: isKoe || isMe || isCam,     // ひだり・みぎ 2れつ
       sp: sp,
       t: 0,
+      limit: rec.time,          // せいげん じかん（0 は なし）
+      key: rankKey(rec.mode, rec.time),
+      queue: [],                // だす よてい
+      caught: {},               // とった たべものの かず（しゅるいごと）
+      end: '',                  // おわった わけ：'time'（じかんに なった）・'hp'（ハートが なくなった）
       level: 1,
       score: 0,
       hp: HP_MAX,
       next: 0.5,
       lastHeart: -99,
-      prevBest: bestScore(rec.mode),
+      prevBest: bestScore(rankKey(rec.mode, rec.time)),
       recShown: false,
       over: false,
       overT: 0,
@@ -541,10 +560,64 @@
     hideHint();
   }
 
-  function speedFactor() { return 1 + (G.lanes ? 0.03 : 0.07) * (Math.min(G.level, LEVEL_CAP) - 1); }
+  // ---------- むずかしさ ----------
+  // はやさ：レベルごとに 約15％ずつ はやく（こえ・め の 2れつの モードは 半分の 約7.5％ずつ）
+  function speedFactor() { return 1 + (G.lanes ? 0.075 : 0.15) * (Math.min(G.level, LEVEL_CAP) - 1); }
   function gapNow() {
     var g = G.sp.gap / (1 + (G.lanes ? 0.05 : 0.12) * (Math.min(G.level, LEVEL_CAP) - 1));
     return Math.max(G.sp.gapMin, g);
+  }
+  // よけるもの（かみなり・いわ・さる）の わりあい：レベル1は 15％、1レベルごとに 5％ずつ ふえて、40％まで
+  function avoidRate() { return Math.min(0.15 + 0.05 * (G.level - 1), 0.4); }
+  // どうじに おちる かず・おちかた に つかう レベル（2れつの モードは 2レベル おそく）
+  function waveLevel() { return G.lanes ? G.level - 2 : G.level; }
+  // よけるものが いくつ どうじに おちるか
+  //   レベル1〜2：1つ ／ 3〜4：ときどき 2つ ／ 5〜6：2つが ふえ、ときどき 3つ ／ 7〜：3つが ふえる
+  function waveSize() {
+    var L = waveLevel(), r = Math.random();
+    if (L >= 7) return r < 0.4 ? 3 : r < 0.75 ? 2 : 1;
+    if (L >= 5) return r < 0.15 ? 3 : r < 0.6 ? 2 : 1;
+    if (L >= 3) return r < 0.3 ? 2 : 1;
+    return 1;
+  }
+  // レベル7から：たべものの すぐ ちかくに よけるものが まざる わりあい
+  function mixChance() { return waveLevel() >= 7 ? 0.3 : 0; }
+  function meanWave() { var L = waveLevel(); return L >= 7 ? 2.15 : L >= 5 ? 1.75 : L >= 3 ? 1.3 : 1; }
+
+  var ESC_WIN = 0.8;    // ゆび：この びょうすう いないに とどく よけるものは「どうじ」と かんがえる
+  var LANE_WIN = 1.6;   // 2れつ：左右の よけるものは、この びょうすう いじょう ずらす（かたほうは かならず あんぜん）
+
+  function fallDur(kind) { return G.sp.fall / speedFactor() * rand(0.92, 1.08) * (kind.id === 'thunder' ? 1.12 : 1); }
+  function fallSpeed(dur) { return (itemY(1) - itemY(0)) / dur; }   // 1びょうに おちる はば
+  function remain(it) { return (1 - it.p) * it.dur; }               // じめんに とどくまでの びょうすう
+
+  // ゆび：よけるものの あいだに、ひよこより ひろい すきまが 1つ いじょう あるか
+  function hasGap(xs) {
+    var r = itemSize * 0.5, need = basketHalf * 2 * 1.2;
+    xs = xs.slice().sort(function (a, b) { return a - b; });
+    var edge = 0;
+    for (var i = 0; i < xs.length; i++) {
+      if (xs[i] - r - edge >= need) return true;
+      edge = Math.max(edge, xs[i] + r);
+    }
+    return W - edge >= need;
+  }
+  // ゆび：いま おちている よけるもののうち、arrive びょうごに とどく ものの いち
+  function hazardsNear(arrive) {
+    var xs = [];
+    for (var i = 0; i < items.length; i++) {
+      var o = items[i];
+      if (o.state === 'fall' && o.type === 'avoid' && Math.abs(remain(o) - arrive) < ESC_WIN) xs.push(itemX(o));
+    }
+    return xs;
+  }
+  // 2れつ：となりの れつに、おなじ ころ とどく よけるものが ないか
+  function otherLaneSafe(lane, arrive) {
+    for (var i = 0; i < items.length; i++) {
+      var o = items[i];
+      if (o.state === 'fall' && o.type === 'avoid' && o.lane === 1 - lane && Math.abs(remain(o) - arrive) < LANE_WIN) return false;
+    }
+    return true;
   }
 
   // 2れつの とき：その れつの 上の ほうに まだ 物が あると、かさなって しまう
@@ -557,53 +630,166 @@
     return true;
   }
 
-  function spawn() {
-    var kind, type;
-    // 2れつの とき：どちらの れつも うまって いたら、すこし まって から だす
-    if (G.lanes && !laneFree(0) && !laneFree(1)) return false;
-    var avoidRate = G.lanes ? Math.min(0.15 + 0.008 * (G.level - 1), 0.22) : Math.min(0.2 + 0.012 * (G.level - 1), 0.32);
-    if (G.hp < HP_MAX && G.t - G.lastHeart > HEART_MIN_SEC && Math.random() < HEART_CHANCE) {
-      kind = HEART; type = 'heart'; G.lastHeart = G.t;
-    } else if (G.t > (G.lanes ? KOE_SAFE_START : SAFE_START) && Math.random() < avoidRate) {
-      kind = pick(AVOIDS); type = 'avoid';
-    } else {
-      kind = pick(FOODS); type = 'food';
+  // ---------- だす よてい ----------
+  // すこし あとで だす もの（ななめに つづく ものなど）も ここに ならべ、だす ときに もういちど たしかめる
+  function plan(delay, o) { o.at = G.t + delay; G.queue.push(o); }
+  function stepQueue() {
+    for (var i = 0; i < G.queue.length; i++) {
+      var q = G.queue[i];
+      if (q.at > G.t) continue;
+      var r = place(q);
+      if (r === 'wait' && G.t - q.at < 3) { q.at = G.t + 0.15; continue; }
+      G.queue.splice(i, 1);
+      i--;
     }
-    // すぐ ちかくに おなじころ でた ものと かさならないように
-    var m = itemSize * 0.7;
-    var x = 0;
-    for (var tries = 0; tries < (G.lanes ? 0 : 6); tries++) {
-      x = rand(m, W - m);
-      var ok = true;
-      for (var i = 0; i < items.length; i++) {
-        var o = items[i];
-        if (o.state === 'fall' && o.p < 0.25 && Math.abs(o.xf * W - x) < itemSize * 1.3) { ok = false; break; }
-      }
-      if (ok) break;
-    }
-    var lane = -1;
+  }
+  // かならず にげみちを のこす：だめな ときは ださない（'drop'）か、すこし まつ（'wait'）
+  function place(q) {
     if (G.lanes) {
-      // こえ・しせんモード：ひだりか みぎの れつ。おなじ れつが ながく つづかないように
-      lane = Math.random() < 0.5 ? 0 : 1;
-      if (G.lastLane === lane && G.sameLane >= 2) lane = 1 - lane;
-      if (!laneFree(lane)) lane = 1 - lane;
-      G.sameLane = G.lastLane === lane ? (G.sameLane || 0) + 1 : 1;
-      G.lastLane = lane;
+      if (!laneFree(q.lane)) return 'wait';
+      if (q.type === 'avoid' && !otherLaneSafe(q.lane, q.dur)) return 'drop';
+    } else if (q.type === 'avoid') {
+      if (!hasGap(hazardsNear(q.dur).concat([q.xf * W]))) return 'drop';
     }
     items.push({
-      kind: kind,
-      type: type,
-      lane: lane,
-      xf: x / W,
+      kind: q.kind,
+      type: q.type,
+      lane: G.lanes ? q.lane : -1,
+      xf: q.xf || 0,
       p: 0,
-      dur: G.sp.fall / speedFactor() * rand(0.92, 1.08) * (kind.id === 'thunder' ? 1.12 : 1),
-      rot: kind.id === 'kanpyo' ? 0 : rand(-0.2, 0.2),   // おちる ときは ほぼ まっすぐ（もじが さかさに ならないように）
+      dur: q.dur,
+      rot: q.kind.id === 'kanpyo' ? 0 : rand(-0.2, 0.2),   // おちる ときは ほぼ まっすぐ（もじが さかさに ならないように）
       spin: rand(-1.2, 1.2),
       ph: rand(0, 6.28),
       state: 'fall',
       t: 0,
       vx: 0, vy: 0, x: 0, y: 0
     });
+    return 'ok';
+  }
+
+  // つぎに だす ものを きめる
+  function spawn() {
+    // 2れつの とき：どちらの れつも うまって いたら、すこし まって から だす
+    if (G.lanes && !laneFree(0) && !laneFree(1)) return false;
+    if (G.hp < HP_MAX && G.t - G.lastHeart > HEART_MIN_SEC && Math.random() < HEART_CHANCE) {
+      G.lastHeart = G.t;
+      planSingle(HEART, 'heart');
+      return true;
+    }
+    // よけるものは「かたまり」や たべものの となりにも でるので、ぜんぶで avoidRate() の わりあいに なるように する
+    //   a：めあての わりあい、m：かたまりの へいきんの かず、x：たべものに よけるものが まざる わりあい
+    var a = avoidRate(), m = meanWave(), x = mixChance();
+    var top = a * (1 + x) - x;
+    var waveChance = top > 0 ? top / (top + m * (1 - a)) : 0;
+    if (G.t > (G.lanes ? KOE_SAFE_START : SAFE_START) && Math.random() < waveChance) {
+      planWave(waveSize());
+      return true;
+    }
+    planFood();
+    return true;
+  }
+
+  // ゆび：ほかの ものと かさならない いち
+  function freeX() {
+    var m = itemSize * 0.7, x = rand(m, W - m);
+    for (var tries = 0; tries < 6; tries++) {
+      var ok = true;
+      for (var i = 0; i < items.length; i++) {
+        var o = items[i];
+        if (o.state === 'fall' && o.p < 0.25 && Math.abs(itemX(o) - x) < itemSize * 1.3) { ok = false; break; }
+      }
+      if (ok) break;
+      x = rand(m, W - m);
+    }
+    return x;
+  }
+  // 2れつ：おなじ れつが ながく つづかないように えらぶ
+  function pickLane() {
+    var lane = Math.random() < 0.5 ? 0 : 1;
+    if (G.lastLane === lane && G.sameLane >= 2) lane = 1 - lane;
+    if (!laneFree(lane)) lane = 1 - lane;
+    G.sameLane = G.lastLane === lane ? (G.sameLane || 0) + 1 : 1;
+    G.lastLane = lane;
+    return lane;
+  }
+
+  function planSingle(kind, type) {
+    var dur = fallDur(kind);
+    if (G.lanes) plan(0, { kind: kind, type: type, lane: pickLane(), dur: dur });
+    else plan(0, { kind: kind, type: type, xf: freeX() / W, dur: dur });
+  }
+
+  // たべもの（レベル7から：すぐ ちかくに よけるものが まざる）
+  function planFood() {
+    var kind = pick(FOODS);
+    var dur = fallDur(kind);
+    var mix = G.t > (G.lanes ? KOE_SAFE_START : SAFE_START) && Math.random() < mixChance();
+    if (G.lanes) {
+      var lane = pickLane();
+      plan(0, { kind: kind, type: 'food', lane: lane, dur: dur });
+      // おなじ れつの すぐ あとに よけるもの（とったら すぐ にげる）
+      if (mix) plan(Math.max(LANE_WIN, itemSize * 1.3 / fallSpeed(dur)), { kind: pick(AVOIDS), type: 'avoid', lane: lane, dur: dur });
+      return;
+    }
+    var x = freeX();
+    plan(0, { kind: kind, type: 'food', xf: x / W, dur: dur });
+    if (!mix) return;
+    // よこに ぴったり ならべる（たべものの まうえに ひよこを あわせれば、よけるものには あたらない）
+    var dx = basketHalf + itemSize * 0.5 * 0.35 + 8;
+    var side = Math.random() < 0.5 ? -1 : 1;
+    var hx = x + side * dx;
+    if (hx < itemSize * 0.5 || hx > W - itemSize * 0.5) hx = x - side * dx;
+    if (hx < itemSize * 0.5 || hx > W - itemSize * 0.5) return;
+    plan(0, { kind: pick(AVOIDS), type: 'avoid', xf: hx / W, dur: dur });
+  }
+
+  // よけるものの かたまり
+  //   レベル3から：よこに ならんで どうじに ／ レベル5から：すこしずつ ずらして ななめに つづく
+  function planWave(n) {
+    var L = waveLevel();
+    var diag = n > 1 && L >= 5 && Math.random() < 0.5;
+    var dur = fallDur(AVOIDS[0]);
+    var i;
+    if (G.lanes) {
+      var lane = pickLane();
+      if (n === 1) { plan(0, { kind: pick(AVOIDS), type: 'avoid', lane: lane, dur: dur }); return; }
+      if (diag) {
+        // ひだり・みぎ・ひだり と こうごに（どうじには ならない）
+        for (i = 0; i < n; i++) plan(i * (LANE_WIN + 0.4), { kind: pick(AVOIDS), type: 'avoid', lane: (lane + i) % 2, dur: dur });
+      } else {
+        // おなじ れつに たてに ならんで（となりの れつは あんぜん）
+        var colGap = Math.max(0.5, itemSize * 1.3 / fallSpeed(dur));
+        for (i = 0; i < n; i++) plan(i * colGap, { kind: pick(AVOIDS), type: 'avoid', lane: lane, dur: dur });
+      }
+      return;
+    }
+    var r = itemSize * 0.5;
+    for (var size = n; size >= 1; size--) {
+      for (var tries = 0; tries < 12; tries++) {
+        var xs = [], delays = [];
+        if (size > 1 && diag) {
+          var step = itemSize * 1.35 * (Math.random() < 0.5 ? -1 : 1);
+          var span = Math.abs(step) * (size - 1);
+          var x0 = rand(r, W - r - span);
+          if (step < 0) x0 += span;
+          for (i = 0; i < size; i++) { xs.push(x0 + step * i); delays.push(i * 0.3); }
+        } else {
+          for (i = 0; i < size; i++) {
+            var x = rand(r, W - r), ok = true;
+            for (var j = 0; j < xs.length; j++) if (Math.abs(xs[j] - x) < itemSize * 1.15) ok = false;
+            if (ok) { xs.push(x); delays.push(0); }
+          }
+          if (xs.length < size) continue;
+        }
+        // おなじ ころ とどく ものも ふくめて、ひよこが にげられる すきまが あるか
+        if (!hasGap(hazardsNear(dur).concat(xs))) continue;
+        for (i = 0; i < xs.length; i++) plan(delays[i], { kind: pick(AVOIDS), type: 'avoid', xf: xs[i] / W, dur: dur });
+        return;
+      }
+    }
+    // おけなかった ときは たべものに する
+    planFood();
   }
 
   function itemY(p) {
@@ -694,10 +880,16 @@
       return;
     }
     G.t += dt;
+    // せいげん じかんに なったら おしまい
+    if (G.limit && G.t >= G.limit) {
+      G.t = G.limit;
+      endGame('time');
+      return;
+    }
     var lv = 1 + Math.floor(G.t / LEVEL_SEC);
     if (lv > G.level) {
       G.level = lv;
-      toast('レベルアップ');
+      showLevelBig(lv);
       sLevel();
     }
     G.next -= dt;
@@ -705,6 +897,7 @@
       if (spawn() === false) G.next = 0.15;
       else G.next = gapNow() * rand(0.75, 1.25);
     }
+    stepQueue();
     if (G.bubble) {
       G.bubble.t += dt;
       if (G.bubble.t > 1.2) G.bubble = null;
@@ -764,6 +957,7 @@
   function caught(it, x, y) {
     if (it.type === 'food') {
       G.score += it.kind.pt;
+      G.caught[it.kind.id] = (G.caught[it.kind.id] || 0) + 1;
       setScore(true);
       P.happy = 0.45;
       P.bounce = 1;
@@ -792,16 +986,25 @@
       items.push(it);
       sHurt();
       if (G.hp <= 0) {
-        G.over = true;
-        G.overT = 0;
-        G.bubble = null;
-        hold.left = hold.right = false;
-        drag.id = null; drag.x = null;
-        releaseMoveBtns();
+        endGame('hp');
       } else {
         G.bubble = { text: 'おっとっと', t: 0 };
       }
     }
+  }
+
+  // おしまい（'time'：じかんに なった ／ 'hp'：ハートが なくなった）
+  function endGame(why) {
+    if (G.over) return;
+    G.over = true;
+    G.end = why;
+    G.overT = 0;
+    G.bubble = null;
+    G.queue = [];
+    hold.left = hold.right = false;
+    drag.id = null; drag.x = null;
+    releaseMoveBtns();
+    if (why === 'time') { P.happy = 1; P.bounce = 1; }
   }
 
   function addPop(text, x, y, color, vx) {
@@ -880,7 +1083,7 @@
       var ba = G.bubble.t < 0.15 ? G.bubble.t / 0.15 : G.bubble.t > 0.9 ? Math.max(0, (1.2 - G.bubble.t) / 0.3) : 1;
       drawBubble(P.x, groundY - 96 * chickS, G.bubble.text, ba);
     } else if (mode === 'play' && G && G.over && G.overT > 0.3) {
-      drawBubble(P.x, groundY - 86 * chickS, 'ふう、たのしかった！', Math.min(1, (G.overT - 0.3) / 0.2));
+      drawBubble(P.x, groundY - 86 * chickS, G.end === 'time' ? 'おしまい！ たのしかった！' : 'ふう、たのしかった！', Math.min(1, (G.overT - 0.3) / 0.2));
     }
   }
 
@@ -1163,6 +1366,7 @@
     }
     draw();
     showCamMsg(frozen);
+    if (mode === 'play') updateTimer();
   }
   function startLoop() {
     if (running) return;
@@ -1218,6 +1422,35 @@
     el.classList.remove('is-lost', 'is-gain', cls);
     void el.getBoundingClientRect();
     el.classList.add(cls);
+  }
+
+  // のこり じかん（せいげん じかんが ある ときだけ。のこり 10びょうで いろを かえる）
+  var timerEl = document.getElementById('timer');
+  var timeNum = document.getElementById('timeNum');
+  var lastSec = -1;
+  function updateTimer() {
+    if (!G || !G.limit) { if (!timerEl.hidden) timerEl.hidden = true; return; }
+    timerEl.hidden = false;
+    var sec = Math.max(0, Math.ceil(G.limit - G.t));
+    if (sec === lastSec) return;
+    if (sec === 10 && lastSec > 10) sTick();
+    lastSec = sec;
+    timeNum.textContent = sec;
+    timerEl.classList.toggle('is-low', sec <= 10);
+    timerEl.setAttribute('aria-label', 'のこり ' + sec + 'びょう');
+  }
+
+  // レベルが あがった ことが はっきり わかるように、まんなかに 大きく
+  var levelBig = document.getElementById('levelBig');
+  var levelTimer = 0;
+  function showLevelBig(n) {
+    hideHint();
+    levelBig.textContent = 'レベル ' + n;
+    levelBig.classList.remove('is-show');
+    void levelBig.offsetWidth;
+    levelBig.classList.add('is-show');
+    clearTimeout(levelTimer);
+    levelTimer = setTimeout(function () { levelBig.classList.remove('is-show'); }, 1900);
   }
 
   function setScore(pop) {
@@ -1283,6 +1516,10 @@
     clearToast();
     setScore(false);
     setHearts();
+    lastSec = -1;
+    clearTimeout(levelTimer);
+    levelBig.classList.remove('is-show');
+    updateTimer();
     clearTimeout(againTimer);
     koeAgainEl.hidden = true;
     leftBtn.hidden = rightBtn.hidden = G.lanes;
@@ -1361,14 +1598,16 @@
   function showOver() {
     var m = G.m;
     var prev = G.prevBest;
-    var rank = addScore(G.score, m);
-    // ランキング用の きろく（「きろくを おくる」で QRコードに する）
-    G.kiroku = window.Kiroku ? Kiroku.makeRecord({ g: 'catch', d: m + '-' + (m === 'yubi' ? rec.speed : rec.koeSpeed), s: G.score }) : null;
+    var rank = addScore(G.score, G.key, m);
+    // ランキング用の きろく（「きろくを おくる」で QRコードに する）。「じかん なし」は ランキングに いれない
+    G.kiroku = window.Kiroku && G.key ? Kiroku.makeRecord({ g: 'catch', d: G.key, s: G.score }) : null;
     sendBtn.hidden = !G.kiroku;
-    var isNew = G.score > 0 && G.score > prev;
+    var isNew = !!G.key && G.score > 0 && G.score > prev;
+    document.getElementById('overWhy').textContent = G.end === 'time' ? 'じかんに なったよ' : 'ハートが なくなったよ';
     document.getElementById('overScore').textContent = G.score;
     document.getElementById('newRec').hidden = !isNew;
-    renderBestList(document.getElementById('overBest'), rank, m);
+    renderAte();
+    renderBestList(document.getElementById('overBest'), rank, G.key, m);
     overEl.hidden = false;
     hud.hidden = false;
     if (isNew) sRecord(); else sOver();
@@ -1390,10 +1629,14 @@
   var KOE_SPEED_NAMES = { vslow: 'とても ゆっくり', slow: 'ゆっくり', normal: 'すこし ゆっくり' };
   function speedTag(r, m) {
     if (m !== 'yubi') return KOE_SPEED_NAMES[r.sp] || '';
-    return r.sp === 'slow' ? 'ゆっくり' : '';
+    return r.sp === 'slow' ? 'ゆっくり' : 'ふつう';
   }
-  function renderBestList(el, newRank, m) {
-    var list = scoreList(m);
+  function renderBestList(el, newRank, key, m) {
+    if (!key) {
+      el.innerHTML = '<li class="b-empty">「じかん なし」は ランキングに はいりません</li>';
+      return;
+    }
+    var list = scoreList(key);
     if (!list.length) {
       el.innerHTML = '<li class="b-empty">まだ ありません</li>';
       return;
@@ -1406,9 +1649,26 @@
         '<span class="b-date">' + dateShort(r.d) + '</span></li>';
     }).join('');
   }
+  function timeName(t) { return t ? t + 'びょう' : 'じかん なし'; }
   function renderBest() {
-    bestTitle.textContent = 'ハイスコア（' + (MODES[rec.mode] || 'ゆび') + '）';
-    renderBestList(document.getElementById('bestList'), -1, rec.mode);
+    bestTitle.textContent = 'ランキング（' + (MODES[rec.mode] || 'ゆび') + '・' + timeName(rec.time) + '）';
+    renderBestList(document.getElementById('bestList'), -1, rankKey(rec.mode, rec.time), rec.mode);
+  }
+
+  // おしまいの がめん：とった たべものの かず（しゅるいごと）
+  var plateUrls = {};
+  function plateUrl(it, type) {
+    if (!plateUrls[it.id]) {
+      try { plateUrls[it.id] = plateSprite(it, type, 96).toDataURL('image/png'); } catch (e) { plateUrls[it.id] = ''; }
+    }
+    return plateUrls[it.id];
+  }
+  function renderAte() {
+    document.getElementById('ateList').innerHTML = FOODS.map(function (f) {
+      var n = G.caught[f.id] || 0;
+      return '<li' + (n ? '' : ' class="is-zero"') + ' aria-label="' + f.name + ' ' + n + 'こ">' +
+        '<img src="' + plateUrl(f, 'food') + '" alt=""><span class="ate-name">' + f.name + '</span><b>' + n + '</b>こ</li>';
+    }).join('');
   }
 
   // はじめの がめんの 「キャッチ してね」「よけてね」
@@ -1444,8 +1704,23 @@
     if (G && G.kiroku && window.Kiroku) Kiroku.showSend(G.kiroku);
   });
 
+  // ---------- せいげん じかん ----------
+  var timeBtns = Array.prototype.slice.call(document.querySelectorAll('[data-time]'));
+  function renderTime() {
+    timeBtns.forEach(function (b) { b.setAttribute('aria-pressed', String(Number(b.dataset.time) === rec.time)); });
+  }
+  timeBtns.forEach(function (b) {
+    b.addEventListener('click', function () {
+      unlockAudio();
+      rec.time = Number(b.dataset.time);
+      save();
+      renderTime();
+      renderBest();
+    });
+  });
+
   // ---------- はやさ・音 ----------
-  var speedBtns = Array.prototype.slice.call(document.querySelectorAll('.speed-btn'));
+  var speedBtns = Array.prototype.slice.call(document.querySelectorAll('[data-speed]'));
   function renderSpeed() {
     speedBtns.forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.speed === rec.speed)); });
   }
@@ -1675,23 +1950,24 @@
     if (e.key === 'Enter' || e.key === ' ') endHold();
   });
 
+  function anyScores() {
+    return Object.keys(rec.best).some(function (key) { return rec.best[key].length > 0; });
+  }
   function renderSettings() {
-    var any = rec.scores.length + rec.koeScores.length + rec.meScores.length + rec.camScores.length > 0;
+    var any = anyScores();
     recNote.textContent = any
-      ? 'この iPad に ほぞん している ハイスコア（「ゆび」「こえ」それぞれ 上位5つ）です。けすと ぜんぶ きえます（はやさ・音・こえの せっていは のこります）。'
-      : 'ハイスコアは まだ ありません。';
+      ? 'この iPad に ほぞん している ランキング（「あそびかた」と「せいげん じかん」ごとに 上位5つ）です。けすと ぜんぶ きえます（はやさ・音・こえ・め の せっていは のこります）。'
+      : 'ランキングは まだ ありません。';
     var html = '';
-    rec.scores.forEach(function (r) {
-      html += '<li>ゆび　' + r.s + 'てん　' + dateLong(r.d) + (r.sp === 'slow' ? '（ゆっくり）' : '（ふつう）') + '</li>';
-    });
-    rec.koeScores.forEach(function (r) {
-      html += '<li>こえ　' + r.s + 'てん　' + dateLong(r.d) + '（' + (KOE_SPEED_NAMES[r.sp] || '') + '）</li>';
-    });
-    rec.meScores.forEach(function (r) {
-      html += '<li>め　' + r.s + 'てん　' + dateLong(r.d) + '（' + (KOE_SPEED_NAMES[r.sp] || '') + '）</li>';
-    });
-    rec.camScores.forEach(function (r) {
-      html += '<li>カメラ　' + r.s + 'てん　' + dateLong(r.d) + '（' + (KOE_SPEED_NAMES[r.sp] || '') + '）</li>';
+    Object.keys(MODES).forEach(function (m) {
+      TIMES.forEach(function (t) {
+        var key = rankKey(m, t);
+        if (!key || !rec.best[key]) return;
+        rec.best[key].forEach(function (r) {
+          var tag = speedTag(r, m);
+          html += '<li>' + MODES[m] + '・' + timeName(t) + '　' + r.s + 'てん　' + dateLong(r.d) + (tag ? '（' + tag + '）' : '') + '</li>';
+        });
+      });
     });
     setList.innerHTML = html;
     setList.hidden = !any;
@@ -1705,7 +1981,7 @@
   function disarmReset() {
     clearTimeout(armTimer);
     resetBtn.classList.remove('is-armed');
-    resetBtn.textContent = 'ハイスコアを けす';
+    resetBtn.textContent = 'ランキングを けす';
   }
 
   function openSettings() {
@@ -1731,7 +2007,7 @@
 
   // まちがえて けさないように、2回 おしたときだけ けす
   resetBtn.addEventListener('click', function () {
-    if (!rec.scores.length && !rec.koeScores.length && !rec.meScores.length && !rec.camScores.length) return;
+    if (!anyScores()) return;
     if (!resetBtn.classList.contains('is-armed')) {
       resetBtn.classList.add('is-armed');
       resetBtn.textContent = 'もういちど おすと けします';
@@ -1740,13 +2016,10 @@
       return;
     }
     disarmReset();
-    rec.scores = [];
-    rec.koeScores = [];
-    rec.meScores = [];
-    rec.camScores = [];
+    rec.best = {};
     save();
     renderSettings();
-    resetStatus.textContent = 'ハイスコアを けしました';
+    resetStatus.textContent = 'ランキングを けしました';
   });
 
   // ---------- こえで あそぶ（../shared/koe-switch.js を つかう） ----------
@@ -2050,6 +2323,7 @@
   // ---------- はじめ ----------
   renderSound();
   renderSpeed();
+  renderTime();
   renderMode();
   placeLines();
   renderBest();
