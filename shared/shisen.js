@@ -417,7 +417,7 @@
   }
 
   // ---------- カメラを つかう まえの おしらせ ----------
-  // opt: { eye, onOk, onCancel }  → eye.start() まで する
+  // opt: { eye, onOk, onCancel, purpose }  → eye.start() まで する（purpose：なにの ために つかうか。はじめは「ひよこを うごかす」）
   var explained = false;
   function explain(opt) {
     var eye = opt.eye;
@@ -425,7 +425,7 @@
     var w = el('<div class="ss-wrap ss-dim"><div class="ss-card" role="dialog" aria-modal="true" aria-labelledby="ss-t1">' +
       CAM_SVG +
       '<p class="ss-title" id="ss-t1">カメラを つかうね</p>' +
-      '<p class="ss-text">どちらを みているかを しらべて ひよこを うごかすために、iPad の まえの カメラを つかいます。<br>' +
+      '<p class="ss-text">どちらを みているかを しらべて ' + (opt.purpose || 'ひよこを うごかす') + 'ために、iPad の まえの カメラを つかいます。<br>' +
       'うつした ようすは この iPad の なかだけで つかい、ほぞんも しないし、どこにも おくりません。</p>' +
       '<p class="ss-sub">このあと「カメラを つかっても いいですか」と きかれたら、「きょか」を おしてね。</p>' +
       '<div class="ss-loading" hidden><div class="ss-spin" aria-hidden="true"></div><p class="ss-sub">じゅんびしています…（はじめては すこし じかんが かかります）</p></div>' +
