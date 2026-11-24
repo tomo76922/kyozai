@@ -79,6 +79,8 @@
       <p class="note" id="whoNote"></p>
     </section>
 
+    <!-- なまえ（イニシャルと いろの マーク）。ひとりで の ときだけ。おすと かえられる -->
+    <div class="name-chip" id="nameChip"></div>
     <button type="button" class="btn go-btn" id="goBtn">はじめる</button>
     <p class="note warn" id="saveWarn" hidden>この iPad では きろくを ほぞん できません。</p>
   </main>
@@ -107,6 +109,7 @@
         <button type="button" class="btn btn-main" id="againBtn">もういちど</button>
         <button type="button" class="btn" id="toStartBtn">はじめの がめん</button>
       </div>
+      <button type="button" class="btn send-btn" id="sendBtn" hidden><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="6.5" height="6.5" rx="1"/><rect x="14" y="3.5" width="6.5" height="6.5" rx="1"/><rect x="3.5" y="14" width="6.5" height="6.5" rx="1"/><path d="M14 14h2.5v2.5H14zM18 18h2.5v2.5H18zM14 20.5h1M20.5 14v1"/></svg><span>きろくを おくる</span></button>
     </div>
   </div>
 
@@ -122,6 +125,8 @@
     </div>
   </div>
 
+  <script src="../shared/qr/qrcode.js"></script>
+  <script src="../shared/kiroku.js"></script>
   <script src="./art.js"></script>
   <script src="./shinkei.js"></script>
   <script src="../pwa.js"></script>

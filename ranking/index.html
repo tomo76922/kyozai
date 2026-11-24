@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>ランキング</title>
+  <meta name="description" content="ゲームの きろくを QRコードで あつめて ランキングに する（せんせい よう）">
+  <meta name="theme-color" content="#f3efe6">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="きょうざい">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="format-detection" content="telephone=no">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <link rel="icon" href="../icons/icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="../common.css">
+  <link rel="stylesheet" href="./ranking.css">
+</head>
+<body>
+  <div class="page">
+    <header class="head">
+      <a class="home-btn" href="../" aria-label="もくじに もどる">
+        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/></svg>
+        <span class="home-text">もくじ</span>
+      </a>
+      <h1 class="title">ランキング</h1>
+      <div class="seg" role="group" aria-label="ひょうじする きろく">
+        <button type="button" class="seg-btn" data-when="today" aria-pressed="true">きょう</button>
+        <button type="button" class="seg-btn" data-when="all" aria-pressed="false">ぜんぶ</button>
+      </div>
+    </header>
+
+    <nav class="tabs games" id="games" aria-label="ゲーム"></nav>
+    <div class="tabs diffs" id="diffs" role="group" aria-label="むずかしさ"></div>
+    <div class="tabs stages" id="stages" role="group" aria-label="ステージ" hidden></div>
+
+    <main class="board" id="board">
+      <h2 class="caption" id="caption"></h2>
+      <ol class="list" id="list"></ol>
+      <p class="empty" id="empty" hidden></p>
+    </main>
+
+    <footer class="tools">
+      <button type="button" class="tbtn tbtn-go" id="scanBtn">
+        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3"/><path d="M8 8h3v3H8zM13 13h3v3h-3zM13 8h3M8 16h3"/></svg>
+        <span>QRコードを よみとる</span>
+      </button>
+      <span class="count" id="count" role="status"></span>
+      <span class="tools-sp"></span>
+      <button type="button" class="tbtn" id="exportBtn">かきだす</button>
+      <button type="button" class="tbtn" id="importBtn">よみこむ</button>
+      <button type="button" class="tbtn tbtn-warn" id="clearBtn">ぜんぶ けす</button>
+      <input type="file" id="fileIn" accept=".csv,text/csv,text/plain" hidden>
+    </footer>
+    <p class="warn" id="saveWarn" hidden>この iPad では きろくを ほぞん できません。ページを とじると きえます。「かきだす」で ファイルに のこしてください。</p>
+  </div>
+
+  <!-- QRコードを よみとる -->
+  <div class="scan" id="scan" role="dialog" aria-modal="true" aria-labelledby="scanTitle" hidden>
+    <div class="scan-view">
+      <video class="scan-video" id="video" playsinline muted autoplay></video>
+      <div class="scan-frame" id="scanFrame" aria-hidden="true"></div>
+      <p class="scan-wait" id="scanWait">カメラを じゅんび しています…</p>
+    </div>
+    <div class="scan-side">
+      <h2 class="scan-title" id="scanTitle">QRコードを よみとる</h2>
+      <p class="scan-msg" id="scanMsg" role="status" aria-live="assertive">QRコードを カメラに うつしてね</p>
+      <ol class="scan-log" id="scanLog" aria-label="うけとった きろく"></ol>
+      <div class="scan-btns">
+        <button type="button" class="tbtn" id="flipBtn">そとの カメラに する</button>
+        <button type="button" class="tbtn tbtn-go" id="scanEndBtn">おわる</button>
+      </div>
+      <p class="scan-note">カメラの えいぞうは ほぞんも そうしんも しません。QRコードを よむ ためだけに つかいます。</p>
+    </div>
+  </div>
+
+  <!-- たしかめる -->
+  <div class="ask" id="ask" hidden>
+    <div class="ask-card" role="alertdialog" aria-modal="true" aria-labelledby="askTitle" aria-describedby="askText" tabindex="-1">
+      <p class="ask-title" id="askTitle"></p>
+      <p class="ask-text" id="askText"></p>
+      <div class="ask-btns">
+        <button type="button" class="tbtn" id="askNo">やめる</button>
+        <button type="button" class="tbtn tbtn-warn" id="askYes"></button>
+      </div>
+    </div>
+  </div>
+
+  <p class="toast" id="toast" role="status" hidden></p>
+
+  <script src="../shared/qr/jsQR.js"></script>
+  <script src="../shared/kiroku.js"></script>
+  <script src="./ranking.js"></script>
+  <script src="../pwa.js"></script>
+</body>
+</html>

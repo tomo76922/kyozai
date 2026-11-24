@@ -1362,6 +1362,9 @@
     var m = G.m;
     var prev = G.prevBest;
     var rank = addScore(G.score, m);
+    // ランキング用の きろく（「きろくを おくる」で QRコードに する）
+    G.kiroku = window.Kiroku ? Kiroku.makeRecord({ g: 'catch', d: m + '-' + (m === 'yubi' ? rec.speed : rec.koeSpeed), s: G.score }) : null;
+    sendBtn.hidden = !G.kiroku;
     var isNew = G.score > 0 && G.score > prev;
     document.getElementById('overScore').textContent = G.score;
     document.getElementById('newRec').hidden = !isNew;
@@ -1425,9 +1428,20 @@
 
   document.getElementById('startBtn').addEventListener('click', function () {
     unlockAudio();
-    if (rec.mode === 'koe') useKoe(startGame);
-    else if (rec.mode === 'cam') useCam(startGame, true);
-    else startGame();
+    // ランキング用の なまえが なければ、さきに きく
+    if (window.Kiroku) Kiroku.ensureName(start);
+    else start();
+    function start() {
+      if (rec.mode === 'koe') useKoe(startGame);
+      else if (rec.mode === 'cam') useCam(startGame, true);
+      else startGame();
+    }
+  });
+  if (window.Kiroku) Kiroku.mountChip(document.getElementById('nameChip'));
+  var sendBtn = document.getElementById('sendBtn');
+  sendBtn.addEventListener('click', function () {
+    // QRコードを みせている あいだは、こえで「もういちど」に ならない（onVoice で Kiroku.isOpen() を みる）
+    if (G && G.kiroku && window.Kiroku) Kiroku.showSend(G.kiroku);
   });
 
   // ---------- はやさ・音 ----------
@@ -1770,7 +1784,7 @@
     if (!testEl.hidden) { flashLamp(); return; }
     if (mode !== 'play' || !G || !G.koe || paused) return;
     if (!G.over) switchLane();
-    else if (againReady && !overEl.hidden) { againReady = false; startGame(); }
+    else if (againReady && !overEl.hidden && !(window.Kiroku && Kiroku.isOpen())) { againReady = false; startGame(); }
   }
 
   // メーター（いま 見えている ほうだけ うごかす）

@@ -1,7 +1,7 @@
 // きょうざい Service Worker（メニューと全教材で1つ）
 // ファイルを更新したら CACHE_VERSION の数字を上げてください。
 // 教材をふやしたら、そのファイルを ASSETS に足してください。
-var CACHE_VERSION = 'v26';
+var CACHE_VERSION = 'v27';
 var CACHE_PREFIX = 'hiragana-cards-';   // 以前の版の保存を消せるように、名前はそのまま
 var CACHE_NAME = CACHE_PREFIX + CACHE_VERSION;
 
@@ -21,6 +21,9 @@ var ASSETS = [
   './shared/koe-switch.js',
   './shared/game-lock.js',
   './shared/shisen.js',
+  './shared/kiroku.js',
+  './shared/qr/qrcode.js',
+  './shared/qr/jsQR.js',
   // ひらがなカード
   './hiragana/',
   './hiragana/index.html',
@@ -89,7 +92,12 @@ var ASSETS = [
   './catch/',
   './catch/index.html',
   './catch/catch.css',
-  './catch/catch.js'
+  './catch/catch.js',
+  // ランキング（せんせい よう）
+  './ranking/',
+  './ranking/index.html',
+  './ranking/ranking.css',
+  './ranking/ranking.js'
 ];
 
 // しせん（カメラで 目の 向きを よむ）用の MediaPipe（ぜんぶで 約25MB）。

@@ -319,6 +319,8 @@
       }
     }
     renderStatus();
+    // ランキング用の きろく（ひとりで の ときだけ。「きろくを おくる」で QRコードに する）
+    G.kiroku = G.players === 1 && window.Kiroku ? Kiroku.makeRecord({ g: 'shinkei', d: G.level, s: G.moves, t: time }) : null;
 
     setTimeout(function () {
       if (!G || !G.over) return;
@@ -339,6 +341,7 @@
       $('bestLine').textContent = G.players === 1 && b
         ? G.L.name + ' の いちばん：' + b.moves + 'かい'
         : (G.players === 2 ? 'ふたりで のときは きろくは のこりません' : '');
+      $('sendBtn').hidden = !G.kiroku;
       clearEl.hidden = false;
       sClear();
       $('againBtn').focus({ preventScroll: true });
@@ -397,6 +400,7 @@
       ? 'こうたいで めくります。そろったら もう いちど めくれます。'
       : 'めくった かいすうの きろくが のこります。';
     $('saveWarn').hidden = canSave;
+    $('nameChip').hidden = rec.players !== 1;
   }
 
   Array.prototype.forEach.call(document.querySelectorAll('.level'), function (b) {
@@ -415,7 +419,16 @@
       renderStart();
     });
   });
-  $('goBtn').addEventListener('click', function () { unlockAudio(); newGame(); });
+  $('goBtn').addEventListener('click', function () {
+    unlockAudio();
+    // ひとりで の ときは、ランキング用の なまえが なければ さきに きく
+    if (rec.players === 1 && window.Kiroku) Kiroku.ensureName(newGame);
+    else newGame();
+  });
+  if (window.Kiroku) Kiroku.mountChip($('nameChip'));
+  $('sendBtn').addEventListener('click', function () {
+    if (G && G.kiroku && window.Kiroku) Kiroku.showSend(G.kiroku);
+  });
 
   // えらぶ ボタンの 絵
   $('picEasy').innerHTML = Art.animalSvg(0);

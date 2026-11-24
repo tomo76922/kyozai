@@ -577,6 +577,8 @@
     if (!rec.cleared[S.n]) rec.cleared[S.n] = true;
     if (!(rec.best[S.n] >= S.acorns)) rec.best[S.n] = S.acorns;
     save();
+    // ランキング用の きろく（「きろくを おくる」で QRコードに する）
+    S.kiroku = window.Kiroku ? Kiroku.makeRecord({ g: 'piyo', d: rec.diff, st: S.n, s: S.acorns }) : null;
   }
 
   function stepGoal(dt) {
@@ -1452,6 +1454,7 @@
     maru.innerHTML = hanamaruSvg();
     var nextBtn = document.getElementById('nextStageBtn');
     nextBtn.hidden = S.n >= STAGE_MAX;
+    document.getElementById('sendBtn').hidden = !S.kiroku;
     goalEl.hidden = false;
     (nextBtn.hidden ? document.getElementById('againBtn') : nextBtn).focus({ preventScroll: true });
   }
@@ -1518,7 +1521,9 @@
       selectMsg.textContent = 'まえの ステージを クリアすると ひらくよ';
       return;
     }
-    begin(n);
+    // ランキング用の なまえが なければ、さきに きく
+    if (window.Kiroku) Kiroku.ensureName(function () { begin(n); });
+    else begin(n);
   });
 
   // ---------- むずかしさ・あそびかた・音 ----------
@@ -1618,6 +1623,10 @@
     if (S) begin(S.n);
   });
   document.getElementById('goalSelectBtn').addEventListener('click', showSelect);
+  document.getElementById('sendBtn').addEventListener('click', function () {
+    if (S && S.kiroku && window.Kiroku) Kiroku.showSend(S.kiroku);
+  });
+  if (window.Kiroku) Kiroku.mountChip(document.getElementById('nameChip'));
 
   // ほかの アプリに したとき・たて向きに したときは いちじていし
   function isPortrait() { return window.innerHeight > window.innerWidth; }

@@ -27,6 +27,23 @@
     <p class="gear-hint" id="gearHint" role="status" hidden>ながく おして ください</p>
   </header>
 
+  <!-- 先生用の せってい（「せってい」を ながおし したときだけ ひらく） -->
+  <div class="teach" id="teach" hidden>
+    <div class="teach-card" role="dialog" aria-modal="true" aria-labelledby="teachTitle" tabindex="-1">
+      <h2 class="teach-title" id="teachTitle">せってい（せんせい よう）</h2>
+      <button type="button" class="teach-btn" id="pinBtn">
+        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+        <span>ゲームの パスワードを かえる</span>
+      </button>
+      <a class="teach-btn" href="./ranking/">
+        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3"/></svg>
+        <span>ランキングを あつめる</span>
+      </a>
+      <p class="teach-note">こどもの iPad に でた きろくの QRコードを、この iPad の カメラで よみとって ランキングに します。</p>
+      <button type="button" class="teach-close" id="teachClose">とじる</button>
+    </div>
+  </div>
+
   <main>
     <!-- 教材をふやすときは、ここに <a class="menu-item"> を1つ足す -->
     <nav class="menu" aria-label="きょうざい いちらん">

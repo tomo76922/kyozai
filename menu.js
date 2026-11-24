@@ -1,6 +1,7 @@
 // メニュー（トップページ）
 // ・ゲームの ボタンを おすと、パスワードを きく（shared/game-lock.js）
-// ・先生用：右上の「せってい」を 1びょう ながおし すると、パスワードを かえられる
+// ・先生用：右上の「せってい」を 1びょう ながおし すると、先生用の がめんが ひらく
+//   （ゲームの パスワードを かえる・ランキングを あつめる）
 (function () {
   'use strict';
   if (!window.GameLock) return;
@@ -25,7 +26,7 @@
       opened = true;
       holdTimer = 0;
       gearBtn.classList.remove('is-pressing');
-      GameLock.change({ onDone: function (changed) { if (changed) toast('パスワードを かえました'); } });
+      openTeach();
     }, HOLD_MS);
   }
   function endHold() {
@@ -57,6 +58,28 @@
   gearBtn.addEventListener('keyup', function (e) {
     if (e.key === 'Enter' || e.key === ' ') endHold();
   });
+
+  // ---------- 先生用の がめん ----------
+  var teach = document.getElementById('teach');
+  function openTeach() {
+    teach.hidden = false;
+    teach.querySelector('.teach-card').focus({ preventScroll: true });
+  }
+  function closeTeach() {
+    teach.hidden = true;
+    gearBtn.focus({ preventScroll: true });
+  }
+  document.getElementById('teachClose').addEventListener('click', closeTeach);
+  teach.addEventListener('click', function (e) { if (e.target === teach) closeTeach(); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && !teach.hidden) closeTeach();
+  });
+  document.getElementById('pinBtn').addEventListener('click', function () {
+    teach.hidden = true;
+    GameLock.change({ onDone: function (changed) { if (changed) toast('パスワードを かえました'); } });
+  });
+  // 「もどる」で もどって きた ときは とじて おく
+  window.addEventListener('pageshow', function () { teach.hidden = true; });
 
   var toastEl = null;
   var toastTimer = 0;
