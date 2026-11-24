@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>ぬりえ</title>
+  <meta name="description" content="ゆびや めで いろを ぬる、ぬりえの きょうざい">
+  <meta name="theme-color" content="#f3efe6">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="きょうざい">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="format-detection" content="telephone=no">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <link rel="icon" href="../icons/icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="../common.css">
+  <link rel="stylesheet" href="./nurie.css">
+</head>
+<body>
+  <header class="header" id="header">
+    <a class="home-btn" id="homeBtn" href="../" aria-label="もくじに もどる">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/></svg>
+      <span class="home-text">もくじ</span>
+    </a>
+    <button type="button" class="btn back-btn" id="backBtn" hidden>
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+      <span>もどる</span>
+    </button>
+    <h1 class="title" id="title">ぬりえ</h1>
+
+    <!-- ぬっている ときだけ 出す -->
+    <div class="tools" id="tools" hidden>
+      <button type="button" class="btn tool-btn" id="undoBtn">
+        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg>
+        <span>もどす</span>
+      </button>
+      <button type="button" class="btn tool-btn" id="clearBtn">
+        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>
+        <span>ぜんぶ けす</span>
+      </button>
+      <button type="button" class="btn done-btn" id="doneBtn">
+        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg>
+        <span>できた！</span>
+      </button>
+    </div>
+
+    <!-- 先生用：ながおし したときだけ ひらく -->
+    <button type="button" class="gear" id="gearBtn" aria-label="せってい（ながおしで ひらく）">せってい</button>
+    <p class="gear-hint" id="gearHint" role="status" hidden>ながく おして ください</p>
+  </header>
+
+  <!-- はじめの がめん：テーマと ぬりかた -->
+  <main class="screen start" id="startEl">
+    <section class="sec" aria-labelledby="hTheme">
+      <h2 class="sec-h" id="hTheme">なにを ぬる？</h2>
+      <div class="themes" id="themes"></div>
+    </section>
+    <section class="sec" aria-labelledby="hHow">
+      <h2 class="sec-h" id="hHow">ぬりかた</h2>
+      <div class="hows" role="group" aria-labelledby="hHow">
+        <button type="button" class="choice how" data-how="finger" aria-pressed="true">
+          <svg viewBox="0 0 48 48" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 26V9a3.5 3.5 0 0 1 7 0v13"/><path d="M25 20a3.5 3.5 0 0 1 7 0v3M32 22a3.5 3.5 0 0 1 7 0v8c0 8-5 14-12 14h-2c-5 0-8-3-11-7l-6-8a3.5 3.5 0 0 1 5.5-4.3L18 30"/></svg>
+          <span>ゆびで ぬる</span>
+        </button>
+        <button type="button" class="choice how" data-how="eye" aria-pressed="false">
+          <svg viewBox="0 0 48 48" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M3 24s8-14 21-14 21 14 21 14-8 14-21 14S3 24 3 24z"/><circle cx="24" cy="24" r="7"/><circle cx="24" cy="24" r="2" fill="currentColor"/></svg>
+          <span>めで ぬる<small>（カメラ）</small></span>
+        </button>
+      </div>
+    </section>
+    <button type="button" class="btn works-btn" id="worksBtn">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-9 9"/></svg>
+      <span>さくひん</span><b class="works-count" id="worksCount"></b>
+    </button>
+    <p class="note warn" id="saveWarn" hidden>この iPad では さくひんを ほぞん できません。</p>
+  </main>
+
+  <!-- えを えらぶ -->
+  <main class="screen pick" id="pickEl" hidden>
+    <div class="pick-list" id="pickList"></div>
+  </main>
+
+  <!-- ぬる -->
+  <main class="screen paint" id="paintEl" hidden>
+    <div class="stage" id="stage">
+      <!-- めで ぬる：ひだり＝いろを かえる -->
+      <div class="side side-l" id="sideL" hidden>
+        <p class="side-arrow" aria-hidden="true">
+          <svg viewBox="0 0 40 40"><path d="M25 8 12 20l13 12" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          ひだり</p>
+        <div class="ring-box">
+          <svg class="ring" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="46" class="ring-bg"/><circle cx="50" cy="50" r="46" class="ring-fg" id="ringL" pathLength="1"/></svg>
+          <span class="cur-swatch" id="curSwatch"></span>
+        </div>
+        <p class="cur-name" id="curName" aria-live="polite"></p>
+        <p class="side-say">いろを かえる</p>
+      </div>
+
+      <div class="canvas-box" id="canvasBox">
+        <svg class="pic" id="picSvg" viewBox="0 0 400 400" role="img" aria-label="ぬりえ"></svg>
+        <p class="cam-msg" id="camMsg" role="status" hidden></p>
+      </div>
+
+      <!-- めで ぬる：みぎ＝ひかっている ところを ぬる -->
+      <div class="side side-r" id="sideR" hidden>
+        <p class="side-arrow" aria-hidden="true">みぎ
+          <svg viewBox="0 0 40 40"><path d="M15 8l13 12-13 12" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg></p>
+        <div class="ring-box">
+          <svg class="ring" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="46" class="ring-bg"/><circle cx="50" cy="50" r="46" class="ring-fg" id="ringR" pathLength="1"/></svg>
+          <span class="brush" aria-hidden="true">
+            <svg viewBox="0 0 48 48"><path d="M30 6l12 12-16 16-12-12z" fill="#fffdf7" stroke="#3d3a35" stroke-width="3" stroke-linejoin="round"/><path d="M14 22l12 12-4 4c-4 4-10 4-14 6 2-4 2-10 6-14z" id="brushTip" stroke="#3d3a35" stroke-width="3" stroke-linejoin="round"/></svg>
+          </span>
+        </div>
+        <p class="cur-name">&nbsp;</p>
+        <p class="side-say">ひかっている ところを ぬる</p>
+      </div>
+      <div class="cam-prev" id="camPrev" hidden></div>
+    </div>
+
+    <div class="palette" id="palette" role="radiogroup" aria-label="いろ"></div>
+  </main>
+
+  <!-- さくひん -->
+  <main class="screen works" id="worksEl" hidden>
+    <p class="note" id="worksEmpty" hidden>まだ さくひんは ないよ。えを ぬって「できた！」を おしてね。</p>
+    <div class="works-list" id="worksList"></div>
+  </main>
+
+  <!-- できた！ -->
+  <div class="overlay" id="doneEl" hidden>
+    <div class="dlg done-dlg" role="dialog" aria-modal="true" aria-labelledby="doneTitle">
+      <div class="done-top">
+        <div class="hanamaru" id="maru" aria-hidden="true"></div>
+        <div class="done-thumb" id="doneThumb"></div>
+      </div>
+      <p class="dlg-title" id="doneTitle">できたね！</p>
+      <p class="dlg-sub" id="doneSub">「さくひん」に ほぞん したよ。</p>
+      <div class="dlg-btns">
+        <button type="button" class="btn btn-main" id="donePhotoBtn">
+          <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-9 9"/></svg>
+          <span>しゃしんに ほぞん</span>
+        </button>
+        <button type="button" class="btn" id="doneMoreBtn">つづきを ぬる</button>
+        <button type="button" class="btn" id="doneNextBtn">ほかの えを ぬる</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- さくひんを 大きく 見る -->
+  <div class="overlay" id="viewEl" hidden>
+    <div class="dlg view-dlg" role="dialog" aria-modal="true" aria-labelledby="viewTitle">
+      <p class="dlg-title" id="viewTitle"></p>
+      <div class="view-pic" id="viewPic"></div>
+      <div class="dlg-btns">
+        <button type="button" class="btn btn-main" id="viewPhotoBtn">
+          <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-9 9"/></svg>
+          <span>しゃしんに ほぞん</span>
+        </button>
+        <button type="button" class="btn" id="viewEditBtn">つづきを ぬる</button>
+        <button type="button" class="btn" id="viewDelBtn">けす</button>
+        <button type="button" class="btn" id="viewCloseBtn">とじる</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- しゃしんに ほぞん（iPad の「共有」が つかえない ときの かわり） -->
+  <div class="overlay" id="photoEl" hidden>
+    <div class="dlg photo-dlg" role="dialog" aria-modal="true" aria-labelledby="photoTitle">
+      <p class="dlg-title" id="photoTitle">しゃしんに ほぞん</p>
+      <p class="dlg-sub">えを ながく おして「“写真”に保存」を えらんでね。</p>
+      <img class="photo-img" id="photoImg" alt="ぬりえの え">
+      <div class="dlg-btns">
+        <a class="btn" id="photoDl" download="nurie.png">ファイルに ほぞん</a>
+        <button type="button" class="btn btn-main" id="photoClose">とじる</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- かくにん（ぜんぶ けす・やめる・さくひんを けす） -->
+  <div class="overlay" id="askEl" hidden>
+    <div class="dlg" role="dialog" aria-modal="true" aria-labelledby="askTitle">
+      <p class="dlg-title" id="askTitle"></p>
+      <p class="dlg-sub" id="askSub"></p>
+      <div class="dlg-btns">
+        <button type="button" class="btn" id="askNo"></button>
+        <button type="button" class="btn btn-warn" id="askYes"></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- せってい（せんせい よう） -->
+  <div class="overlay" id="setEl" hidden>
+    <div class="dlg set-dlg" role="dialog" aria-modal="true" aria-labelledby="setTitle">
+      <p class="dlg-title" id="setTitle">せってい（せんせい よう）</p>
+
+      <h3 class="set-h">めで ぬる：ひかる はやさ（1つの ばしょが ひかる じかん）</h3>
+      <div class="opts" id="speedOpts">
+        <button type="button" class="btn opt-btn" data-speed="1.5" aria-pressed="false">はやい<small>1.5びょう</small></button>
+        <button type="button" class="btn opt-btn" data-speed="2.5" aria-pressed="false">ふつう<small>2.5びょう</small></button>
+        <button type="button" class="btn opt-btn" data-speed="4" aria-pressed="false">ゆっくり<small>4びょう</small></button>
+        <button type="button" class="btn opt-btn" data-speed="6" aria-pressed="false">とても ゆっくり<small>6びょう</small></button>
+      </div>
+
+      <h3 class="set-h">めで ぬる：みつづける じかん（みぎ・ひだりを これだけ みたら きまる）</h3>
+      <div class="opts">
+        <button type="button" class="btn opt-btn" data-dwell="0.5" aria-pressed="false">0.5びょう</button>
+        <button type="button" class="btn opt-btn" data-dwell="0.8" aria-pressed="false">0.8びょう</button>
+        <button type="button" class="btn opt-btn" data-dwell="1" aria-pressed="false">1びょう</button>
+        <button type="button" class="btn opt-btn" data-dwell="1.5" aria-pressed="false">1.5びょう</button>
+      </div>
+
+      <h3 class="set-h">めで ぬる：はんだんに つかう もの</h3>
+      <div class="opts">
+        <button type="button" class="btn opt-btn" data-cam-src="eye" aria-pressed="false">め</button>
+        <button type="button" class="btn opt-btn" data-cam-src="face" aria-pressed="false">かお</button>
+        <button type="button" class="btn opt-btn" data-cam-src="both" aria-pressed="false">りょうほう</button>
+      </div>
+      <div class="opts">
+        <button type="button" class="btn opt-btn" id="setTestBtn">しせんテスト</button>
+      </div>
+
+      <h3 class="set-h">おと</h3>
+      <div class="opts">
+        <button type="button" class="btn opt-btn" data-sound="1" aria-pressed="false">あり</button>
+        <button type="button" class="btn opt-btn" data-sound="0" aria-pressed="false">なし</button>
+      </div>
+
+      <div class="dlg-btns">
+        <button type="button" class="btn btn-main" id="setClose">とじる</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" hidden></div>
+
+  <script src="../shared/shisen.js"></script>
+  <script src="./art.js"></script>
+  <script src="./nurie.js"></script>
+  <script src="../pwa.js"></script>
+</body>
+</html>
