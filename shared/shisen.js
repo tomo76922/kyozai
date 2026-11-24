@@ -20,7 +20,11 @@
   var MP_VERSION = '0.10.35';
   var SETTINGS_KEY = 'shisen-v1';
   var CALIB_KEY = 'shisen-calib-v1';
-  var DEFAULTS = { source: 'both', dwell: 0.5, preview: false };
+  var DEFAULTS = { source: 'both', dwell: 0.5, preview: false, calSec: 5 };
+  var CAL_SECS = [5, 8, 12];   // あわせる ときに 1つの まるを みる じかん（ふつう・ゆっくり・とても ゆっくり）
+  var CAL_FIND = 2000;         // まるが でてから はかりはじめる までの「みつける じかん」（この間は きろく しない）
+  var CAL_REST = 1000;         // つぎの まるに うつる まえの やすみ
+  var CAL_GIVEUP = 30000;      // 1つの まるで これだけ みていない じかんが つづいたら、いったん やめる
   var HZ = 15;                 // 判定は 1びょうに 15かいまで（ゲームが カクカク しないように）
   var ENTER = 0.5;             // まんなか → ひだり／みぎ に なる さかい（あわせた はばの 半分）
   var LEAVE = 0.35;            // ひだり／みぎ → まんなか に もどる さかい（ゆれで いったり きたり しないように）
@@ -30,6 +34,7 @@
   var BASE = me && me.src ? new URL('mediapipe/', me.src).href : '../shared/mediapipe/';
 
   function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+  function med(a) { if (!a.length) return NaN; a = a.slice().sort(function (x, y) { return x - y; }); return a[a.length >> 1]; }
   function now() { return performance.now(); }
 
   function isSupported() {
@@ -45,7 +50,8 @@
     return {
       source: d.source === 'eye' || d.source === 'face' ? d.source : 'both',
       dwell: clamp(Number(d.dwell) || DEFAULTS.dwell, 0.3, 1.5),
-      preview: !!d.preview
+      preview: !!d.preview,
+      calSec: CAL_SECS.indexOf(Number(d.calSec)) >= 0 ? Number(d.calSec) : DEFAULTS.calSec
     };
   }
   function saveSettings(s) {
@@ -53,6 +59,7 @@
     if (s.source) cur.source = s.source;
     if (s.dwell != null) cur.dwell = clamp(Number(s.dwell), 0.3, 1.5);
     if (s.preview != null) cur.preview = !!s.preview;
+    if (s.calSec != null && CAL_SECS.indexOf(Number(s.calSec)) >= 0) cur.calSec = Number(s.calSec);
     return writeJSON(SETTINGS_KEY, cur);
   }
   function validTriple(t) {
@@ -200,6 +207,7 @@
       getSource: function () { return st.source; },
       canJudge: function () { var u = usable(st.calib, st.source); return u.eye || u.head; },
       sample: sample,
+      collect: collect,
       showPreview: function (box) { if (box) { box.appendChild(video); video.classList.add('ss-video-show'); } else { video.classList.remove('ss-video-show'); park(); } }
     };
 
@@ -325,12 +333,28 @@
           done: function () {
             clearTimeout(timer);
             if (st.sampling === s) st.sampling = null;
-            function med(a) { if (!a.length) return NaN; a = a.slice().sort(function (x, y) { return x - y; }); return a[a.length >> 1]; }
             resolve({ eye: med(eyes), head: med(heads), faceRatio: n ? eyes.length / n : 0, n: n });
           }
         };
         st.sampling = s;
       });
+    }
+
+    // あつめはじめる。pause(true) の 間は あつめない。done() で まんなかの 値（中央値）を かえす
+    function collect() {
+      if (st.sampling) st.sampling.done();
+      var eyes = [], heads = [], n = 0, off = false;
+      var c = {
+        add: function (f) { if (off) return; n++; if (f) { eyes.push(f.eye); heads.push(f.head); } },
+        pause: function (p) { off = !!p; },
+        done: function () {
+          if (st.sampling === c) st.sampling = null;
+          off = true;
+          return { eye: med(eyes), head: med(heads), faceRatio: n ? eyes.length / n : 0, n: eyes.length };
+        }
+      };
+      st.sampling = c;
+      return c;
     }
 
     return api;
@@ -358,17 +382,27 @@
     '.ss-btn:focus-visible{outline:4px solid var(--active-border,#c9a96b);outline-offset:3px}',
     '.ss-icon{width:64px;height:64px;padding:10px;border-radius:50%;background:var(--btn,#e6efe9);border:3px solid var(--btn-border,#a9c2b3)}',
     '.ss-spin{width:44px;height:44px;border-radius:50%;border:6px solid #e8e1d2;border-top-color:#8fb58c;animation:ss-spin 1s linear infinite}',
-    // あわせる
-    '.ss-cal{position:fixed;inset:0;z-index:60;background:#cfd3c9;color:var(--text,#3d3a35)}',
-    '.ss-dot{position:absolute;top:44%;width:clamp(96px,14vmin,140px);height:clamp(96px,14vmin,140px);margin:calc(clamp(96px,14vmin,140px)/-2) 0 0 calc(clamp(96px,14vmin,140px)/-2);',
-    'border-radius:50%;background:#fffdf7;border:6px solid #3d3a35;box-shadow:0 0 0 10px rgba(255,253,247,.55);transition:left .5s ease}',
-    '.ss-dot::after{content:"";position:absolute;left:50%;top:50%;width:26%;height:26%;margin:-13% 0 0 -13%;border-radius:50%;background:#e0524a}',
-    '.ss-dot svg{position:absolute;inset:-18px;width:calc(100% + 36px);height:calc(100% + 36px);transform:rotate(-90deg)}',
-    '.ss-dot.is-wait{animation:ss-pulse 1s ease-in-out infinite}',
-    '.ss-say{position:absolute;left:50%;top:70%;transform:translateX(-50%);margin:0;padding:10px 28px;font-size:clamp(26px,3.6vw,36px);',
-    'font-weight:700;background:rgba(255,253,247,.92);border:3px solid var(--card-border,#e2dccf);border-radius:999px;white-space:nowrap}',
+    // あわせる（くらい はいけいに、あかるく 大きな まる）
+    '.ss-cal{position:fixed;inset:0;z-index:60;overflow:hidden;background:#1c2233;color:#fff;--ssd:max(25vmin,120px)}',
+    '.ss-dot{position:absolute;top:42%;width:var(--ssd);height:var(--ssd);margin:calc(var(--ssd)/-2) 0 0 calc(var(--ssd)/-2);transition:opacity .35s ease}',
+    '.ss-dot.is-hide{opacity:0;transition:opacity .25s ease}',
+    '.ss-pos-L{left:max(15%,calc(var(--ssd)*.7 + 16px))}.ss-pos-C{left:50%}.ss-pos-R{left:min(85%,calc(100% - var(--ssd)*.7 - 16px))}',
+    '.ss-face{position:absolute;inset:0;border-radius:50%;background:#ffd43b;box-shadow:0 0 0 calc(var(--ssd)*.05) rgba(255,212,59,.28),0 0 calc(var(--ssd)*.35) rgba(255,224,120,.55);',
+    'animation:ss-breathe 2.4s ease-in-out infinite}',
+    '.ss-face svg{position:absolute;inset:0;width:100%;height:100%}',
+    '.ss-ringsvg{position:absolute;left:-17%;top:-17%;width:134%;height:134%;transform:rotate(-90deg);transition:opacity .3s ease}',
+    '.ss-ringsvg.is-off{opacity:0}',
+    '.ss-ring{transition:stroke .3s ease}',
+    '.ss-cal.is-pause .ss-ring{stroke:#8d93a6}',
+    '.ss-say{position:absolute;left:50%;top:73%;transform:translateX(-50%);margin:0;padding:10px 30px;font-size:clamp(28px,4vw,40px);',
+    'font-weight:700;color:#fff;background:rgba(255,255,255,.12);border:3px solid rgba(255,255,255,.35);border-radius:999px;white-space:nowrap}',
+    '.ss-cal.is-pause .ss-say{background:rgba(255,212,59,.2);border-color:#ffd43b}',
     '.ss-cal-cancel{position:absolute;right:16px;bottom:16px}',
-    '.ss-cal-msg{position:absolute;left:50%;top:84%;transform:translateX(-50%);margin:0;font-size:20px;font-weight:700;color:#b4583f;white-space:nowrap}',
+    '.ss-cal-msg{position:absolute;left:50%;top:84%;transform:translateX(-50%);margin:0;font-size:22px;font-weight:700;color:#ffc9a8;white-space:nowrap}',
+    '.ss-hana{position:absolute;top:42%;width:calc(var(--ssd)*.5);height:calc(var(--ssd)*.5);margin:calc(var(--ssd)*-.25) 0 0 calc(var(--ssd)*-.25);animation:ss-pop .5s ease-out}',
+    '.ss-hana svg{width:100%;height:100%}',
+    '.ss-cal-done{position:absolute;left:50%;top:76%;transform:translate(-50%,-50%);margin:0;padding:18px 44px;font-size:clamp(36px,6vw,60px);font-weight:700;',
+    'color:#3d3a35;background:#ffd43b;border-radius:999px;white-space:nowrap;animation:ss-pop .5s ease-out}',
     // テスト
     '.ss-dirs{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;width:100%}',
     '.ss-dir{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:clamp(110px,18vh,160px);',
@@ -382,8 +416,10 @@
     '.ss-meter i{position:absolute;top:-6px;width:28px;height:28px;margin-left:-14px;border-radius:50%;background:#3d3a35;transition:left .08s linear}',
     '.ss-meter b{position:absolute;top:-4px;bottom:-4px;width:3px;margin-left:-1.5px;background:#c8665a}',
     '@keyframes ss-spin{to{transform:rotate(360deg)}}',
-    '@keyframes ss-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}',
-    '@media (prefers-reduced-motion:reduce){.ss-dot.is-wait,.ss-spin{animation:none}.ss-dot{transition:none}}'
+    '@keyframes ss-breathe{0%,100%{transform:scale(.9)}50%{transform:scale(1.08)}}',
+    '@keyframes ss-pop{0%{transform:scale(.3);opacity:0}70%{transform:scale(1.15);opacity:1}100%{transform:scale(1)}}',
+    '.ss-cal-done{animation-name:ss-pop2}@keyframes ss-pop2{0%{transform:translate(-50%,-50%) scale(.3);opacity:0}70%{transform:translate(-50%,-50%) scale(1.1);opacity:1}100%{transform:translate(-50%,-50%) scale(1)}}',
+    '@media (prefers-reduced-motion:reduce){.ss-face,.ss-spin,.ss-hana,.ss-cal-done{animation:none}.ss-dot{transition:none}}'
   ].join('');
   function addStyle() {
     if (document.getElementById('ss-style')) return;
@@ -493,59 +529,147 @@
 
     function run() {
       var speak = opt.speak !== false;
+      var total = loadSettings().calSec * 1000;
       var w = el('<div class="ss-cal" role="dialog" aria-modal="true" aria-label="めの じゅんび">' +
-        '<div class="ss-dot" aria-hidden="true"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="none" stroke="rgba(61,58,53,.15)" stroke-width="7"/>' +
-        '<circle class="ss-ring" cx="50" cy="50" r="46" fill="none" stroke="#e0a92a" stroke-width="7" stroke-linecap="round" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"/></svg></div>' +
+        '<div class="ss-dot is-hide ss-pos-C" aria-hidden="true">' +
+          '<svg class="ss-ringsvg is-off" viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="none" stroke="rgba(255,255,255,.18)" stroke-width="5"/>' +
+          '<circle class="ss-ring" cx="50" cy="50" r="46" fill="none" stroke="#7ee08a" stroke-width="5" stroke-linecap="round" pathLength="1" stroke-dasharray="1" stroke-dashoffset="0"/></svg>' +
+          '<div class="ss-face">' + HIYOKO_SVG + '</div></div>' +
         '<p class="ss-say" aria-live="polite">ここを みてね</p>' +
         '<p class="ss-cal-msg" role="status"></p>' +
         '<button type="button" class="ss-btn ss-cal-cancel">やめる</button></div>');
       var dot = w.querySelector('.ss-dot');
+      var ringSvg = w.querySelector('.ss-ringsvg');
       var ring = w.querySelector('.ss-ring');
       var sayEl = w.querySelector('.ss-say');
       var msg = w.querySelector('.ss-cal-msg');
       var stopped = false;
-      var raf = 0;
-      function close() { stopped = true; cancelAnimationFrame(raf); if (w.parentNode) w.parentNode.removeChild(w); }
+      var raf = 0, timer = 0, coll = null;
+      function close() {
+        stopped = true;
+        cancelAnimationFrame(raf);
+        clearTimeout(timer);
+        if (coll) { coll.done(); coll = null; }
+        if (w.parentNode) w.parentNode.removeChild(w);
+      }
       w.querySelector('.ss-cal-cancel').addEventListener('click', function () { close(); if (opt.onCancel) opt.onCancel(); });
+      function later(ms, fn) { clearTimeout(timer); timer = setTimeout(function () { if (!stopped) fn(); }, ms); }
 
-      var POS = [['L', 12], ['C', 50], ['R', 88]];
+      // まんなかを さきに はかると、ひだり・みぎ で「まるを みているか」が わかる
+      var ORDER = ['C', 'L', 'R'];
       var got = {};
       var i = 0;
-      function wait(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
-      function step() {
-        if (stopped) return;
-        if (i >= POS.length) { finish(); return; }
-        var p = POS[i];
-        dot.style.left = p[1] + '%';
-        dot.classList.add('is-wait');
-        ring.style.strokeDashoffset = '1';
-        sayEl.textContent = 'ここを みてね';
-        msg.textContent = '';
-        say('ここを みてね', speak);
-        // うごいた 丸を 目で おいかける 時間を とってから、2びょう はかる
-        wait(1100).then(function () {
-          if (stopped) return;
-          dot.classList.remove('is-wait');
-          var t0 = performance.now();
-          (function fill() {
-            if (stopped) return;
-            var a = Math.min(1, (performance.now() - t0) / 2000);
-            ring.style.strokeDashoffset = String(1 - a);
-            if (a < 1) raf = requestAnimationFrame(fill);
-          })();
-          return eye.sample(2000);
-        }).then(function (r) {
-          if (stopped || !r) return;
-          if (r.faceRatio < 0.5) {
-            msg.textContent = eye.getStatus() === 'dark' ? 'へやを あかるくしてね' : 'かおが みえないよ';
-            fail(eye.getStatus() === 'dark' ? 'へやが くらくて、かおが よく みえなかったよ。へやを あかるくしてね。' : 'かおが よく みえなかったよ。iPad の まえに すわって、かおが うつるように してね。');
-            return;
+      var P = null;   // いまの まる
+      function setText(t) { if (sayEl.textContent !== t) sayEl.textContent = t; }
+
+      // まるを みているか（まんなかは かおが みえれば よい。ひだり・みぎ は まんなかから うごいて いるか）
+      function looking() {
+        var raw = eye.getRaw();
+        if (!raw || eye.getStatus() !== 'ok') return false;
+        if (P === 'C' || !got.C) return true;
+        var src = eye.getSource();
+        function away(k, min) {
+          var c = got.C[k];
+          if (!isFinite(c) || !isFinite(raw[k])) return false;
+          var d = raw[k] - c;
+          if (Math.abs(d) < min * 0.5) return false;
+          // みぎ は、ひだりと はんたいがわ で ないと いけない
+          if (P === 'R' && got.L && isFinite(got.L[k])) {
+            var dl = got.L[k] - c;
+            if (Math.abs(dl) >= min * 0.5 && d * dl > 0) return false;
           }
-          got[p[0]] = r;
-          i++;
-          step();
-        });
+          return true;
+        }
+        return (src !== 'face' && away('eye', MIN_SPAN.eye)) || (src !== 'eye' && away('head', MIN_SPAN.head));
       }
+
+      function nextPoint() {
+        if (stopped) return;
+        if (i >= ORDER.length) { finish(); return; }
+        P = ORDER[i];
+        dot.className = 'ss-dot is-hide ss-pos-' + P;
+        requestAnimationFrame(function () { requestAnimationFrame(function () { if (!stopped) dot.classList.remove('is-hide'); }); });
+        ringSvg.classList.add('is-off');
+        ring.style.strokeDashoffset = '0';
+        w.classList.remove('is-pause');
+        msg.textContent = '';
+        setText('ここを みてね');
+        say('ここを みてね', speak);
+        // みつける じかん（この 間は きろく しない）
+        later(CAL_FIND, record);
+      }
+
+      function record() {
+        coll = eye.collect();
+        coll.pause(true);
+        ringSvg.classList.remove('is-off');
+        setText('じーっと みてね');
+        var recMs = 0, badMs = 0, goodMs = 0, pausedMs = 0, paused = false, lastNag = 0;
+        var lastT = performance.now();
+        (function frame() {
+          if (stopped) return;
+          var t = performance.now();
+          var dt = Math.min(100, t - lastT);
+          lastT = t;
+          var ok = looking();
+          coll.pause(!ok);
+          if (ok) { goodMs += dt; badMs = 0; } else { badMs += dt; goodMs = 0; }
+          if (!paused && badMs >= 500) {
+            // みていない：のこりの じかんを とめて、やさしく よびかける
+            paused = true;
+            w.classList.add('is-pause');
+            setText('まるを みてね');
+            if (t - lastNag > 2500) { say('まるを みてね', speak); lastNag = t; }
+          } else if (paused && goodMs >= 300) {
+            // みたら つづきから
+            paused = false;
+            w.classList.remove('is-pause');
+            msg.textContent = '';
+            setText('じーっと みてね');
+          }
+          if (paused) {
+            pausedMs += dt;
+            var stx = eye.getStatus();
+            msg.textContent = stx === 'dark' ? 'へやを あかるくしてね' : stx !== 'ok' ? 'かおが みえないよ' : '';
+            if (t - lastNag > 6000) { say('まるを みてね', speak); lastNag = t; }
+            if (pausedMs > CAL_GIVEUP) { giveUp(stx); return; }
+          } else if (ok) {
+            recMs += dt;
+          }
+          ring.style.strokeDashoffset = String(Math.min(1, recMs / total));
+          if (recMs >= total) { endPoint(); return; }
+          raf = requestAnimationFrame(frame);
+        })();
+      }
+
+      function giveUp(stx) {
+        if (coll) { coll.done(); coll = null; }
+        if (stx === 'dark') fail('へやが くらくて、かおが よく みえなかったよ。へやを あかるくしてね。');
+        else if (stx !== 'ok') fail('かおが よく みえなかったよ。iPad の まえに すわって、かおが うつるように してね。');
+        else fail('まるを みるのが むずかしかったみたい。' +
+          (eye.getSource() === 'eye' ? '「かお」や「りょうほう」に すると、わかりやすく なることが あります（せってい）。' : 'かおを すこし むけても いいよ。'));
+      }
+
+      function endPoint() {
+        var r = coll.done();
+        coll = null;
+        if (r.n < 8) { giveUp(eye.getStatus()); return; }
+        got[P] = r;
+        i++;
+        // はなまる を だして、すこし やすむ
+        ringSvg.classList.add('is-off');
+        dot.classList.add('is-hide');
+        w.classList.remove('is-pause');
+        msg.textContent = '';
+        var h = document.createElement('div');
+        h.className = 'ss-hana ss-pos-' + P;
+        h.setAttribute('aria-hidden', 'true');
+        h.innerHTML = HANAMARU_SVG;
+        w.insertBefore(h, sayEl);
+        setText(i >= ORDER.length ? 'はなまる！' : 'はなまる！ ひとやすみ');
+        later(CAL_REST, nextPoint);
+      }
+
       function finish() {
         var c = {
           eye: { L: got.L.eye, C: got.C.eye, R: got.R.eye },
@@ -560,10 +684,16 @@
         }
         saveCalib(c);
         eye.setCalib(c);
-        sayEl.textContent = 'できたよ！';
         dot.style.display = 'none';
-        say('できたよ', speak);
-        wait(1200).then(function () { if (stopped) return; close(); if (opt.onDone) opt.onDone(c); });
+        sayEl.style.display = 'none';
+        w.querySelector('.ss-cal-cancel').style.display = 'none';
+        var d = document.createElement('p');
+        d.className = 'ss-cal-done';
+        d.setAttribute('role', 'status');
+        d.textContent = 'じゅんび できたよ';
+        w.insertBefore(d, sayEl);
+        say('じゅんび できたよ', speak);
+        later(2200, function () { close(); if (opt.onDone) opt.onDone(c); });
       }
       function fail(text) {
         close();
@@ -577,9 +707,45 @@
         w2.querySelector('[data-a="again"]').addEventListener('click', function () { close2(); run(); });
         w2.querySelector('[data-a="no"]').addEventListener('click', function () { close2(); if (opt.onCancel) opt.onCancel(); });
       }
-      step();
+      nextPoint();
     }
   }
+
+  // ひよこの かお（まるの なか）と、はなまる
+  var HIYOKO_SVG = '<svg viewBox="0 0 100 100" aria-hidden="true">' +
+    '<ellipse cx="24" cy="60" rx="9" ry="6" fill="#ff9aa2" opacity=".85"/><ellipse cx="76" cy="60" rx="9" ry="6" fill="#ff9aa2" opacity=".85"/>' +
+    '<circle cx="34" cy="44" r="7" fill="#3d3a35"/><circle cx="66" cy="44" r="7" fill="#3d3a35"/>' +
+    '<circle cx="36.5" cy="41.5" r="2.4" fill="#fff"/><circle cx="68.5" cy="41.5" r="2.4" fill="#fff"/>' +
+    '<path d="M41 54 L59 54 L50 66 Z" fill="#f08c2a" stroke="#d9731a" stroke-width="2" stroke-linejoin="round"/>' +
+    '<path d="M44 14 Q50 2 52 13 Q57 4 58 15" fill="none" stroke="#e8b51f" stroke-width="3.5" stroke-linecap="round"/></svg>';
+  var HANAMARU_SVG = (function () {
+    var petals = '';
+    for (var k = 0; k < 10; k++) {
+      var a = k / 10 * Math.PI * 2;
+      petals += '<circle cx="' + (50 + Math.cos(a) * 34).toFixed(1) + '" cy="' + (50 + Math.sin(a) * 34).toFixed(1) + '" r="12" fill="#fff" stroke="#e0524a" stroke-width="4"/>';
+    }
+    return '<svg viewBox="0 0 100 100" aria-hidden="true">' + petals +
+      '<circle cx="50" cy="50" r="34" fill="#fff"/>' +
+      '<path d="M50 50 m0 -4 a4 4 0 1 1 -4 4 a8 8 0 0 1 8 -8 a12 12 0 0 1 12 12 a16 16 0 0 1 -16 16 a20 20 0 0 1 -20 -20 a24 24 0 0 1 24 -24" ' +
+      'fill="none" stroke="#e0524a" stroke-width="5" stroke-linecap="round"/></svg>';
+  })();
+
+  // ---------- せってい：あわせる ときに 1つの まるを みる じかん ----------
+  // 教材の せってい 画面に <button data-ss-cal="5|8|12"> を おけば、ここで うごかす
+  function renderCalButtons() {
+    var v = loadSettings().calSec;
+    Array.prototype.forEach.call(document.querySelectorAll('[data-ss-cal]'), function (b) {
+      b.setAttribute('aria-pressed', String(Number(b.getAttribute('data-ss-cal')) === v));
+    });
+  }
+  document.addEventListener('click', function (e) {
+    var b = e.target && e.target.closest ? e.target.closest('[data-ss-cal]') : null;
+    if (!b) return;
+    saveSettings({ calSec: Number(b.getAttribute('data-ss-cal')) });
+    renderCalButtons();
+  });
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', renderCalButtons);
+  else renderCalButtons();
 
   // ---------- しせんテスト ----------
   // opt: { speak, onClose() }
@@ -658,6 +824,8 @@
     loadSettings: loadSettings,
     saveSettings: saveSettings,
     loadCalib: loadCalib,
+    renderCalButtons: renderCalButtons,
+    CAL_SECS: CAL_SECS,
     saveCalib: saveCalib,
     // テスト・ほかの 教材 用
     features: features,
