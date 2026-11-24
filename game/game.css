@@ -134,8 +134,7 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: clamp(8px, 1.8vh, 16px);
-  max-height: 76%;
+  gap: clamp(6px, 1.3vh, 12px);
   padding: clamp(4px, 1.5vh, 14px) var(--side) 0;
 }
 .select-ask {
@@ -161,7 +160,7 @@ body {
   align-items: center;
   justify-content: flex-start;
   gap: 4px;
-  min-height: clamp(150px, 27vh, 220px);
+  min-height: clamp(128px, 21vh, 200px);
   padding: 12px 6px 10px;
   font: inherit;
   color: var(--text);
@@ -212,7 +211,7 @@ body {
 .stage-btn.is-locked:active { transform: none; background: rgba(255, 253, 247, 0.6); border-color: var(--card-border); }
 
 .select-msg {
-  min-height: 1.4em;
+  min-height: 1.3em;
   margin: 0;
   font-size: 19px;
   font-weight: 700;
@@ -220,16 +219,54 @@ body {
 }
 .select-msg:empty { visibility: hidden; }
 
-.speed {
+/* あそびかた・むずかしさ */
+.options {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px 18px;
+}
+.opt-group {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 6px 8px 6px 18px;
+  gap: 8px;
+  padding: 6px;
   background: rgba(255, 253, 247, 0.75);
   border-radius: 999px;
 }
-.speed-label { font-size: clamp(20px, 2.4vw, 24px); font-weight: 700; margin-right: 4px; }
-.speed-btn[aria-pressed="false"] { background: var(--card); border-color: var(--card-border); }
+.input-btn { gap: 6px; padding: 6px 18px; }
+.input-btn svg { width: 1.25em; height: 1.25em; flex: none; }
+.input-btn, .diff-btn { min-height: 58px; }
+.diff-btn { padding: 6px 20px; }
+.input-btn[aria-pressed="false"], .diff-btn[aria-pressed="false"] { background: var(--card); border-color: var(--card-border); }
+.input-btn[aria-pressed="true"], .diff-btn[aria-pressed="true"] { background: var(--active); border-color: var(--active-border); }
+.opt-note {
+  margin: 0;
+  padding: 2px 16px;
+  font-size: clamp(16px, 1.9vw, 19px);
+  font-weight: 700;
+  color: var(--muted);
+  background: rgba(255, 253, 247, 0.7);
+  border-radius: 999px;
+}
+.koe-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px 14px;
+  padding: 4px 6px 4px 18px;
+  background: rgba(255, 253, 247, 0.75);
+  border-radius: 28px;
+}
+.koe-note {
+  margin: 0;
+  max-width: 640px;
+  font-size: clamp(16px, 1.9vw, 19px);
+  font-weight: 700;
+}
+.koe-test-btn { gap: 6px; min-height: 56px; background: var(--card); border-color: var(--btn-border); }
+.koe-test-btn svg { width: 1.2em; height: 1.2em; }
 
 /* ---------- あそんでいる ときの 表示 ---------- */
 .hud {
@@ -305,6 +342,102 @@ body {
 .acorn-count svg { width: 40px; height: 40px; flex: none; }
 .acorn-count span { display: inline-block; }
 .acorn-count.is-pop span { animation: pop 0.3s ease; }
+
+/* むずかしい：ハートの 体力ゲージ */
+.hearts {
+  display: flex;
+  flex: none;
+  gap: 2px;
+  padding: 4px 10px;
+  background: rgba(255, 253, 247, 0.85);
+  border: 3px solid var(--card-border);
+  border-radius: 999px;
+}
+.heart { display: block; width: 40px; height: 40px; }
+.heart svg { display: block; width: 100%; height: 100%; fill: #e88a8a; }
+.heart.is-lost svg { fill: #ebe4d6; opacity: 0.8; }
+.heart.is-pop { animation: pop 0.45s ease; }
+
+/* ステージの はじめの 大きな 文字 */
+.banner {
+  position: absolute;
+  left: 50%;
+  top: 24%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 14px 48px 16px;
+  background: rgba(255, 253, 247, 0.92);
+  border: 4px solid var(--active-border);
+  border-radius: 32px;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+.banner.is-show { animation: banner 2.2s ease forwards; }
+.banner-num { font-size: clamp(52px, 8vw, 84px); font-weight: 700; letter-spacing: 0.08em; line-height: 1.1; }
+.banner-name { font-size: clamp(22px, 3vw, 30px); font-weight: 700; color: var(--muted); }
+
+/* こえモード：下の まんなかの メーター */
+.koe-hud {
+  position: absolute;
+  left: 50%;
+  bottom: calc(18px + env(safe-area-inset-bottom));
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
+  background: rgba(255, 253, 247, 0.85);
+  border: 3px solid var(--card-border);
+  border-radius: 999px;
+  transform: translateX(-50%);
+}
+.koe-hud svg { width: 30px; height: 30px; flex: none; }
+
+.meter {
+  position: relative;
+  overflow: visible;
+  background: #e8e1d2;
+  border: 3px solid var(--card-border);
+  border-radius: 999px;
+}
+.meter-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 100%;
+  border-radius: 999px;
+  background: #a9c2b3;
+  transform: scaleX(0);
+  transform-origin: left center;
+  will-change: transform;
+}
+.meter.is-over .meter-fill { background: #e3c06a; }
+.meter-line {
+  position: absolute;
+  top: -10px;
+  bottom: -10px;
+  left: 50%;
+  width: 4px;
+  margin-left: -2px;
+  border-radius: 2px;
+  background: #c8665a;
+}
+.meter-line span {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-top: 4px;
+  transform: translateX(-50%);
+  font-size: 16px;
+  font-weight: 700;
+  color: #b4583f;
+  white-space: nowrap;
+}
+.meter-big { flex: 1 1 auto; height: 40px; min-width: 0; }
+.meter-small { width: clamp(140px, 24vw, 220px); height: 20px; }
+.meter-small .meter-line { top: -6px; bottom: -6px; }
 
 /* パワーアップの のこり時間：画面の 右はし */
 .powers {
@@ -432,6 +565,80 @@ body {
   animation: draw 1.1s ease-out 0.15s forwards;
 }
 
+.over-text { margin: 0; font-size: clamp(20px, 2.6vw, 26px); font-weight: 700; color: var(--muted); }
+
+/* ---------- マイクの おしらせ・こえテスト ---------- */
+.mic-card, .test-card { width: min(720px, 92vw); max-height: 94vh; overflow-y: auto; }
+.mic-icon {
+  width: 64px;
+  height: 64px;
+  padding: 10px;
+  color: var(--text);
+  background: var(--btn);
+  border: 3px solid var(--btn-border);
+  border-radius: 50%;
+}
+.mic-title, .test-title { font-size: clamp(30px, 4.4vw, 42px); }
+.mic-text, .test-text {
+  margin: 0;
+  font-size: clamp(19px, 2.4vw, 23px);
+  font-weight: 700;
+  line-height: 1.6;
+  text-align: center;
+}
+.mic-sub, .test-hint {
+  margin: 0;
+  font-size: clamp(16px, 2vw, 18px);
+  color: var(--muted);
+  text-align: center;
+  line-height: 1.5;
+}
+.mic-err {
+  margin: 0;
+  padding: 10px 16px;
+  font-size: 18px;
+  line-height: 1.5;
+  background: #fbe3dc;
+  border-radius: 12px;
+}
+.test-meter-row {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  width: 100%;
+  padding: 14px 4px 28px;
+}
+.test-lamp {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 108px;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--muted);
+}
+.lamp-dot {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #ebe4d6;
+  border: 3px solid var(--card-border);
+  transition: background-color 0.15s ease, transform 0.15s ease;
+}
+.test-lamp.is-on { color: var(--text); }
+.test-lamp.is-on .lamp-dot { background: #f3cf63; border-color: #e0a92a; transform: scale(1.12); }
+.test-adjust {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 10px 12px;
+}
+.adj-label { font-size: clamp(18px, 2.2vw, 21px); font-weight: 700; }
+.adj-btn { min-height: 60px; padding: 6px 20px; }
+.adj-value { min-width: 3em; font-size: 28px; font-weight: 700; text-align: center; }
+
 /* ---------- せってい（先生用） ---------- */
 .settings {
   position: fixed;
@@ -484,6 +691,8 @@ body {
   margin-top: 16px;
 }
 .set-status { font-size: 18px; font-weight: 700; color: #4e8a63; }
+.set-note-gap { margin-top: 18px; }
+.opt-btn[aria-pressed="false"] { background: var(--card); border-color: var(--card-border); }
 #openAllBtn[aria-pressed="false"] { background: var(--card); border-color: var(--card-border); }
 .btn-reset { background: #fbe9e4; border-color: #e0a99c; }
 .btn-reset:active, .btn-reset.is-armed { background: #f5d2c8; border-color: #c9725f; }
@@ -521,6 +730,12 @@ body {
   from { opacity: 0; transform: translateY(16px); }
   to { opacity: 1; transform: none; }
 }
+@keyframes banner {
+  0% { opacity: 0; transform: translateX(-50%) scale(0.85); }
+  12% { opacity: 1; transform: translateX(-50%) scale(1.04); }
+  20%, 78% { opacity: 1; transform: translateX(-50%) scale(1); }
+  100% { opacity: 0; transform: translateX(-50%) scale(1); }
+}
 @keyframes draw { to { stroke-dashoffset: 0; } }
 @keyframes turn {
   0%, 20% { transform: rotate(0); }
@@ -528,7 +743,8 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .card, .rotate .rot-pad, .acorn-count.is-pop span { animation: none; }
+  .card, .rotate .rot-pad, .acorn-count.is-pop span, .heart.is-pop { animation: none; }
+  .banner.is-show { animation: none; }
   .goal-card .hanamaru .hm-line { animation: none; stroke-dashoffset: 0; }
   .stage-btn, .stage-btn:active { transition: none; transform: none; }
 }

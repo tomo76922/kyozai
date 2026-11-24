@@ -7,31 +7,45 @@
   // ---------- 大きさ・はやさ（画面の 高さを 600 として かく） ----------
   var VH = 600;
   var GROUND = 470;          // じめんの 高さ
-  var RUN = 300;             // はしる はやさ（1びょうに すすむ はば）
-  var SLOW = 0.72;           // 「ゆっくり」の ときの 時間の すすみかた
+  var RUN = 300;             // はしる はやさ（1びょうに すすむ はば。ステージ1・ふつう）
   var GRAV = 2200;
-  var JUMP_V = 865;          // ジャンプの いきおい（たかさ 約170）
+  var JUMP_V = 865;          // ジャンプの いきおい（足の たかさ 約170）
   var AIR_JUMP_V = 780;      // はねの 2かいめ ジャンプ
-  var STAGE_LEN = 16500;     // 1ステージの ながさ（ふつうで 約55びょう）
+  var AIR_TIME = 2 * JUMP_V / GRAV;   // ジャンプして ついちするまでの 時間（約0.79びょう）
+  var STAGE_TIME = 55;       // 1ステージの 時間（ふつうで 約55びょう）
   var FEATHER_TIME = 10;
   var STAR_TIME = 8;
   var STAGE_MAX = 5;
+  var LIFE_MAX = 3;          // むずかしい の ハート
   var STEP = 1 / 120;        // うごきの 計算は 1/120びょう ずつ
 
+  // ひくい 石・池（はばは ステージで かわる）・たかい 切り株
   var KINDS = {
-    stone:  { w: 50, h: 34, inset: 7 },
-    stump:  { w: 54, h: 48, inset: 6 },
-    puddle: { w: 78, h: 4, inset: 14 }
+    stone:  { w: 48, h: 30, inset: 7 },
+    stump:  { w: 54, h: 56, inset: 6 },
+    puddle: { w: 64, h: 4, inset: 14 }
   };
 
-  // あとの ステージほど しょうがいぶつが すこし ふえる
+  // ステージが すすむほど：はやさ 約10％アップ・しょうがいぶつが ふえて 間かくが せまく・
+  // 種類が ふえる（1 石だけ → 2 池 → 3 切り株 → 4 2つ つづけて → 5 ぜんぶ）・池が ひろく・はね と ほしが へる
   var STAGES = [
-    { name: 'のはら',       count: 12, kinds: ['stone', 'puddle'],          feather: [3],     star: [8] },
-    { name: 'おはなばたけ', count: 15, kinds: ['stone', 'puddle', 'stump'], feather: [4],     star: [10] },
-    { name: 'もりの みち',  count: 18, kinds: ['stone', 'puddle', 'stump'], feather: [3, 12], star: [8] },
-    { name: 'かわべ',       count: 22, kinds: ['stone', 'puddle', 'stump'], feather: [5, 15], star: [10, 19] },
-    { name: 'ゆうやけ',     count: 26, kinds: ['stone', 'puddle', 'stump'], feather: [4, 17], star: [10, 22] }
+    { name: 'のはら',       count: 12, kinds: { stone: 1 },                        pairs: 0,    puddleW: 0,  feather: 2, star: 2 },
+    { name: 'おはなばたけ', count: 16, kinds: { stone: 1, puddle: 1 },             pairs: 0,    puddleW: 64, feather: 2, star: 1 },
+    { name: 'もりの みち',  count: 20, kinds: { stone: 1, puddle: 1, stump: 1.2 }, pairs: 0,    puddleW: 74, feather: 1, star: 1 },
+    { name: 'かわべ',       count: 25, kinds: { stone: 1, puddle: 1, stump: 1 },   pairs: 0.25, puddleW: 84, feather: 1, star: 1 },
+    { name: 'ゆうやけ',     count: 30, kinds: { stone: 1, puddle: 1, stump: 1.2 }, pairs: 0.4,  puddleW: 94, feather: 1, star: 0 }
   ];
+
+  // むずかしさ（どれでも ステージが すすむほど むずかしく なる しくみは 同じ）
+  //   ts：時間の すすみかた（やさしい は ぜんぶ ゆっくり）・speed：はしる はやさ・count：しょうがいぶつの かず
+  var DIFFS = {
+    easy:   { label: 'やさしい',   ts: 0.75, speed: 1,   count: 0.75, life: false },
+    normal: { label: 'ふつう',     ts: 1,    speed: 1,   count: 1,    life: false },
+    hard:   { label: 'むずかしい', ts: 1,    speed: 1.1, count: 1.2,  life: true }
+  };
+
+  // こえで あそぶ：ジャンプしたあと、つぎの 声に 反応しない 時間（ミリびょう。せっていで かえられる）
+  var KOE_COOLS = [300, 400, 600, 800, 1000];
 
   // ステージごとの 色（目に やさしい おちついた色）
   var THEMES = [
@@ -48,7 +62,7 @@
   // ---------- きろく（この iPad の中だけに ほぞん） ----------
   var STORE_KEY = 'piyorun-v1';
   var canSave = true;
-  var rec = { cleared: {}, best: {}, openAll: false, speed: 'normal', sound: true };
+  var rec = { cleared: {}, best: {}, openAll: false, diff: 'normal', sound: true, input: 'yubi', koeCool: 400 };
 
   (function load() {
     var raw = null;
@@ -62,8 +76,11 @@
         if (b >= 0 && b < 10000) rec.best[i] = Math.floor(b);
       }
       rec.openAll = !!d.openAll;
-      rec.speed = d.speed === 'slow' ? 'slow' : 'normal';
+      // まえの 版の「ゆっくり」は「やさしい」に する
+      rec.diff = DIFFS[d.diff] ? d.diff : (d.speed === 'slow' ? 'easy' : 'normal');
       rec.sound = d.sound !== false;
+      rec.input = d.input === 'koe' ? 'koe' : 'yubi';
+      rec.koeCool = KOE_COOLS.indexOf(Number(d.koeCool)) >= 0 ? Number(d.koeCool) : 400;
     } catch (e) {}
   })();
 
@@ -123,34 +140,38 @@
     osc.stop(t + dur + 0.05);
   }
 
-  function sound(fn) {
+  // ignoreMs：こえで あそぶ ときに、この 音を マイクが ひろって ジャンプ しないように する 時間
+  function sound(fn, ignoreMs) {
     if (!rec.sound || !audio()) return;
+    if (ignoreMs && koe && koe.isRunning()) koe.ignoreFor(ignoreMs);
     try { fn(); } catch (e) {}
   }
 
-  function sJump() { sound(function () { tone(0, 'sine', 520, 880, 0.16, 0.09); }); }
-  function sAirJump() { sound(function () { tone(0, 'sine', 700, 1180, 0.16, 0.08); }); }
+  function sJump() { sound(function () { tone(0, 'sine', 520, 880, 0.16, 0.09); }, 200); }
+  function sAirJump() { sound(function () { tone(0, 'sine', 700, 1180, 0.16, 0.08); }, 200); }
   var lastAcornSnd = 0;
   function sAcorn() {
     var now = performance.now();
     if (now - lastAcornSnd < 45) return;
     lastAcornSnd = now;
+    // こえで あそぶ ときは、マイクが ひろわないように もっと 小さく
+    var v = rec.input === 'koe' ? 0.6 : 1;
     sound(function () {
-      tone(0, 'sine', 1568, 1568, 0.16, 0.055);
-      tone(0.05, 'sine', 2093, 2093, 0.18, 0.04);
+      tone(0, 'sine', 1568, 1568, 0.16, 0.055 * v);
+      tone(0.05, 'sine', 2093, 2093, 0.18, 0.04 * v);
     });
   }
   function sPower() {
     sound(function () {
       [784, 988, 1175, 1568].forEach(function (f, i) { tone(i * 0.07, 'triangle', f, f, 0.22, 0.06); });
-    });
+    }, 450);
   }
   // ぶつかった とき：こわくない「ぽよん」
   function sBump() {
     sound(function () {
       tone(0, 'sine', 330, 250, 0.18, 0.08);
       tone(0.14, 'sine', 300, 380, 0.18, 0.06);
-    });
+    }, 400);
   }
   function sGoal() {
     sound(function () {
@@ -158,7 +179,13 @@
         tone(n[0], 'sine', n[1], n[1], 1.1, 0.1);
         tone(n[0], 'sine', n[1] * 2, n[1] * 2, 0.5, 0.015);
       });
-    });
+    }, 1500);
+  }
+  // おしまい：ゆっくり さがる やさしい 音
+  function sOver() {
+    sound(function () {
+      [[0, 659], [0.25, 587], [0.5, 523]].forEach(function (n) { tone(n[0], 'sine', n[1], n[1], 0.7, 0.08); });
+    }, 1200);
   }
 
   // ---------- べんりな もの ----------
@@ -179,58 +206,134 @@
   function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
 
   // ---------- ステージを つくる（いつも 同じ ならび） ----------
-  function buildStage(n) {
+  function pick(r, kinds) {
+    var total = 0, k;
+    for (k in kinds) total += kinds[k];
+    var x = r() * total;
+    for (k in kinds) { x -= kinds[k]; if (x < 0) return k; }
+    return 'stone';
+  }
+
+  function buildStage(n, diffKey) {
     var def = STAGES[n - 1];
+    var diff = DIFFS[diffKey] || DIFFS.normal;
     var r = rng(n * 1013 + 7);
-    var first = 1100;
-    var last = STAGE_LEN - 900;
-    var gap = (last - first) / (def.count - 1);
+    var v = RUN * Math.pow(1.1, n - 1) * diff.speed;    // ステージごとに 約10％ はやく
+    var len = Math.round(200 + v * STAGE_TIME);
+    var count = Math.max(6, Math.round(def.count * diff.count));
     var obs = [];
     var items = [];
-    var prevKind = '';
-    var i;
+    var i, j;
 
-    for (i = 0; i < def.count; i++) {
-      var kind = def.kinds[Math.floor(r() * def.kinds.length)];
-      if (kind === prevKind && r() < 0.5) kind = def.kinds[(def.kinds.indexOf(kind) + 1) % def.kinds.length];
-      prevKind = kind;
+    function makeOb(kind) {
       var k = KINDS[kind];
-      obs.push({ kind: kind, x: first + gap * i + (r() - 0.5) * gap * 0.3, w: k.w, h: k.h, miss: 0, help: false, sparkled: false });
+      return { kind: kind, x: 0, w: kind === 'puddle' ? def.puddleW : k.w, h: k.h, miss: 0, help: false, sparkled: false };
     }
+
+    // しょうがいぶつの まとまり（1つ、または ステージ4から 2つ つづけて）
+    var groups = [];
+    var left = count;
+    var prevKind = '';
+    while (left > 0) {
+      var size = left >= 2 && r() < def.pairs ? 2 : 1;
+      var g = [];
+      for (j = 0; j < size; j++) {
+        var kind = pick(r, def.kinds);
+        if (kind === prevKind && r() < 0.5) kind = pick(r, def.kinds);
+        prevKind = kind;
+        g.push(makeOb(kind));
+      }
+      groups.push(g);
+      left -= size;
+    }
+    // 2つ目は、1つ目を とんで ついちしてから すこし 走った ところ
+    var PAIR_GAP = v * (AIR_TIME + 0.45);
+    function groupW(g) { return g.length === 1 ? g[0].w : g[0].w / 2 + PAIR_GAP + g[1].w / 2; }
+    var first = 200 + v * 3;
+    var last = len - v * 2.5;
+    var used = 0;
+    groups.forEach(function (g) { used += groupW(g); });
+    var gap = (last - first - used) / Math.max(1, groups.length - 1);
+    var x = first;
+    groups.forEach(function (g) {
+      var gx = x + (r() - 0.5) * gap * 0.3;
+      g[0].x = gx;
+      obs.push(g[0]);
+      if (g.length === 2) {
+        g[1].x = gx + g[0].w / 2 + PAIR_GAP - g[1].w / 2;
+        obs.push(g[1]);
+      }
+      x += groupW(g) + gap;
+    });
 
     function add(kind, x, y) { items.push({ kind: kind, x: x, y: y, got: false, ph: r() * 6.28 }); }
-    var skyAfter = {};
-    def.feather.forEach(function (f) { skyAfter[f + 1] = skyAfter[f + 2] = skyAfter[f + 3] = true; });
+
+    // はね・ほしを おく すきま（ステージが すすむほど すくない）
+    var gapCount = obs.length + 1;
+    var powerAt = {};
+    var types = [];
+    for (i = 0; i < Math.max(def.feather, def.star); i++) {
+      if (i < def.feather) types.push('feather');
+      if (i < def.star) types.push('star');
+    }
+    types.forEach(function (t, k) {
+      var gi = Math.max(1, Math.round((k + 0.5) / types.length * (gapCount - 2)));
+      while (powerAt[gi]) gi++;
+      powerAt[gi] = t;
+    });
 
     // しょうがいぶつの あいだに どんぐり・はね・ほし
-    for (i = 0; i <= def.count; i++) {
-      var a = i === 0 ? 320 : obs[i - 1].x + obs[i - 1].w + 60;
-      var b = i < def.count ? obs[i].x - 80 : STAGE_LEN - 260;
+    var gaps = [];
+    for (i = 0; i <= obs.length; i++) {
+      var a = i === 0 ? 320 : obs[i - 1].x + obs[i - 1].w + 50;
+      var b = i < obs.length ? obs[i].x - 70 : len - 260;
+      gaps.push({ a: a, b: b });
       var L = b - a;
-      if (L < 160) continue;
-      var power = def.feather.indexOf(i) >= 0 ? 'feather' : def.star.indexOf(i) >= 0 ? 'star' : '';
-      if (power) add(power, a + L * 0.28, GROUND - 42);
+      if (L < 140) continue;
+      var power = powerAt[i] || '';
+      if (power) add(power, a + L * 0.25, GROUND - 42);
       var m = power ? 3 : 3 + Math.floor(r() * 3);
       var sx = a + L * (power ? 0.55 : 0.3 + r() * 0.15);
-      for (var j = 0; j < m && sx + j * 44 < b; j++) add('acorn', sx + j * 44, GROUND - 24);
-      // はねが あるとき：そらの たかい ところにも（2かい ジャンプで とれる）
-      if (skyAfter[i] && L > 300) {
-        var cx = a + L * 0.5;
-        add('acorn', cx - 44, GROUND - 270);
-        add('acorn', cx, GROUND - 290);
-        add('acorn', cx + 44, GROUND - 270);
-      }
+      for (j = 0; j < m && sx + j * 44 < b; j++) add('acorn', sx + j * 44, GROUND - 24);
     }
-    // しょうがいぶつの 上に、ジャンプの 形に どんぐり
+
+    // しょうがいぶつの 上に、ジャンプの 形に どんぐり（とびこえると とれる）
+    var dxArc = 62 * v / RUN;
     obs.forEach(function (o) {
-      if (r() < 0.5) return;
+      if (r() < 0.45) return;
       var c = o.x + o.w / 2;
-      add('acorn', c - 62, GROUND - 150);
+      add('acorn', c - dxArc, GROUND - 150);
       add('acorn', c, GROUND - 182);
-      add('acorn', c + 62, GROUND - 150);
+      add('acorn', c + dxArc, GROUND - 150);
     });
+
+    // はねが つづいている 間だけ、2だん ジャンプで とどく たかい どんぐり
+    // （ふつうの ジャンプで とどくのは 地面から 約230 まで。これは 290〜305 なので はねが ないと とどかない）
+    items.filter(function (it) { return it.kind === 'feather'; }).forEach(function (f) {
+      var from = f.x + v * 1.2;
+      var to = f.x + v * (FEATHER_TIME - 1.5);
+      var placed = 0;
+      gaps.forEach(function (gp) {
+        var mid = (gp.a + gp.b) / 2;
+        if (placed >= 4 || mid < from || mid > to || gp.b - gp.a < 200) return;
+        var d = 50 * v / RUN;
+        add('acorn', mid - d, GROUND - 290);
+        add('acorn', mid, GROUND - 305);
+        add('acorn', mid + d, GROUND - 290);
+        placed++;
+      });
+    });
+
+    // たかい ところに どんぐりが ある ときは、その 下の 地面には おかない（とぶか まよわないように）
+    var high = items.filter(function (it) { return it.kind === 'acorn' && it.y < GROUND - 100; });
+    items = items.filter(function (it) {
+      if (it.kind !== 'acorn' || it.y < GROUND - 100) return true;
+      for (var q = 0; q < high.length; q++) if (Math.abs(high[q].x - it.x) < 56) return false;
+      return true;
+    });
+
     items.sort(function (p, q) { return p.x - q.x; });
-    return { n: n, def: def, theme: THEMES[n - 1], obs: obs, items: items, len: STAGE_LEN };
+    return { n: n, def: def, theme: THEMES[n - 1], obs: obs, items: items, len: len, v: v, ts: diff.ts, life: diff.life };
   }
 
   // ---------- がめん ----------
@@ -260,7 +363,7 @@
   var parts = [];      // こまかい つぶ（すな・キラキラ など）
 
   function newRun(n) {
-    var st = buildStage(n);
+    var st = buildStage(n, rec.diff);
     S = {
       st: st, n: n,
       x: 200, px: 200, y: GROUND, py: GROUND, vy: 0,
@@ -268,13 +371,13 @@
       feather: 0, star: 0, blink: 0,
       acorns: 0, oi: 0, ii: 0,
       phase: 0, squash: 0,
-      hit: null, goal: null,
+      hit: null, goal: null, over: false,
+      life: st.life ? LIFE_MAX : 0,
       t: 0, jumped: false
     };
     parts = [];
   }
 
-  function timeScale() { return rec.speed === 'slow' ? SLOW : 1; }
 
   function doJump(air) {
     S.vy = -(air ? AIR_JUMP_V : JUMP_V);
@@ -329,12 +432,12 @@
     if (S.squash > 0) S.squash -= dt;
     if (S.coyote > 0) S.coyote -= dt;
 
-    S.x += RUN * dt;
+    S.x += st.v * dt;
     S.phase += dt * 16;
 
     // 3かい ぶつかった ところは、ひよこが じぶんで とぶ（てつだい）
     var next = st.obs[S.oi];
-    if (next && next.help && S.onGround && S.x >= next.x + next.w / 2 - 118) doJump(false);
+    if (next && next.help && S.onGround && S.x >= next.x + next.w / 2 - st.v * AIR_TIME / 2) doJump(false);
 
     if (S.buf > 0 && (S.onGround || S.coyote > 0)) doJump(false);
 
@@ -420,6 +523,16 @@
     o.miss++;
     if (o.miss >= 3) o.help = true;
     S.hit = { t: 0, i: i, moved: false, word: BUMP_WORDS[(o.miss - 1) % BUMP_WORDS.length] };
+    // むずかしい：ハートが 1つ へる。3かい ぶつかると おしまい
+    if (S.st.life) {
+      S.life = Math.max(0, S.life - 1);
+      renderHearts(true);
+      if (S.life === 0) {
+        S.over = true;
+        S.hit.word = 'あいたた';
+        S.feather = S.star = 0;
+      }
+    }
     S.vy = 0;
     sBump();
     for (var k = 0; k < 5; k++) addPart('heart', S.x, S.y - 50, (Math.random() - 0.5) * 140, -60 - Math.random() * 60, 0.8, '#f2b8c6');
@@ -430,10 +543,14 @@
     var h = S.hit;
     h.t += dt;
     if (S.y < GROUND) S.y = Math.min(GROUND, S.y + 260 * dt);
+    if (S.over) {
+      if (h.t >= 1.1 && !h.moved) { h.moved = true; showOver(); }
+      return;
+    }
     if (h.t >= 0.75 && !h.moved) {
       var o = S.st.obs[h.i];
       var prev = h.i > 0 ? S.st.obs[h.i - 1] : null;
-      var back = Math.max(o.x - 300, prev ? prev.x + prev.w + 40 : 120);
+      var back = Math.max(o.x - S.st.v, prev ? prev.x + prev.w + 40 : 120);
       S.x = S.px = back;
       S.y = S.py = GROUND;
       S.vy = 0;
@@ -557,7 +674,7 @@
     drawParts(camX, true);
 
     // もどる ときは ふわっと うすく
-    if (playing && S.hit) {
+    if (playing && S.hit && !S.over) {
       var f = S.hit.t < 0.75 ? clamp((S.hit.t - 0.5) / 0.25, 0, 1) : clamp(1 - (S.hit.t - 0.75) / 0.25, 0, 1);
       if (f > 0) {
         ctx.fillStyle = 'rgba(243,239,230,' + (f * 0.85).toFixed(3) + ')';
@@ -862,15 +979,20 @@
     ctx.beginPath(); ctx.ellipse(x + w - 4, top - 8, 9, 5, -0.6, 0, 6.2832); ctx.fill(); ctx.stroke();
   }
 
+  // 池：こい 青。ふちに あかるい 線を 入れて 形を わかりやすく
   function drawPuddle(x, w) {
-    ctx.fillStyle = '#b5d3e4';
-    ctx.strokeStyle = '#8fb4d6';
-    ctx.beginPath(); ctx.ellipse(x + w / 2, GROUND + 4, w / 2, 9, 0, 0, 6.2832); ctx.fill(); ctx.stroke();
-    ctx.strokeStyle = 'rgba(255,253,247,0.9)';
+    var cx = x + w / 2;
+    ctx.fillStyle = '#2f5f8f';
+    ctx.beginPath(); ctx.ellipse(cx, GROUND + 4, w / 2, 10, 0, 0, 6.2832); ctx.fill();
+    ctx.strokeStyle = '#a9d0ee';
+    ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.ellipse(cx, GROUND + 4, w / 2 - 1.5, 8.5, 0, 0, 6.2832); ctx.stroke();
+    ctx.strokeStyle = 'rgba(214,234,248,0.9)';
     ctx.lineWidth = 2.6;
+    ctx.lineCap = 'round';
     ctx.beginPath();
-    ctx.moveTo(x + w * 0.24, GROUND + 2); ctx.lineTo(x + w * 0.42, GROUND + 2);
-    ctx.moveTo(x + w * 0.56, GROUND + 6); ctx.lineTo(x + w * 0.7, GROUND + 6);
+    ctx.moveTo(x + w * 0.22, GROUND + 2); ctx.lineTo(x + w * 0.4, GROUND + 2);
+    ctx.moveTo(x + w * 0.56, GROUND + 7); ctx.lineTo(x + w * 0.7, GROUND + 7);
     ctx.stroke();
     ctx.strokeStyle = INK;
   }
@@ -1149,10 +1271,9 @@
     lastTs = ts;
     if (!paused) {
       acc += dt;
-      var ts2 = timeScale();
       while (acc >= STEP) {
         if (mode === 'select') stepDemo(STEP);
-        else if (S) stepPlay(STEP * (S.goal || S.hit ? 1 : ts2), STEP);
+        else if (S) stepPlay(STEP * (S.goal || S.hit ? 1 : S.st.ts), STEP);
         acc -= STEP;
       }
     }
@@ -1185,6 +1306,9 @@
   var pwFeatherFill = document.getElementById('pwFeatherFill');
   var pwStarFill = document.getElementById('pwStarFill');
   var tapHint = document.getElementById('tapHint');
+  var heartsEl = document.getElementById('hearts');
+  var bannerEl = document.getElementById('banner');
+  var koeHud = document.getElementById('koeHud');
   var trackW = 300;
   var lastProg = -1;
 
@@ -1213,10 +1337,44 @@
     tapHint.hidden = true;
   }
 
+  // むずかしい：ハートの 体力ゲージ
+  var HEART_SVG = '<svg viewBox="0 0 40 40" aria-hidden="true"><path d="M20 34C9 26 4 20 4 13.5 4 8.5 8 5 12.5 5c3.3 0 5.9 1.8 7.5 4.6C21.6 6.8 24.2 5 27.5 5 32 5 36 8.5 36 13.5 36 20 31 26 20 34z" stroke="#3d3a35" stroke-width="3" stroke-linejoin="round"/></svg>';
+  function renderHearts(anim) {
+    if (!S || !S.st.life) { heartsEl.hidden = true; return; }
+    heartsEl.hidden = false;
+    var html = '';
+    for (var i = 0; i < LIFE_MAX; i++) {
+      var lost = i >= S.life;
+      html += '<span class="heart' + (lost ? ' is-lost' : '') + (anim && i === S.life ? ' is-pop' : '') + '">' + HEART_SVG + '</span>';
+    }
+    heartsEl.innerHTML = html;
+    heartsEl.setAttribute('aria-label', 'たいりょく ' + S.life + ' / ' + LIFE_MAX);
+  }
+
+  // ステージの はじめに「ステージ3」と 大きく 出す
+  var bannerTimer = 0;
+  function showBanner(n) {
+    document.getElementById('bannerNum').textContent = 'ステージ' + n;
+    document.getElementById('bannerName').textContent = STAGES[n - 1].name;
+    bannerEl.hidden = false;
+    bannerEl.classList.remove('is-show');
+    void bannerEl.offsetWidth;
+    bannerEl.classList.add('is-show');
+    clearTimeout(bannerTimer);
+    bannerTimer = setTimeout(function () { bannerEl.hidden = true; }, 2200);
+  }
+
   // ---------- がめんの きりかえ ----------
   var pauseEl = document.getElementById('pause');
   var pauseTitle = document.getElementById('pauseTitle');
   var goalEl = document.getElementById('goal');
+  var overEl = document.getElementById('over');
+
+  // こえで あそぶ ときは、マイクを じゅんび してから はじめる
+  function begin(n) {
+    if (rec.input === 'koe') useKoe(function () { startStage(n); });
+    else startStage(n);
+  }
 
   function startStage(n) {
     newRun(n);
@@ -1226,14 +1384,27 @@
     hud.hidden = false;
     pauseEl.hidden = true;
     goalEl.hidden = true;
+    overEl.hidden = true;
     acornNum.textContent = '0';
     lastProg = -1;
     pwFeather.hidden = pwStar.hidden = true;
+    renderHearts(false);
+    var useVoice = rec.input === 'koe' && koe && koe.isRunning();
+    koeHud.hidden = !useVoice;
+    if (koe) koe.enabled = true;
     trackW = progTrack.offsetWidth || trackW;
-    // はじめの 2ステージは「タップで ジャンプ」を しばらく 出す
-    tapHint.hidden = n > 2;
+    showBanner(n);
+    // はじめの 2ステージは「タップで ジャンプ」を しばらく 出す（こえの ときは いつも）
+    tapHint.textContent = useVoice ? 'こえを だすと ジャンプ！' : 'がめんを タップすると ジャンプ！';
+    // 「ステージ○」が きえてから 出す
+    tapHint.hidden = true;
     clearTimeout(hintTimer);
-    if (!tapHint.hidden) hintTimer = setTimeout(hideTapHint, 5000);
+    if (useVoice || n <= 2) {
+      hintTimer = setTimeout(function () {
+        if (S && !S.jumped) tapHint.hidden = false;
+        hintTimer = setTimeout(hideTapHint, 5000);
+      }, 2100);
+    }
     startLoop();
     updateHud();
     if (isPortrait()) pause('つづける？');
@@ -1248,15 +1419,19 @@
     hud.hidden = true;
     pauseEl.hidden = true;
     goalEl.hidden = true;
+    overEl.hidden = true;
+    bannerEl.hidden = true;
     selectEl.hidden = false;
+    stopKoe();
     selectMsg.textContent = '';
     renderStages();
     startLoop();
   }
 
   function pause(title) {
-    if (mode !== 'play' || paused || (S && S.goal)) return;
+    if (mode !== 'play' || paused || (S && (S.goal || S.over))) return;
     paused = true;
+    if (koe) koe.enabled = false;
     pauseTitle.textContent = title || 'やめる？';
     pauseEl.hidden = false;
     document.getElementById('resumeBtn').focus({ preventScroll: true });
@@ -1266,6 +1441,7 @@
     if (!paused) return;
     paused = false;
     pauseEl.hidden = true;
+    if (koe) koe.enabled = true;
     lastTs = 0;
     acc = 0;
   }
@@ -1278,6 +1454,15 @@
     nextBtn.hidden = S.n >= STAGE_MAX;
     goalEl.hidden = false;
     (nextBtn.hidden ? document.getElementById('againBtn') : nextBtn).focus({ preventScroll: true });
+  }
+
+  // むずかしい で 3かい ぶつかった とき
+  function showOver() {
+    sOver();
+    if (koe) koe.enabled = false;
+    document.getElementById('overNum').textContent = S.acorns;
+    overEl.hidden = false;
+    document.getElementById('overAgainBtn').focus({ preventScroll: true });
   }
 
   // はなまる（ぐるぐる と はなびら）
@@ -1333,20 +1518,42 @@
       selectMsg.textContent = 'まえの ステージを クリアすると ひらくよ';
       return;
     }
-    startStage(n);
+    begin(n);
   });
 
-  // ---------- はやさ・音 ----------
-  var speedBtns = Array.prototype.slice.call(document.querySelectorAll('.speed-btn'));
-  function renderSpeed() {
-    speedBtns.forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.speed === rec.speed)); });
+  // ---------- むずかしさ・あそびかた・音 ----------
+  var diffBtns = Array.prototype.slice.call(document.querySelectorAll('.diff-btn'));
+  var diffNote = document.getElementById('diffNote');
+  var DIFF_NOTES = {
+    easy: 'ゆっくり はしるよ。ぶつかっても すこし まえから やりなおし',
+    normal: 'ぶつかっても すこし まえから やりなおし',
+    hard: 'はやくて しょうがいぶつも おおいよ。3かい ぶつかると おしまい'
+  };
+  function renderDiff() {
+    diffBtns.forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.diff === rec.diff)); });
+    diffNote.textContent = DIFF_NOTES[rec.diff];
   }
-  speedBtns.forEach(function (b) {
+  diffBtns.forEach(function (b) {
     b.addEventListener('click', function () {
       unlockAudio();
-      rec.speed = b.dataset.speed;
+      rec.diff = DIFFS[b.dataset.diff] ? b.dataset.diff : 'normal';
       save();
-      renderSpeed();
+      renderDiff();
+    });
+  });
+
+  var inputBtns = Array.prototype.slice.call(document.querySelectorAll('.input-btn'));
+  var koeRow = document.getElementById('koeRow');
+  function renderInput() {
+    inputBtns.forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.input === rec.input)); });
+    koeRow.hidden = rec.input !== 'koe';
+  }
+  inputBtns.forEach(function (b) {
+    b.addEventListener('click', function () {
+      unlockAudio();
+      rec.input = b.dataset.input === 'koe' ? 'koe' : 'yubi';
+      save();
+      renderInput();
     });
   });
 
@@ -1384,6 +1591,7 @@
       tap();
     } else if (e.key === 'Escape') {
       if (!settings.hidden) closeSettings();
+      else if (!testEl.hidden) closeTest();
       else if (mode === 'play' && !paused) pause('やめる？');
     }
   });
@@ -1399,11 +1607,15 @@
   document.getElementById('toSelectBtn').addEventListener('click', showSelect);
   document.getElementById('nextStageBtn').addEventListener('click', function () {
     unlockAudio();
-    if (S && S.n < STAGE_MAX) startStage(S.n + 1);
+    if (S && S.n < STAGE_MAX) begin(S.n + 1);
   });
   document.getElementById('againBtn').addEventListener('click', function () {
     unlockAudio();
-    if (S) startStage(S.n);
+    if (S) begin(S.n);
+  });
+  document.getElementById('overAgainBtn').addEventListener('click', function () {
+    unlockAudio();
+    if (S) begin(S.n);
   });
   document.getElementById('goalSelectBtn').addEventListener('click', showSelect);
 
@@ -1421,6 +1633,154 @@
     resize();
     if (isPortrait()) pause('つづける？');
   });
+
+  // ---------- こえで あそぶ（../shared/koe-switch.js を つかう） ----------
+  // 声の 大きさだけを みる（音声認識は しない・録音しない・オフラインで うごく）。
+  // しきい値は たべもの キャッチなどと 共通の せってい。ジャンプの 待ち時間は この ゲームだけの せってい。
+  var KS = window.KoeSwitch || null;
+  var koeConf = KS ? KS.loadSettings() : { threshold: 0.5 };
+  var koe = null;
+  var micExplained = false;
+  var micNext = null;
+
+  var micAskEl = document.getElementById('micAsk');
+  var micErr = document.getElementById('micErr');
+  var micOkBtn = document.getElementById('micOkBtn');
+  var testEl = document.getElementById('koeTest');
+  var testErr = document.getElementById('testErr');
+  var testLamp = document.getElementById('testLamp');
+  var testLampText = document.getElementById('testLampText');
+  var thValue = document.getElementById('thValue');
+  var meters = [
+    { fill: document.getElementById('hudMeterFill'), line: document.getElementById('hudMeterLine') },
+    { fill: document.getElementById('testMeterFill'), line: document.getElementById('testMeterLine') }
+  ];
+  meters.forEach(function (m) { m.box = m.fill.parentNode; m.last = -1; m.over = null; });
+
+  if (KS) {
+    koe = KS.create({
+      threshold: koeConf.threshold,
+      cooldown: rec.koeCool,          // 1かい ジャンプしたら、この 間は つぎの 声に 反応しない
+      onTrigger: onVoice,
+      onLevel: showLevel,
+      onStop: function () { showLevel(0, koe.getThreshold()); }
+    });
+  }
+
+  function onVoice() {
+    if (!testEl.hidden) { flashLamp(); return; }
+    if (mode !== 'play' || paused || !S || rec.input !== 'koe') return;
+    tap();   // ゆびの タップと 同じ（はねが あれば 空中で もう1かい）
+  }
+
+  function showLevel(level, th) {
+    meters.forEach(function (m) {
+      if (m.box.offsetParent === null) return;
+      var v = Math.round(level * 200) / 200;
+      if (v !== m.last) { m.last = v; m.fill.style.transform = 'scaleX(' + v + ')'; }
+      var over = level >= th;
+      if (over !== m.over) { m.over = over; m.box.classList.toggle('is-over', over); }
+    });
+  }
+  function placeLines() {
+    var th = koe ? koe.getThreshold() : koeConf.threshold;
+    meters.forEach(function (m) { m.line.style.left = (th * 100).toFixed(1) + '%'; });
+    thValue.textContent = Math.round(th * 100);
+  }
+
+  // マイクを つかう：はじめての ときは、なぜ つかうかを やさしく せつめいしてから
+  function useKoe(next) {
+    if (koe && koe.isRunning()) { next(); return; }
+    micNext = next;
+    if (!micExplained || !koe) {
+      micErr.hidden = true;
+      micOkBtn.hidden = false;
+      micAskEl.hidden = false;
+      micOkBtn.focus({ preventScroll: true });
+      return;
+    }
+    startMic();
+  }
+  function startMic() {
+    if (!koe) { showMicError(KS ? null : { name: 'NotSupportedError' }); return; }
+    koe.start().then(function () {
+      micAskEl.hidden = true;
+      var fn = micNext;
+      micNext = null;
+      placeLines();
+      if (fn) fn();
+    }, function (err) {
+      showMicError(err);
+    });
+  }
+  function showMicError(err) {
+    micErr.textContent = KS ? KS.errorMessage(err) : 'この ページでは マイクが つかえません。';
+    micErr.hidden = false;
+    micOkBtn.textContent = 'もういちど ためす';
+    micAskEl.hidden = false;
+  }
+  function closeMicAsk() {
+    micAskEl.hidden = true;
+    micNext = null;
+    micOkBtn.textContent = 'マイクを つかう';
+  }
+  micOkBtn.addEventListener('click', function () {
+    unlockAudio();
+    micExplained = true;
+    micErr.hidden = true;
+    startMic();
+  });
+  document.getElementById('micNoBtn').addEventListener('click', closeMicAsk);
+
+  function stopKoe() {
+    if (koe && koe.isRunning()) koe.stop();
+  }
+
+  // ---------- こえテスト ----------
+  var lampTimer = 0;
+  var lampCount = 0;
+  function flashLamp() {
+    lampCount++;
+    testLamp.classList.add('is-on');
+    testLampText.textContent = 'はんのう！（' + lampCount + '）';
+    clearTimeout(lampTimer);
+    lampTimer = setTimeout(function () { testLamp.classList.remove('is-on'); }, 500);
+  }
+  function openTest() {
+    useKoe(function () {
+      lampCount = 0;
+      testLamp.classList.remove('is-on');
+      testLampText.textContent = 'まってるよ';
+      testErr.hidden = true;
+      koe.enabled = true;
+      testEl.hidden = false;
+      placeLines();
+      meters.forEach(function (m) { m.last = -1; m.over = null; });
+      document.getElementById('testCloseBtn').focus({ preventScroll: true });
+    });
+  }
+  function closeTest() {
+    if (testEl.hidden) return;
+    testEl.hidden = true;
+    clearTimeout(lampTimer);
+    if (mode === 'select') stopKoe();
+  }
+  function stepThreshold(d) {
+    if (!koe) return;
+    var th = clamp(Math.round((koe.getThreshold() + d) * 100) / 100, 0.1, 0.9);
+    koe.setThreshold(th);
+    koeConf.threshold = th;
+    // たべもの キャッチ などと 同じ ところに ほぞん
+    if (KS && !KS.saveSettings({ threshold: th })) {
+      testErr.textContent = 'この iPad では せっていを ほぞん できません。ページを とじると もとに もどります。';
+      testErr.hidden = false;
+    }
+    placeLines();
+  }
+  document.getElementById('koeTestBtn').addEventListener('click', function () { unlockAudio(); openTest(); });
+  document.getElementById('testCloseBtn').addEventListener('click', closeTest);
+  document.getElementById('thUpBtn').addEventListener('click', function () { stepThreshold(0.05); });
+  document.getElementById('thDownBtn').addEventListener('click', function () { stepThreshold(-0.05); });
 
   // ---------- せってい（ながおしで ひらく） ----------
   var gearBtn = document.getElementById('gearBtn');
@@ -1487,7 +1847,27 @@
     recNote.textContent = 'クリアした ステージ：' + (done.length ? done.join('・') : 'まだ ありません') +
       '。けすと、クリアの きろくと どんぐりの かずが ぜんぶ きえます（はやさ と 音の せっていは のこります）。';
     saveWarn.hidden = canSave;
+    coolBtns.forEach(function (b) { b.setAttribute('aria-pressed', String(Number(b.dataset.cool) === rec.koeCool)); });
+    var th = koe ? koe.getThreshold() : koeConf.threshold;
+    thNote.textContent = 'はんのう する 声の 大きさ：' + Math.round(th * 100) +
+      '（こえテストで、メーターを 見ながら かえられます）。この 大きさは、たべもの キャッチ など こえで あそぶ ほかの 教材とも 共通です。';
   }
+
+  var coolBtns = Array.prototype.slice.call(document.querySelectorAll('[data-cool]'));
+  var thNote = document.getElementById('thNote');
+  coolBtns.forEach(function (b) {
+    b.addEventListener('click', function () {
+      rec.koeCool = Number(b.dataset.cool);
+      if (koe) koe.setCooldown(rec.koeCool);
+      save();
+      renderSettings();
+    });
+  });
+  document.getElementById('setTestBtn').addEventListener('click', function () {
+    unlockAudio();
+    closeSettings();
+    openTest();
+  });
 
   var armTimer = 0;
   function disarmReset() {
@@ -1543,11 +1923,12 @@
   });
 
   // とちゅうで 新しい版への 自動の 再読み込みを しない
-  window.kyozaiBusy = function () { return mode === 'play' || !settings.hidden; };
+  window.kyozaiBusy = function () { return mode === 'play' || !settings.hidden || !testEl.hidden; };
 
   // ---------- はじめ ----------
   renderSound();
-  renderSpeed();
+  renderDiff();
+  renderInput();
   renderStages();
   resize();
   startLoop();
