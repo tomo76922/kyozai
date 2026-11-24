@@ -1,6 +1,6 @@
 /* もくじ（メニュー）のページ */
 .menu-header {
-  max-width: 1000px;
+  max-width: 1240px;
   margin: 0 auto;
   padding: 28px var(--side) 8px;
 }
@@ -12,34 +12,143 @@
   letter-spacing: 0.1em;
 }
 
-.menu {
+/* なかまの 色（教材の ボタンも この 色に そろえる） */
+:root {
+  --g-all: #b59a6a;
+  --g-manabu: #6f9fcb;
+  --g-tsutaeru: #e0a24f;
+  --g-asobu: #e07f72;
+  --g-tsukuru: #6fb26a;
+}
+[data-group="manabu"], [data-tab="manabu"] { --accent: var(--g-manabu); }
+[data-group="tsutaeru"], [data-tab="tsutaeru"] { --accent: var(--g-tsutaeru); }
+[data-group="asobu"], [data-tab="asobu"] { --accent: var(--g-asobu); }
+[data-group="tsukuru"], [data-tab="tsukuru"] { --accent: var(--g-tsukuru); }
+[data-tab="all"] { --accent: var(--g-all); }
+
+/* なかま分けの タブ */
+.tabs {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
-  gap: clamp(16px, 3vw, 32px);
-  max-width: 1000px;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 12px;
+  max-width: 1240px;
   margin: 0 auto;
-  padding: 16px var(--side) 40px;
+  padding: 14px var(--side) 4px;
+}
+.tab {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 0;
+  min-height: 92px;
+  padding: 10px 14px 10px;
+  font: inherit;
+  color: var(--text);
+  text-align: left;
+  background: var(--card);
+  border: 3px solid color-mix(in srgb, var(--accent) 45%, var(--card));
+  border-top-width: 9px;
+  border-top-color: var(--accent);
+  border-radius: 20px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.12s ease;
+}
+.tab:active { transform: scale(0.97); }
+.tab:focus-visible { outline: 4px solid var(--active-border); outline-offset: 3px; }
+.tab[aria-selected="true"] {
+  background: color-mix(in srgb, var(--accent) 32%, var(--card));
+  border-color: var(--accent);
+  box-shadow: 0 4px 0 color-mix(in srgb, var(--accent) 70%, #3d3a35);
+}
+.tab-name {
+  max-width: 100%;
+  white-space: nowrap;
+  font-size: clamp(20px, 2.6vw, 28px);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1.2;
+}
+.tab-count {
+  position: absolute;
+  top: -16px;
+  right: 8px;
+  min-width: 2.2em;
+  padding: 1px 8px;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: center;
+  color: var(--text);
+  background: color-mix(in srgb, var(--accent) 30%, var(--card));
+  border: 2px solid var(--accent);
+  border-radius: 999px;
+}
+.tab-list {
+  display: block;
+  width: 100%;
+  height: 2.7em;           /* 2ぎょう ぶん（はいりきらない ぶんは「ほか ○こ」） */
+  overflow: hidden;
+  font-size: clamp(12px, 1.4vw, 14px);
+  line-height: 1.35;
+  color: var(--muted);
+}
+.tab-list b { font-weight: 700; color: var(--text); white-space: nowrap; }
+
+/* ★ よく つかう */
+.fav {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 10px var(--side) 0;
+}
+.fav-title {
+  margin: 4px 4px 0;
+  font-size: clamp(18px, 2.2vw, 22px);
+  letter-spacing: 0.06em;
+}
+.fav-title span { color: #e0a92a; }
+.menu-fav {
+  padding: 8px 0 6px;
+  border-bottom: 3px dashed var(--card-border);
 }
 
+/* 教材の ボタン */
+.menu {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 180px), 1fr));
+  gap: clamp(18px, 2vw, 22px) clamp(12px, 1.6vw, 18px);
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 20px var(--side) 40px;
+}
+.menu.menu-fav { padding-left: 0; padding-right: 0; padding-bottom: 14px; }
+.menu-cell {
+  position: relative;
+  display: flex;
+  min-width: 0;
+}
 .menu-item {
+  position: relative;
+  flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 18px;
-  min-height: clamp(240px, 30vh, 340px);
-  padding: 28px 20px;
-  border-radius: 28px;
+  justify-content: flex-start;
+  gap: 8px;
+  padding: 18px 12px 14px;
+  border-radius: 24px;
   background: var(--card);
-  border: 3px solid var(--card-border);
-  box-shadow: 0 4px 0 #d9d2c3;
+  border: 3px solid color-mix(in srgb, var(--accent, var(--card-border)) 55%, var(--card));
+  box-shadow: 0 4px 0 color-mix(in srgb, var(--accent, #d9d2c3) 55%, #d9d2c3);
   color: var(--text);
   text-decoration: none;
   transition: transform 0.12s ease, background-color 0.2s ease, border-color 0.2s ease;
 }
 .menu-item:active {
-  background: var(--active);
-  border-color: var(--active-border);
+  background: color-mix(in srgb, var(--accent, var(--active)) 22%, var(--card));
+  border-color: var(--accent, var(--active-border));
   transform: scale(0.97);
 }
 .menu-item:focus-visible {
@@ -51,30 +160,161 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 140px;
-  height: 140px;
-  border-radius: 32px;
-  background: color-mix(in srgb, var(--accent, var(--card-border)) 45%, var(--card));
+  width: clamp(88px, 10vw, 112px);
+  height: clamp(88px, 10vw, 112px);
+  flex: none;
+  border-radius: 26px;
+  background: color-mix(in srgb, var(--accent, var(--card-border)) 30%, var(--card));
   border: 3px solid var(--accent, var(--card-border));
 }
-.menu-icon svg { width: 104px; height: 104px; }
+.menu-icon svg { width: 76%; height: 76%; }
 .menu-icon-text {
-  font-size: 92px;
+  font-size: clamp(58px, 7vw, 74px);
   font-weight: 700;
   line-height: 1;
 }
 
 .menu-label {
-  font-size: clamp(28px, 4vw, 38px);
+  font-size: clamp(21px, 2.4vw, 27px);
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.04em;
+  line-height: 1.25;
   text-align: center;
+  word-break: keep-all;    /* 「ひらがな カード」は すきまで だけ おりかえす */
+  overflow-wrap: anywhere;
+}
+.menu-desc {
+  font-size: clamp(14px, 1.5vw, 16px);
+  line-height: 1.4;
+  text-align: center;
+  color: var(--muted);
+}
+
+/* こえ・め・パスワードの しるし */
+.menu-marks {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px 6px;
+  margin-top: auto;
+}
+.mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 9px 1px 6px;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.5;
+  border-radius: 999px;
+  border: 2px solid currentColor;
+}
+.mark svg { width: 16px; height: 16px; flex: none; }
+.mark-koe { color: #b4553f; background: #fbe7e1; }
+.mark-me { color: #3d6f9a; background: #e3eef7; }
+.mark-lock { color: var(--muted); background: var(--card); border-color: var(--card-border); }
+
+/* ★ボタン（教材の ボタンの 右上） */
+.menu-star {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  padding: 0;
+  color: #cfc6b4;
+  background: none;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+}
+.menu-star svg { width: 30px; height: 30px; }
+.menu-star[aria-pressed="true"] { color: #e8b42a; }
+.menu-star[aria-pressed="true"] svg { fill: currentColor; }
+.menu-star:active { transform: scale(0.9); }
+.menu-star:focus-visible { outline: 4px solid var(--active-border); outline-offset: -4px; }
+
+.menu-empty {
+  grid-column: 1 / -1;
+  margin: 20px 0;
+  font-size: 20px;
+  text-align: center;
+  color: var(--muted);
+}
+
+/* 横むきで 高さが すくない とき（iPad の よこ）は、すこし ちいさく して スクロールを へらす */
+@media (orientation: landscape) and (max-height: 860px) {
+  .menu-header { padding-top: 16px; }
+  .menu-item { padding-top: 14px; gap: 6px; }
+  .menu-icon { width: 84px; height: 84px; border-radius: 22px; }
+  .menu-icon-text { font-size: 56px; }
+  .tab { min-height: 84px; }
+}
+/* せまい がめん：タブを 2〜3れつに おりかえす */
+@media (max-width: 700px) {
+  .tabs { grid-auto-flow: row; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+  .menu { grid-template-columns: repeat(auto-fill, minmax(min(100%, 150px), 1fr)); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .menu-item { transition: background-color 0.2s ease, border-color 0.2s ease; }
-  .menu-item:active { transform: none; }
+  .menu-item, .tab { transition: background-color 0.2s ease, border-color 0.2s ease; }
+  .menu-item:active, .tab:active, .menu-star:active { transform: none; }
 }
+
+/* 先生用：この iPad に だす きょうざい */
+.show-card { max-height: calc(100vh - 32px); max-height: calc(100dvh - 32px); width: min(680px, 100%); }
+.show-note { margin: -6px 0 0; text-align: center; }
+.show-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.show-group {
+  margin: 8px 0 0;
+  padding-left: 10px;
+  font-size: 18px;
+  border-left: 8px solid var(--accent);
+}
+.show-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 60px;
+  padding: 4px 10px 4px 16px;
+  font: inherit;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+  text-align: left;
+  background: var(--card);
+  border: 3px solid var(--card-border);
+  border-radius: 16px;
+  cursor: pointer;
+}
+.show-row:focus-visible { outline: 4px solid var(--active-border); outline-offset: 2px; }
+.show-name { flex: 1; }
+.show-state {
+  flex: none;
+  min-width: 5.5em;
+  padding: 6px 12px;
+  font-size: 17px;
+  text-align: center;
+  border-radius: 999px;
+  color: var(--muted);
+  background: #ece6da;
+}
+.show-row[aria-pressed="true"] { border-color: color-mix(in srgb, var(--accent) 70%, var(--card)); }
+.show-row[aria-pressed="true"] .show-state { color: var(--text); background: color-mix(in srgb, var(--accent) 45%, var(--card)); }
+.show-row[aria-pressed="false"] .show-name { color: var(--muted); text-decoration: line-through; }
+.show-foot { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }
 
 /* せってい（先生用：ながおしで ひらく。小さく・目立たない） */
 .menu-header {
@@ -131,18 +371,6 @@
   border: 2px solid var(--card-border);
   border-radius: 10px;
 }
-
-/* パスワードが いる ゲーム */
-.menu-lock {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  margin-top: -10px;
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--muted);
-}
-.menu-lock svg { width: 18px; height: 18px; }
 
 /* パスワードを かえた ときの おしらせ */
 .menu-toast {
@@ -253,11 +481,11 @@
 .news-btn:focus-visible { outline: 4px solid var(--active-border); outline-offset: 3px; }
 
 /* 最近 新しく なった 教材の しるし */
-.menu-item { position: relative; }
 .menu-new {
   position: absolute;
-  top: 12px;
-  right: 14px;
+  top: -13px;
+  left: 12px;
+  z-index: 1;
   padding: 2px 10px;
   font-size: 16px;
   font-weight: 700;
