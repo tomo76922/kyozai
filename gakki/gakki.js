@@ -32,6 +32,27 @@
     return [{ label: it.sounds[0], sound: 0 }, { label: it.sounds[1], sound: 1 }];
   }
 
+  // めで じゆう：見つづけた ときに 順番に 鳴らす 音（i 番目）
+  var BOUNCE = [0, 1, 2, 3, 4, 5, 6, 7, 6, 5, 4, 3, 2, 1];   // ド→上のド→ド… と 行ったり来たり
+  var RATES = [0.84, 0.92, 1, 1.09, 1.19, 1.09, 1, 0.92];     // すず・トライアングルの 高さ（少しずつ 上がって 下がる）
+  var LEVELS = [1, 2, 3, 4, 5, 4, 3, 2];
+  function jiyuStep(it, i) {
+    if (it.keys) {
+      var deg = BOUNCE[i % BOUNCE.length];
+      return { sound: deg, label: Oto.NOTE_NAMES[deg], color: KEY_COLORS[deg], key: deg };
+    }
+    if (it.id === 'suzu' || it.id === 'triangle') {
+      var r = i % RATES.length;
+      return { sound: 0, rate: RATES[r], label: it.sounds[0], level: LEVELS[r] };
+    }
+    if (it.id === 'taiko') {
+      var t = i % 3;
+      return { sound: t === 2 ? 1 : 0, label: t === 2 ? 'カッ' : 'ドン' };
+    }
+    // カスタネット：大きい 音と 小さい 音を 順番に
+    return i % 2 === 0 ? { sound: 0, scale: 1, label: 'タン', size: 'big' } : { sound: 0, scale: 0.4, label: 'タン', size: 'small' };
+  }
+
   var ART = {
     piano: '<svg viewBox="0 0 100 100" aria-hidden="true">' +
       '<rect x="6" y="24" width="88" height="56" rx="8" fill="#6b5442" stroke="#3d3a35" stroke-width="3"/>' +
@@ -80,7 +101,8 @@
   // ---------- ほぞん（この iPad の 中だけ） ----------
   var STORE_KEY = 'gakki-v1';
   var VOLS = [{ t: 'ちいさい', v: 0.22 }, { t: 'ふつう', v: 0.4 }, { t: 'おおきい', v: 0.7 }];
-  var rec = { vol: 1, speed: 2, kyoku: false, song: 'kirakira', beats: 4, reps: 1, dwellPlay: 0.3, pickSpeed: 3, dwellPick: 0.5, insts: [] };
+  var rec = { vol: 1, speed: 2, kyoku: false, song: 'kirakira', beats: 4, reps: 1, dwellPlay: 0.3, pickSpeed: 3, dwellPick: 0.5, insts: [],
+              eyeMode: 'rhythm', stepSec: 1, resume: false };
   (function load() {
     try {
       var d = JSON.parse(localStorage.getItem(STORE_KEY) || 'null');
@@ -95,6 +117,9 @@
       if (isFinite(d.pickSpeed)) rec.pickSpeed = clamp(Number(d.pickSpeed), 1, 10);
       if (isFinite(d.dwellPick)) rec.dwellPick = clamp(Number(d.dwellPick), 0.2, 2);
       if (Array.isArray(d.insts)) rec.insts = d.insts.filter(inst).slice(0, 2);
+      if (d.eyeMode === 'jiyu' || d.eyeMode === 'rhythm') rec.eyeMode = d.eyeMode;
+      if ([0.5, 1, 2].indexOf(d.stepSec) >= 0) rec.stepSec = d.stepSec;
+      rec.resume = !!d.resume;
     } catch (e) {}
   })();
   function save() { try { localStorage.setItem(STORE_KEY, JSON.stringify(rec)); } catch (e) {} }
@@ -379,8 +404,13 @@
     if (rec.kyoku && !beatsOk(rec.beats)) rec.beats = beatsOk(4) ? 4 : 2;
 
     var std = [2, 3, 4].indexOf(rec.speed) >= 0;
-    $('speedSec').hidden = !(how === 'eye' || rec.kyoku);
-    $('speedNote').textContent = how === 'eye' ? '' : '（めで えんそう する 子の iPad と おなじに してね）';
+    var rhythm = how === 'eye' && rec.eyeMode === 'rhythm';
+    $('eyeModeSec').hidden = how !== 'eye';
+    each('[data-eye-mode]', function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-eye-mode') === rec.eyeMode)); });
+    $('stepSec').hidden = !(how === 'eye' && rec.eyeMode === 'jiyu');
+    each('[data-step]', function (b) { b.setAttribute('aria-pressed', String(Number(b.getAttribute('data-step')) === rec.stepSec)); });
+    $('speedSec').hidden = !(rhythm || rec.kyoku);
+    $('speedNote').textContent = rhythm ? '' : '（めで「リズム」で えんそう する 子の iPad と おなじに してね）';
     each('[data-speed]', function (b) { b.setAttribute('aria-pressed', String(Number(b.getAttribute('data-speed')) === rec.speed)); });
     var cu = $('speedCustom');
     cu.hidden = std;
@@ -416,6 +446,12 @@
   each('[data-beats]', function (b) {
     b.addEventListener('click', function () { rec.beats = Number(b.getAttribute('data-beats')); save(); renderPrep(); });
   });
+  each('[data-eye-mode]', function (b) {
+    b.addEventListener('click', function () { rec.eyeMode = b.getAttribute('data-eye-mode'); save(); renderPrep(); });
+  });
+  each('[data-step]', function (b) {
+    b.addEventListener('click', function () { rec.stepSec = Number(b.getAttribute('data-step')); save(); renderPrep(); });
+  });
   each('[data-reps]', function (b) {
     b.addEventListener('click', function () { rec.reps = Number(b.getAttribute('data-reps')); save(); renderPrep(); });
   });
@@ -430,7 +466,7 @@
 
   // ---------- えんそう ----------
   // state：free（ゆびで・きょく なし）/ ready / count / run / end
-  var G = { state: 'free', timed: false, cStart: 0, t0: 0, ms: 2000, total: Infinity, lastCount: 0, k: -1, lit: null,
+  var G = { state: 'free', timed: false, jiyu: false, j: { held: null, heldT: 0, fired: false, stepT: 0, pos: { left: -1, right: -1 } }, cStart: 0, t0: 0, ms: 2000, total: Infinity, lastCount: 0, k: -1, lit: null,
             held: null, heldT: 0, fired: false, song: null, raf: 0, last: 0, halves: null, sides: null };
 
   function hitFx(el, color) {
@@ -500,6 +536,109 @@
     });
   }
 
+  // めで じゆう：左は 1つめ、右は 2つめの がっき（1つの ときは 左右とも おなじ がっき）
+  function buildJiyu(stage) {
+    var a = inst(sel[0]), b = sel[1] ? inst(sel[1]) : a;
+    G.sides = { left: { it: a }, right: { it: b } };
+    G.halves = {};
+    [['left', a, 'ひだり'], ['right', b, 'みぎ']].forEach(function (x) {
+      var side = x[0], it = x[1];
+      var h = document.createElement('button');
+      h.type = 'button';
+      h.className = 'half half-' + side;
+      h.style.setProperty('--accent', it.color);
+      h.setAttribute('aria-label', x[2] + '：' + it.name);
+      var extra = '';
+      if (it.keys) {
+        extra = '<span class="half-keys" aria-hidden="true">' + KEY_COLORS.map(function (c, i) {
+          return '<i style="--c:' + c + '" data-k="' + i + '"></i>';
+        }).join('') + '</span>';
+      } else if (it.id === 'suzu' || it.id === 'triangle') {
+        extra = '<span class="half-meter" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>';
+      }
+      h.innerHTML = '<span class="half-tag">' + x[2] + '</span>' +
+        '<span class="half-ring">' +
+          '<svg class="ring" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="46" class="ring-bg"/><circle cx="50" cy="50" r="46" class="ring-fg" pathLength="1"/></svg>' +
+          '<span class="half-art">' + ART[it.id] + '</span></span>' +
+        '<span class="half-name">' + it.name + '</span>' +
+        '<span class="half-say" aria-live="polite"></span>' + extra;
+      // 先生が 指で タップしたときも、つぎの 音を 鳴らす
+      h.addEventListener('pointerdown', function (e) {
+        e.preventDefault();
+        Oto.unlock();
+        jiyuSound(side, G.j.pos[side] + 1);
+      });
+      stage.appendChild(h);
+      G.halves[side] = h;
+    });
+    jiyuReset();
+  }
+  function jiyuShow(side, st) {
+    var h = G.halves[side];
+    var say = h.querySelector('.half-say');
+    say.textContent = st.label;
+    say.classList.toggle('is-small', st.size === 'small');
+    say.classList.toggle('is-big', st.size === 'big');
+    if (st.color) h.style.setProperty('--say', st.color); else h.style.removeProperty('--say');
+    Array.prototype.forEach.call(h.querySelectorAll('.half-keys i'), function (k) { k.classList.toggle('is-on', st.key != null && Number(k.getAttribute('data-k')) === st.key); });
+    Array.prototype.forEach.call(h.querySelectorAll('.half-meter i'), function (m, i) { m.classList.toggle('is-on', st.level != null && i < st.level); });
+  }
+  function jiyuReset() {
+    G.j = { held: null, heldT: 0, fired: false, stepT: 0, pos: { left: -1, right: -1 } };
+    if (!G.halves || !G.jiyu) return;
+    ['left', 'right'].forEach(function (side) {
+      var st = jiyuStep(G.sides[side].it, 0);
+      jiyuShow(side, st);
+      Array.prototype.forEach.call(G.halves[side].querySelectorAll('.half-keys i, .half-meter i'), function (k) { k.classList.remove('is-on'); });
+    });
+  }
+  // i 番目の 音を 鳴らして、画面に 大きく 出す
+  function jiyuSound(side, i) {
+    if (i < 0) i = 0;
+    G.j.pos[side] = i;
+    var it = G.sides[side].it, st = jiyuStep(it, i);
+    Oto.play(it.id, st.sound, null, st.scale, st.rate);
+    jiyuShow(side, st);
+    hitFx(G.halves[side], st.color);
+  }
+  function jiyuEnd(side) {
+    var h = G.halves[side];
+    h.classList.remove('is-lit');
+    setRing(h.querySelector('.ring-fg'), 0);
+  }
+  // 左か 右を 見た 瞬間（見つめ時間の あと）に 1つめの 音。見つづけると 一定の 間かくで つぎの 音へ
+  function jiyuTick(d, dt) {
+    var J = G.j;
+    if (d === 'left' || d === 'right') {
+      if (d !== J.held) {
+        if (J.held) jiyuEnd(J.held);
+        J.held = d; J.heldT = 0; J.fired = false; J.stepT = 0;
+      }
+      var h = G.halves[d], ring = h.querySelector('.ring-fg');
+      if (!J.fired) {
+        J.heldT += dt;
+        setRing(ring, J.heldT / rec.dwellPlay);
+        if (J.heldT >= rec.dwellPlay) {
+          J.fired = true;
+          J.stepT = 0;
+          h.classList.add('is-lit');
+          // まんなかを 見てから もどったときは はじめの 音から（せっていで「つづきから」も）
+          jiyuSound(d, rec.resume && J.pos[d] >= 0 ? J.pos[d] + 1 : 0);
+        }
+      } else {
+        J.stepT += dt;
+        if (J.stepT >= rec.stepSec) {
+          J.stepT -= rec.stepSec;
+          jiyuSound(d, J.pos[d] + 1);
+        }
+        setRing(ring, J.stepT / rec.stepSec);
+      }
+    } else if (J.held) {
+      jiyuEnd(J.held);
+      J.held = null; J.heldT = 0; J.fired = false; J.stepT = 0;
+    }
+  }
+
   function buildEye(stage) {
     var a = inst(sel[0]), b = sel[1] ? inst(sel[1]) : null;
     var L, R;
@@ -540,9 +679,10 @@
     var stage = $('stage');
     stage.innerHTML = '';
     G.halves = null;
-    stage.className = 'stage stage-' + how + ' n' + sel.length;
-    if (how === 'eye') buildEye(stage); else buildFinger(stage);
-    G.timed = how === 'eye' || rec.kyoku;
+    G.jiyu = how === 'eye' && rec.eyeMode === 'jiyu';
+    stage.className = 'stage stage-' + how + ' n' + sel.length + (G.jiyu ? ' stage-jiyu' : '');
+    if (G.jiyu) buildJiyu(stage); else if (how === 'eye') buildEye(stage); else buildFinger(stage);
+    G.timed = (how === 'eye' && !G.jiyu) || rec.kyoku;
     setPreview($('playPrev'), how === 'eye');
     $('playCamMsg').hidden = true;
     toReady();
@@ -557,7 +697,8 @@
       var s = songOf(rec.song);
       t.push('♪ ' + s.name + '（' + (rec.reps ? rec.reps + 'かい' : 'ずっと') + '）');
     }
-    if (how === 'eye') t.push(fmtSec(rec.speed) + 'びょうに 1かい ひかるよ');
+    if (how === 'eye' && G.jiyu) t.push('みた ほうが なるよ。みつづけると おとが かわるよ');
+    else if (how === 'eye') t.push(fmtSec(rec.speed) + 'びょうに 1かい ひかるよ');
     else if (!rec.kyoku) t.push('すきな ように ならしてね');
     return t.join('　');
   }
@@ -610,6 +751,11 @@
     G.lit = null;
     G.held = null; G.heldT = 0; G.fired = false;
     if (!G.halves) return;
+    if (G.jiyu) {
+      ['left', 'right'].forEach(function (s) { jiyuEnd(s); G.halves[s].classList.remove('is-look'); });
+      jiyuReset();
+      return;
+    }
     ['left', 'right'].forEach(function (s) {
       var h = G.halves[s];
       h.classList.remove('is-lit', 'is-look', 'is-done');
@@ -653,7 +799,7 @@
     if (G.state === 'run') {
       var el = now - G.t0;
       if (el >= G.total) { stopSong(); unlight(); setState('end'); return; }
-      if (G.halves) {
+      if (G.halves && !G.jiyu) {
         var k = Math.floor(el / G.ms);
         if (k !== G.k) { G.k = k; setLit(k % 2 === 0 ? 'left' : 'right'); }
       }
@@ -664,6 +810,11 @@
     var d = ok && !anyOverlay() ? eye.getDir() : null;
     G.halves.left.classList.toggle('is-look', d === 'left');
     G.halves.right.classList.toggle('is-look', d === 'right');
+    if (G.jiyu) {
+      // じゆう：スタートの まえ・カウントダウン・おしまい の ときは 鳴らさない
+      jiyuTick(G.state === 'free' || G.state === 'run' ? d : null, dt);
+      return;
+    }
     if (G.state !== 'run' || !G.lit) return;
     // ひかっている ほうを 見つづけたら、その 音を 1かい ならす（つぎが ひかるまでの 間なら おくれても いい）
     var h = G.halves[G.lit];
@@ -786,6 +937,7 @@
     each('[data-pick-speed]', function (b) { b.setAttribute('aria-pressed', String(Number(b.getAttribute('data-pick-speed')) === rec.pickSpeed)); });
     each('[data-dwell-pick]', function (b) { b.setAttribute('aria-pressed', String(Number(b.getAttribute('data-dwell-pick')) === rec.dwellPick)); });
     each('[data-cam-src]', function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-cam-src') === c.source)); });
+    each('[data-resume]', function (b) { b.setAttribute('aria-pressed', String((b.getAttribute('data-resume') === '1') === rec.resume)); });
   }
   function afterSetting() {
     save();
@@ -795,6 +947,7 @@
   }
   $('spMinus').addEventListener('click', function () { rec.speed = clamp(rec.speed - 0.5, 1.5, 8); afterSetting(); });
   $('spPlus').addEventListener('click', function () { rec.speed = clamp(rec.speed + 0.5, 1.5, 8); afterSetting(); });
+  each('[data-resume]', function (b) { b.addEventListener('click', function () { rec.resume = b.getAttribute('data-resume') === '1'; afterSetting(); }); });
   each('[data-dwell-play]', function (b) { b.addEventListener('click', function () { rec.dwellPlay = Number(b.getAttribute('data-dwell-play')); afterSetting(); }); });
   each('[data-pick-speed]', function (b) { b.addEventListener('click', function () { rec.pickSpeed = Number(b.getAttribute('data-pick-speed')); afterSetting(); }); });
   each('[data-dwell-pick]', function (b) { b.addEventListener('click', function () { rec.dwellPick = Number(b.getAttribute('data-dwell-pick')); afterSetting(); }); });
@@ -829,7 +982,7 @@
   });
 
   // えんそうの とちゅうで ページを 読みなおさない
-  window.kyozaiBusy = function () { return playing() || mode === 'pick' && P.on; };
+  window.kyozaiBusy = function () { return playing() || mode === 'pick' && P.on || mode === 'play' && how === 'eye'; };
   window.addEventListener('pagehide', function () { stopCam(); keepAwake(false); });
 
   // ---------- はじめ ----------
