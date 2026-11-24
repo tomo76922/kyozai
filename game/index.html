@@ -43,10 +43,30 @@
       <p class="select-ask">ステージを えらんでね</p>
       <div class="stages" id="stages" role="group" aria-label="ステージ"></div>
       <p class="select-msg" id="selectMsg" role="status"></p>
-      <div class="speed" role="group" aria-label="はやさ">
-        <span class="speed-label">はやさ</span>
-        <button type="button" class="btn speed-btn" data-speed="slow" aria-pressed="false">ゆっくり</button>
-        <button type="button" class="btn speed-btn" data-speed="normal" aria-pressed="true">ふつう</button>
+      <div class="options">
+        <div class="opt-group" role="group" aria-label="あそびかた">
+          <button type="button" class="btn input-btn" data-input="yubi" aria-pressed="true">
+            <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11V4.5a1.5 1.5 0 0 1 3 0V10"/><path d="M12 9.5a1.5 1.5 0 0 1 3 0V11"/><path d="M15 10.5a1.5 1.5 0 0 1 3 0V15a6 6 0 0 1-6 6h-.5a6 6 0 0 1-4.6-2.2L4.2 15.4a1.6 1.6 0 0 1 2.4-2.1L9 15"/></svg>
+            <span>ゆびで あそぶ</span>
+          </button>
+          <button type="button" class="btn input-btn" data-input="koe" aria-pressed="false">
+            <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg>
+            <span>こえで あそぶ</span>
+          </button>
+        </div>
+        <div class="opt-group" role="group" aria-label="むずかしさ">
+          <button type="button" class="btn diff-btn" data-diff="easy" aria-pressed="false">やさしい</button>
+          <button type="button" class="btn diff-btn" data-diff="normal" aria-pressed="true">ふつう</button>
+          <button type="button" class="btn diff-btn" data-diff="hard" aria-pressed="false">むずかしい</button>
+        </div>
+      </div>
+      <p class="opt-note" id="diffNote"></p>
+      <div class="koe-row" id="koeRow" hidden>
+        <p class="koe-note">こえを だすと ジャンプ するよ。はねが あると、くうちゅうで もういちど こえを だすと 2だん ジャンプ</p>
+        <button type="button" class="btn koe-test-btn" id="koeTestBtn">
+          <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg>
+          <span>こえテスト</span>
+        </button>
       </div>
     </div>
   </div>
@@ -69,6 +89,7 @@
           <path d="M16 34v-9a4 4 0 0 1 8 0v9" fill="#b88a5e" stroke="#3d3a35" stroke-width="2.5"/>
         </svg>
       </div>
+      <div class="hearts" id="hearts" role="img" aria-label="たいりょく" hidden></div>
       <p class="acorn-count" aria-live="off">
         <svg viewBox="0 0 40 40" aria-hidden="true">
           <ellipse cx="20" cy="24" rx="10" ry="12" fill="#c98d4e" stroke="#3d3a35" stroke-width="2.5"/>
@@ -100,6 +121,21 @@
     </div>
 
     <p class="tap-hint" id="tapHint" hidden>がめんを タップすると ジャンプ！</p>
+
+    <!-- ステージの はじめ -->
+    <div class="banner" id="banner" hidden aria-live="polite">
+      <span class="banner-num" id="bannerNum">ステージ1</span>
+      <span class="banner-name" id="bannerName"></span>
+    </div>
+
+    <!-- こえモード：こえの おおきさ メーター -->
+    <div class="koe-hud" id="koeHud" hidden>
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg>
+      <div class="meter meter-small" aria-hidden="true">
+        <div class="meter-fill" id="hudMeterFill"></div>
+        <div class="meter-line" id="hudMeterLine"></div>
+      </div>
+    </div>
   </div>
 
   <!-- いちじ ていし -->
@@ -137,6 +173,72 @@
     </div>
   </div>
 
+  <!-- おしまい（むずかしい で 3かい ぶつかった とき） -->
+  <div class="overlay" id="over" hidden>
+    <div class="card" role="dialog" aria-modal="true" aria-labelledby="overTitle">
+      <p class="card-title" id="overTitle">おしまい</p>
+      <p class="goal-acorn">
+        <svg viewBox="0 0 40 40" aria-hidden="true">
+          <ellipse cx="20" cy="24" rx="10" ry="12" fill="#c98d4e" stroke="#3d3a35" stroke-width="2.5"/>
+          <path d="M8 18c0-7 5-10 12-10s12 3 12 10z" fill="#8a6a45" stroke="#3d3a35" stroke-width="2.5" stroke-linejoin="round"/>
+          <path d="M20 8V4" stroke="#3d3a35" stroke-width="3" stroke-linecap="round"/>
+        </svg>
+        <span>どんぐり <b id="overNum">0</b>こ</span>
+      </p>
+      <p class="over-text">よく がんばったね</p>
+      <div class="card-btns">
+        <button type="button" class="btn btn-go" id="overAgainBtn">もういちど</button>
+        <a class="btn btn-sub" href="../">もくじ</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- マイクを つかう まえの おしらせ -->
+  <div class="overlay" id="micAsk" hidden>
+    <div class="card mic-card" role="dialog" aria-modal="true" aria-labelledby="micTitle">
+      <svg class="mic-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg>
+      <p class="card-title mic-title" id="micTitle">マイクを つかうね</p>
+      <p class="mic-text">こえの おおきさで ひよこを ジャンプ させるために、マイクを つかいます。<br>
+        ことばは ききとりません。こえは ろくおんしないし、どこにも おくりません。</p>
+      <p class="mic-sub">このあと「マイクを つかっても いいですか」と きかれたら、「きょか」を おしてね。</p>
+      <p class="mic-err" id="micErr" role="alert" hidden></p>
+      <div class="card-btns">
+        <button type="button" class="btn btn-go" id="micOkBtn">マイクを つかう</button>
+        <button type="button" class="btn btn-sub" id="micNoBtn">やめる</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- こえテスト -->
+  <div class="overlay" id="koeTest" hidden>
+    <div class="card test-card" role="dialog" aria-modal="true" aria-labelledby="testTitle">
+      <p class="card-title test-title" id="testTitle">こえテスト</p>
+      <p class="test-text">こえを だしてみてね。いろの ぼうが <b>せん</b>を こえると はんのう するよ。</p>
+      <div class="test-meter-row">
+        <div class="meter meter-big" aria-hidden="true">
+          <div class="meter-fill" id="testMeterFill"></div>
+          <div class="meter-line" id="testMeterLine"><span>ここで はんのう</span></div>
+        </div>
+        <div class="test-lamp" id="testLamp" aria-live="polite">
+          <span class="lamp-dot" aria-hidden="true"></span>
+          <span class="lamp-text" id="testLampText">まってるよ</span>
+        </div>
+      </div>
+      <div class="test-adjust">
+        <span class="adj-label">はんのう する おおきさ</span>
+        <button type="button" class="btn adj-btn" id="thDownBtn" aria-label="ちいさい こえでも はんのう するように する">ちいさく ▼</button>
+        <span class="adj-value" id="thValue">50</span>
+        <button type="button" class="btn adj-btn" id="thUpBtn" aria-label="おおきい こえだけ はんのう するように する">おおきく ▲</button>
+      </div>
+      <p class="test-hint">へやの ものおとで はんのう するときは「おおきく」、こえを だしても はんのう しないときは「ちいさく」を おしてね。
+        この おおきさは「たべもの キャッチ」と おなじ せっていです。</p>
+      <p class="mic-err" id="testErr" role="alert" hidden></p>
+      <div class="card-btns">
+        <button type="button" class="btn btn-go" id="testCloseBtn">おわり</button>
+      </div>
+    </div>
+  </div>
+
   <!-- 先生用の せってい -->
   <div class="settings" id="settings" role="dialog" aria-modal="true" aria-labelledby="setTitle" hidden>
     <div class="set-inner">
@@ -152,6 +254,23 @@
         <p class="set-note">オンにすると、クリアしていない ステージも ぜんぶ えらべます。</p>
         <div class="set-row">
           <button type="button" class="btn" id="openAllBtn" aria-pressed="false">ぜんぶの ステージを ひらく</button>
+        </div>
+      </section>
+
+      <section class="set-sec" aria-labelledby="h-koe">
+        <h3 class="set-h" id="h-koe">こえで あそぶ</h3>
+        <p class="set-note">1かい ジャンプしたあと、つぎの 声に 反応しない 時間です（声が のびて 何度も ジャンプ しないように）。
+          みじかいと 2だん ジャンプ しやすく、ながいと まちがえて とびにくく なります。</p>
+        <div class="set-row" role="group" aria-label="ジャンプの まちじかん">
+          <button type="button" class="btn opt-btn" data-cool="300" aria-pressed="false">0.3びょう</button>
+          <button type="button" class="btn opt-btn" data-cool="400" aria-pressed="true">0.4びょう</button>
+          <button type="button" class="btn opt-btn" data-cool="600" aria-pressed="false">0.6びょう</button>
+          <button type="button" class="btn opt-btn" data-cool="800" aria-pressed="false">0.8びょう</button>
+          <button type="button" class="btn opt-btn" data-cool="1000" aria-pressed="false">1びょう</button>
+        </div>
+        <p class="set-note set-note-gap" id="thNote"></p>
+        <div class="set-row">
+          <button type="button" class="btn" id="setTestBtn">こえテストを ひらく</button>
         </div>
       </section>
 
@@ -176,6 +295,7 @@
     <p>よこに してね</p>
   </div>
 
+  <script src="../shared/koe-switch.js"></script>
   <script src="./game.js"></script>
   <script src="../pwa.js"></script>
 </body>
