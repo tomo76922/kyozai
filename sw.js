@@ -1,7 +1,8 @@
 // きょうざい Service Worker（メニューと全教材で1つ）
 // ファイルを更新したら CACHE_VERSION の数字を上げてください。
 // 教材をふやしたら、そのファイルを ASSETS に足してください。
-var CACHE_VERSION = 'v27';
+// 教材を追加・修正したら、news.json に おしらせを1件 足してください（くわしくは CLAUDE.md）。
+var CACHE_VERSION = 'v28';
 var CACHE_PREFIX = 'hiragana-cards-';   // 以前の版の保存を消せるように、名前はそのまま
 var CACHE_NAME = CACHE_PREFIX + CACHE_VERSION;
 
@@ -11,6 +12,8 @@ var ASSETS = [
   './index.html',
   './menu.css',
   './menu.js',
+  './news.js',
+  './news.json',
   './common.css',
   './pwa.js',
   './manifest.webmanifest',

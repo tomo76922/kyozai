@@ -20,12 +20,30 @@
 <body>
   <header class="menu-header">
     <h1 class="menu-title">きょうざい</h1>
-    <!-- 先生用：ながおし したときだけ ひらく（ゲームの パスワードを かえる） -->
-    <button type="button" class="gear" id="gearBtn" aria-label="せってい（ながおしで ひらく）">
-      <span class="gear-text">せってい</span>
-    </button>
+    <div class="menu-tools">
+      <!-- これまでの 更新の おしらせ（データは news.json） -->
+      <button type="button" class="news-btn" id="newsBtn" aria-haspopup="dialog">
+        <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 6 2.5 7.5 2.5 7.5h-17S6 15 6 9z"/><path d="M10 20a2.2 2.2 0 0 0 4 0"/></svg>
+        <span>おしらせ</span>
+      </button>
+      <!-- 先生用：ながおし したときだけ ひらく（ゲームの パスワード・ランキング） -->
+      <button type="button" class="gear" id="gearBtn" aria-label="せってい（ながおしで ひらく）">
+        <span class="gear-text">せってい</span>
+      </button>
+    </div>
     <p class="gear-hint" id="gearHint" role="status" hidden>ながく おして ください</p>
   </header>
+
+  <!-- おしらせ（これまでの 更新。あたらしい じゅん） -->
+  <div class="news" id="news" hidden>
+    <div class="news-card" role="dialog" aria-modal="true" aria-labelledby="newsTitle" tabindex="-1">
+      <div class="news-head">
+        <h2 class="news-title" id="newsTitle">おしらせ</h2>
+        <button type="button" class="teach-close" id="newsClose">とじる</button>
+      </div>
+      <ol class="news-list" id="newsList"></ol>
+    </div>
+  </div>
 
   <!-- 先生用の せってい（「せってい」を ながおし したときだけ ひらく） -->
   <div class="teach" id="teach" hidden>
@@ -243,6 +261,7 @@
 
   <script src="./shared/game-lock.js"></script>
   <script src="./menu.js"></script>
+  <script src="./news.js"></script>
   <script src="./pwa.js"></script>
 </body>
 </html>
