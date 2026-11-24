@@ -758,3 +758,13 @@ body {
   transform: translateX(-50%);
   background: #3d3a35;
 }
+
+/* きろくを おくる（おしまいの がめん） */
+.send-btn {
+  gap: 8px;
+  min-height: 60px;
+  margin-top: 4px;
+  padding: 6px 24px;
+  background: var(--card);
+}
+.send-btn svg { width: 1.4em; height: 1.4em; flex: none; }

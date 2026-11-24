@@ -31,6 +31,8 @@
         <span class="home-text">もくじ</span>
       </a>
       <h1 class="title">ぴよぴよ ラン</h1>
+      <!-- なまえ（イニシャルと いろの マーク）。おすと かえられる -->
+      <div class="name-chip" id="nameChip"></div>
       <button type="button" class="btn sound-btn" aria-pressed="true"></button>
       <!-- 先生用：ながおし したときだけ ひらく -->
       <button type="button" class="gear" id="gearBtn" aria-label="せってい（ながおしで ひらく）">
@@ -170,6 +172,7 @@
         <button type="button" class="btn btn-sub" id="againBtn">もういちど</button>
         <button type="button" class="btn btn-sub" id="goalSelectBtn">ステージを えらぶ</button>
       </div>
+      <button type="button" class="btn send-btn" id="sendBtn" hidden><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="6.5" height="6.5" rx="1"/><rect x="14" y="3.5" width="6.5" height="6.5" rx="1"/><rect x="3.5" y="14" width="6.5" height="6.5" rx="1"/><path d="M14 14h2.5v2.5H14zM18 18h2.5v2.5H18zM14 20.5h1M20.5 14v1"/></svg><span>きろくを おくる</span></button>
     </div>
   </div>
 
@@ -296,6 +299,8 @@
   </div>
 
   <script src="../shared/koe-switch.js"></script>
+  <script src="../shared/qr/qrcode.js"></script>
+  <script src="../shared/kiroku.js"></script>
   <script src="./game.js"></script>
   <script src="../pwa.js"></script>
 </body>

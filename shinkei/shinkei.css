@@ -399,3 +399,7 @@ body.is-playing .title { display: none; }
   .spark { animation-duration: 0.01s; }
   .hm-line { animation: none; stroke-dashoffset: 0; }
 }
+
+/* なまえ・きろくを おくる */
+.name-chip { margin-bottom: 4px; }
+.send-btn { margin-top: 6px; background: var(--card); border-color: var(--card-border); }
