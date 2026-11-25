@@ -111,58 +111,7 @@
     try { localStorage.setItem('kazu-slow', slow ? '1' : '0'); } catch (e) {}
   });
 
-  // ---------- 音（音のファイルは使わず、その場で作る） ----------
-  var AC = window.AudioContext || window.webkitAudioContext;
-  var ctx = null;
-
-  // iPad では、ボタンをおしたときに音の準備をしておかないと、あとで鳴らせない
-  function unlockAudio() {
-    if (!AC) return;
-    try {
-      if (!ctx) ctx = new AC();
-      if (ctx.state !== 'running' && ctx.resume) ctx.resume();
-      var buf = ctx.createBuffer(1, 1, 22050);
-      var src = ctx.createBufferSource();
-      src.buffer = buf;
-      src.connect(ctx.destination);
-      src.start(0);
-    } catch (e) {}
-  }
-
-  // かねのような音を1つ
-  function bell(t, freq, vol) {
-    [[1, 1], [2, 0.15], [3, 0.04]].forEach(function (p) {
-      var osc = ctx.createOscillator();
-      var g = ctx.createGain();
-      osc.type = 'sine';
-      osc.frequency.value = freq * p[0];
-      g.gain.setValueAtTime(0.0001, t);
-      g.gain.linearRampToValueAtTime(vol * p[1], t + 0.02);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + 1.2 / p[0] + 0.3);
-      osc.connect(g);
-      g.connect(ctx.destination);
-      osc.start(t);
-      osc.stop(t + 1.6);
-    });
-  }
-
-  // せいかいの音：やさしい「ピン・ポン」（ひかえめな音量）
-  function goodSound() {
-    if (!AC) return;
-    try {
-      if (!ctx) ctx = new AC();
-      var play = function () {
-        var t = ctx.currentTime + 0.03;
-        bell(t, 784, 0.16);         // ソ
-        bell(t + 0.22, 1047, 0.14); // ド
-      };
-      if (ctx.state !== 'running' && ctx.resume) {
-        ctx.resume().then(play, play);
-      } else {
-        play();
-      }
-    } catch (e) {}
-  }
+  // 音（せいかいの 音など）は 共通の部品（shared/mondai.js）で 鳴らす
 
   // ---------- 共通：絵をならべる（5こずつ 2だん） ----------
   function fillFrame(frame, n, pic) {
@@ -246,17 +195,19 @@
   });
 
   // 数えている間は、新しい版への自動の再読み込みをしない
-  window.kyozaiBusy = function () { return counting; };
+  window.kyozaiBusy = function () { return counting || quiz.busy(); };
 
   // ---------- いくつかな ----------
+  // せいかいの あとの 自動で つぎへ・10もんで 一区切り は 共通の部品（shared/mondai.js）
+  var quizSec = document.getElementById('sec-quiz');
+  var quizBar = document.getElementById('quizBar');
   var quizFrame = document.getElementById('quizFrame');
   var quizText = document.getElementById('quizText');
   var quizNums = document.getElementById('quizNums');
-  var nextBtn = document.getElementById('nextBtn');
   var rangeBtns = Array.prototype.slice.call(document.querySelectorAll('.seg-btn'));
 
   var maxN = 5;
-  var answer = 0;
+  var answer = 0;     // いまの もんだいの こたえ（solved のあとも のこす）
   var pic = '';
   var solved = false;
   var sayTimer = null;   // 「せいかい」を読み上げるまでの まち時間
@@ -270,49 +221,57 @@
     return c[Math.floor(Math.random() * c.length)];
   }
 
-  function newQuestion() {
+  // あたらしい もんだい（まえと 同じ かず・絵には しない）
+  function makeQuestion() {
     var nums = [];
     for (var i = 1; i <= maxN; i++) nums.push(i);
     answer = pickOther(nums, answer);
     pic = pickOther(PIC_NAMES, pic);
+    return { n: answer, pic: pic, max: maxN };
+  }
+
+  function showQuestion(q) {
+    answer = q.n;
+    pic = q.pic;
     solved = false;
     clearTimeout(sayTimer);
     stopSpeech();
-    fillFrame(quizFrame, answer, pic);
-    quizFrame.classList.toggle('is-five', maxN === 5);
+    fillFrame(quizFrame, q.n, q.pic);
+    quizFrame.classList.toggle('is-five', q.max === 5);
     quizText.className = 'stage-text';
     quizText.textContent = 'いくつ あるかな？';
+    quizNums.classList.toggle('is-five', q.max === 5);
     Array.prototype.forEach.call(quizNums.children, function (b) {
       b.classList.remove('is-ok', 'is-ng');
+      b.hidden = Number(b.dataset.n) > q.max;
     });
   }
+
+  var quiz = Mondai.create({
+    area: quizSec,
+    countIn: quizBar,
+    total: 10,
+    make: makeQuestion,
+    show: showQuestion,
+    speak: function (t) { speak(t); }
+  });
 
   function setRange(n) {
     maxN = n;
     rangeBtns.forEach(function (b) {
       b.setAttribute('aria-pressed', String(Number(b.dataset.max) === n));
     });
-    quizNums.classList.toggle('is-five', n === 5);
-    Array.prototype.forEach.call(quizNums.children, function (b) {
-      b.hidden = Number(b.dataset.n) > n;
-    });
     try { localStorage.setItem('kazu-range', String(n)); } catch (e) {}
-    newQuestion();
+    quiz.start();
   }
 
   rangeBtns.forEach(function (b) {
     b.addEventListener('click', function () { setRange(Number(b.dataset.max)); });
   });
 
-  nextBtn.addEventListener('click', function () {
-    unlockAudio();
-    newQuestion();
-  });
-
   quizNums.addEventListener('click', function (e) {
     var b = e.target.closest('.num');
     if (!b || solved) return;
-    unlockAudio();
     var n = Number(b.dataset.n);
     Array.prototype.forEach.call(quizNums.children, function (x) {
       x.classList.remove('is-ng');
@@ -322,7 +281,7 @@
       b.classList.add('is-ok');
       quizText.className = 'stage-text is-ok';
       quizText.textContent = 'せいかい';
-      goodSound();
+      quiz.correct(b);
       // 音と重ならないように、少しあとで読み上げる
       clearTimeout(sayTimer);
       sayTimer = setTimeout(function () { speak('せいかい'); }, 500);
@@ -332,10 +291,16 @@
       b.classList.add('is-ng');
       quizText.className = 'stage-text is-retry';
       quizText.textContent = 'もういちど';
+      quiz.wrong();
     }
   });
 
   setRange(maxN);
+
+  // 先生用の せってい（ながおしで ひらく）：せいかいの あと まつ じかん
+  Mondai.bindGear(document.getElementById('gearBtn'), document.getElementById('gearHint'),
+    function () { stopCount(); clearTimeout(sayTimer); quiz.hold(); },
+    function () { quiz.next(); });
 
   // ---------- 「かぞえる」「いくつかな」の切り替え ----------
   var tabs = Array.prototype.slice.call(document.querySelectorAll('.tab'));
@@ -349,6 +314,7 @@
     });
     stopCount();
     clearTimeout(sayTimer);
+    quiz.stop();
     window.scrollTo(0, 0);
     try { localStorage.setItem('kazu-tab', tab.id); } catch (e) {}
   }

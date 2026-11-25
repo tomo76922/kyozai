@@ -15,6 +15,7 @@
   <link rel="icon" href="../icons/icon-192.png" type="image/png">
   <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
   <link rel="stylesheet" href="../common.css">
+  <link rel="stylesheet" href="../shared/mondai.css">
   <link rel="stylesheet" href="./tokei.css">
 </head>
 <body>
@@ -31,6 +32,11 @@
               aria-controls="sec-quiz" aria-selected="false" tabindex="-1">なんじかな</button>
     </div>
     <button type="button" class="btn" id="speedBtn" aria-pressed="false">ゆっくり</button>
+    <!-- 先生用：ながおし したときだけ ひらく -->
+    <button type="button" class="md-gear" id="gearBtn" aria-label="せってい（ながおしで ひらく）">
+      <span>せってい</span>
+    </button>
+    <p class="md-gear-hint" id="gearHint" role="status" hidden>ながく おして ください</p>
   </header>
 
   <p class="notice" id="notice" hidden></p>
@@ -52,14 +58,13 @@
 
     <!-- なんじかな：とけいを みて、3つの こたえから えらぶ -->
     <section class="section" id="sec-quiz" role="tabpanel" aria-labelledby="tab-quiz" hidden>
-      <div class="toolbar">
+      <div class="toolbar md-keep" id="quizBar">
         <div class="seg" role="group" aria-label="むずかしさ">
           <button type="button" class="seg-btn" data-level="0" aria-pressed="true">ちょうど</button>
           <button type="button" class="seg-btn" data-level="1" aria-pressed="false">ちょうど・はん</button>
           <button type="button" class="seg-btn" data-level="2" aria-pressed="false">5ふんごと</button>
           <button type="button" class="seg-btn" data-level="3" aria-pressed="false">1ぷんごと</button>
         </div>
-        <button type="button" class="btn next-btn" id="nextBtn">つぎ</button>
       </div>
       <div class="quiz-body">
         <div class="stage">
@@ -73,6 +78,7 @@
     </section>
   </main>
 
+  <script src="../shared/mondai.js"></script>
   <script src="./tokei.js"></script>
   <script src="../pwa.js"></script>
 </body>

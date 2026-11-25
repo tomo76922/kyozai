@@ -15,6 +15,7 @@
   <link rel="icon" href="../icons/icon-192.png" type="image/png">
   <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
   <link rel="stylesheet" href="../common.css">
+  <link rel="stylesheet" href="../shared/mondai.css">
   <link rel="stylesheet" href="./kisetsu.css">
 </head>
 <body>
@@ -27,6 +28,11 @@
     <h1 class="title" data-t="[季節:き.せつ]クイズ">きせつクイズ</h1>
     <button type="button" class="btn" id="furiBtn" aria-pressed="false">ふりがな</button>
     <button type="button" class="btn" id="speedBtn" aria-pressed="false">ゆっくり</button>
+    <!-- 先生用：ながおし したときだけ ひらく -->
+    <button type="button" class="md-gear" id="gearBtn" aria-label="せってい（ながおしで ひらく）">
+      <span>せってい</span>
+    </button>
+    <p class="md-gear-hint" id="gearHint" role="status" hidden>ながく おして ください</p>
   </header>
 
   <div class="bar">
@@ -71,27 +77,15 @@
         <div class="choices" id="choices"></div>
         <div class="q-foot">
           <p class="feedback" id="feedback" aria-live="polite"></p>
-          <button type="button" class="btn next-btn" id="nextBtn" hidden>つぎ</button>
         </div>
         <div class="dots" id="dots" aria-hidden="true"></div>
-      </div>
-    </section>
-
-    <!-- 5. けっか -->
-    <section class="screen" id="scr-result" hidden>
-      <div class="result">
-        <div class="stars" id="stars" aria-hidden="true"></div>
-        <p class="score" id="score" aria-live="polite"></p>
-        <div class="result-btns">
-          <button type="button" class="btn big-btn" id="againBtn" data-t="もう[一:いっ][回:かい]">もういっかい</button>
-          <button type="button" class="btn big-btn" id="otherBtn" data-t="ジャンルを [選:えら]ぶ">ジャンルを えらぶ</button>
-        </div>
       </div>
     </section>
   </main>
 
   <script src="./kanji.js"></script>
   <script src="./data.js"></script>
+  <script src="../shared/mondai.js"></script>
   <script src="./kisetsu.js"></script>
   <script src="../pwa.js"></script>
 </body>

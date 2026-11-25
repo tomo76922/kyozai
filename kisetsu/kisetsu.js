@@ -113,61 +113,8 @@
     if (synth) synth.cancel();
   }
 
-  // ---------- 音（音のファイルは使わず、その場で作る） ----------
-  var AC = window.AudioContext || window.webkitAudioContext;
-  var ctx = null;
-
-  // iPad では、ボタンをおしたときに音の準備をしておかないと、あとで鳴らせない
-  function unlockAudio() {
-    if (!AC) return;
-    try {
-      if (!ctx) ctx = new AC();
-      if (ctx.state !== 'running' && ctx.resume) ctx.resume();
-      var buf = ctx.createBuffer(1, 1, 22050);
-      var src = ctx.createBufferSource();
-      src.buffer = buf;
-      src.connect(ctx.destination);
-      src.start(0);
-    } catch (e) {}
-  }
-
-  // かねのような音を1つ
-  function bell(t, freq, vol) {
-    [[1, 1], [2, 0.15], [3, 0.04]].forEach(function (p) {
-      var osc = ctx.createOscillator();
-      var g = ctx.createGain();
-      osc.type = 'sine';
-      osc.frequency.value = freq * p[0];
-      g.gain.setValueAtTime(0.0001, t);
-      g.gain.linearRampToValueAtTime(vol * p[1], t + 0.02);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + 1.2 / p[0] + 0.3);
-      osc.connect(g);
-      g.connect(ctx.destination);
-      osc.start(t);
-      osc.stop(t + 1.6);
-    });
-  }
-
-  function playNotes(notes) {
-    if (!AC) return;
-    try {
-      if (!ctx) ctx = new AC();
-      var play = function () {
-        var t = ctx.currentTime + 0.03;
-        notes.forEach(function (n) { bell(t + n[0], n[1], n[2]); });
-      };
-      if (ctx.state !== 'running' && ctx.resume) {
-        ctx.resume().then(play, play);
-      } else {
-        play();
-      }
-    } catch (e) {}
-  }
-
-  // せいかいの音：やさしい「ピン・ポン」（ひかえめな音量）
-  function goodSound() { playNotes([[0, 784, 0.16], [0.22, 1047, 0.14]]); }
-  // おわりの音：ド・ミ・ソ
-  function endSound() { playNotes([[0, 523, 0.13], [0.2, 659, 0.13], [0.4, 784, 0.14]]); }
+  // ---------- 音 ----------
+  // せいかい・おわりの 音は 共通の部品（shared/mondai.js）で 鳴らす
 
   // ---------- ボタン（ふりがな・ゆっくり） ----------
   var furiBtn = $('furiBtn');
@@ -192,10 +139,11 @@
   var screen = '';
   var season = null;    // 選んだ季節
   var genre = null;     // 選んだジャンル
-  var screens = ['grade', 'season', 'genre', 'quiz', 'result'];
+  var screens = ['grade', 'season', 'genre', 'quiz'];
 
   function show(name) {
     stopSpeech();
+    if (name !== 'quiz' && quiz) quiz.cancel();
     screen = name;
     screens.forEach(function (s) { $('scr-' + s).hidden = s !== name; });
     redraw();
@@ -207,16 +155,16 @@
     renderStatic();
     var crumb = [];
     if (grade && screen !== 'grade') crumb.push(gradeName(grade));
-    if (season && (screen === 'genre' || screen === 'quiz' || screen === 'result')) crumb.push(season.name);
-    if (genre && (screen === 'quiz' || screen === 'result')) crumb.push(genre.name);
+    if (season && (screen === 'genre' || screen === 'quiz')) crumb.push(season.name);
+    if (genre && screen === 'quiz') crumb.push(genre.name);
     $('crumb').innerHTML = crumb.map(T).join(' ・ ');
 
     if (screen === 'grade') drawGrades();
     if (screen === 'season') drawSeasons();
     if (screen === 'genre') drawGenres();
     if (screen === 'quiz') drawQuiz();
-    if (screen === 'result') drawResult();
     if (screen !== 'quiz') $('heading').innerHTML = T(HEAD[screen]);
+    if (screen === 'quiz' && quiz && quiz.finished()) $('heading').innerHTML = T(HEAD.result);
   }
 
   function gradeName(g) {
@@ -255,7 +203,6 @@
       b.setAttribute('aria-pressed', String(x.g === grade));
       b.innerHTML = cardHtml('', '', T(x.name));
       b.addEventListener('click', function () {
-        unlockAudio();
         grade = x.g;
         save('grade', String(grade));
         speak(R(x.name));
@@ -287,8 +234,7 @@
       b.innerHTML = cardHtml(s.icon, s.color, T(s.name), ready ? '' : T(T_SOON));
       if (ready) {
         b.addEventListener('click', function () {
-          unlockAudio();
-          season = s;
+            season = s;
           speak(R(s.name));
           show('genre');
         });
@@ -308,7 +254,6 @@
       b.style.setProperty('--accent', season.color);
       b.innerHTML = cardHtml(g.icon, season.color, T(g.name));
       b.addEventListener('click', function () {
-        unlockAudio();
         genre = g;
         startQuiz();
       });
@@ -326,7 +271,9 @@
     return a;
   }
 
-  var round = null;   // { items, idx, results, choices, missed, solved }
+  // せいかいの あとの 自動で つぎへ・おわりの 画面は 共通の部品（shared/mondai.js）
+  var round = null;   // { items, item, choices, missed, solved, info }
+  var quiz = null;
 
   // まちがいの選択肢：ほかの季節のものを かならず1つ入れ、もう1つは 同じ季節か ほかの季節から
   function makeChoices(answer) {
@@ -358,24 +305,25 @@
   }
 
   function startQuiz() {
-    var items = shuffle(quizItems(season, genre.id)).slice(0, QUESTIONS);
-    round = { items: items, idx: 0, results: [] };
+    round = { items: [] };
     show('quiz');
-    newQuestion();
+    quiz.start();
   }
 
-  function newQuestion() {
-    var it = round.items[round.idx];
+  function showQuestion(it, info) {
+    round.item = it;
+    round.info = info;
     round.choices = makeChoices(it);
     round.missed = false;
     round.solved = false;
     drawQuiz(true);
     // 少し間をあけて、問題文と答えを読み上げる
-    clearTimeout(sayTimer);
+    stopSpeech();
     sayTimer = setTimeout(readQuestion, 450);
   }
 
   function readQuestion() {
+    if (!round || !round.choices) return;
     speak(R(genre.ask) + '　' + round.choices.map(function (c) { return R(c.name); }).join('、　'));
   }
 
@@ -393,8 +341,9 @@
 
   function drawQuiz(fresh) {
     if (!round || !round.choices) return;
-    var it = round.items[round.idx];
-    $('heading').innerHTML = T('[第:だい]' + (round.idx + 1) + '[問:もん]');
+    var it = round.item;
+    var info = round.info;
+    $('heading').innerHTML = T('[第:だい]' + (info.index + 1) + '[問:もん]');
 
     var pic = $('pic');
     if (fresh) {
@@ -416,7 +365,6 @@
       b.innerHTML = T(c.name);
       b.dataset.i = String(i);
       if (round.solved && c === it) b.classList.add('is-ok');
-      if (c.wrong) b.classList.add('is-ng');
       box.appendChild(b);
     });
 
@@ -430,15 +378,14 @@
     } else if (fb.classList.contains('is-retry')) {
       fb.innerHTML = T(T_RETRY);
     }
-    var next = $('nextBtn');
-    next.hidden = !round.solved;
-    next.textContent = round.idx + 1 < round.items.length ? 'つぎ' : 'おわり';
 
+    // ●：1回目で せいかい（みどり）・まちがえた（はいいろ）・いま
+    var res = quiz.info().results;
     var dots = '';
-    for (var d = 0; d < round.items.length; d++) {
+    for (var d = 0; d < info.total; d++) {
       var cls = 'dot';
-      if (d < round.results.length) cls += round.results[d] ? ' is-ok' : ' is-miss';
-      else if (d === round.idx) cls += ' is-now';
+      if (res[d] !== undefined) cls += res[d] ? ' is-ok' : ' is-miss';
+      else if (d === info.index) cls += ' is-now';
       dots += '<span class="' + cls + '"></span>';
     }
     $('dots').innerHTML = dots;
@@ -447,21 +394,19 @@
   $('choices').addEventListener('click', function (e) {
     var b = e.target.closest('.choice');
     if (!b || !round || round.solved) return;
-    unlockAudio();
-    var it = round.items[round.idx];
+    var it = round.item;
     var c = round.choices[Number(b.dataset.i)];
     var fb = $('feedback');
     if (c === it) {
       round.solved = true;
-      round.results.push(!round.missed);
-      round.choices.forEach(function (x) { delete x.wrong; });
+      quiz.correct(b);
       drawQuiz(false);
-      goodSound();
       // 音と重ならないように、少しあとで読み上げる
       stopSpeech();
       sayTimer = setTimeout(function () { speak(R(c.name) + '。　' + R(T_OK)); }, 500);
     } else {
       round.missed = true;
+      quiz.wrong();
       // 同じ ボタンを もう一度 おしても 動きが わかるように、いったん外してから つける
       b.classList.remove('is-ng');
       void b.offsetWidth;
@@ -474,55 +419,30 @@
   });
 
   $('listenBtn').addEventListener('click', function () {
-    unlockAudio();
     readQuestion();
   });
 
-  $('nextBtn').addEventListener('click', function () {
-    unlockAudio();
-    round.idx++;
-    if (round.idx < round.items.length) {
-      newQuestion();
-    } else {
-      show('result');
-      endSound();
-      var n = countOk();
-      sayTimer = setTimeout(function () {
-        speak(R(scoreText(n)));
-      }, 700);
+  quiz = Mondai.create({
+    area: $('scr-quiz'),
+    total: QUESTIONS,
+    // 1ジャンルの もんだいを まぜて、じゅんばんに 出す
+    onNewSet: function () { round.items = shuffle(quizItems(season, genre.id)).slice(0, QUESTIONS); },
+    make: function (i) { return round.items[i]; },
+    show: showQuestion,
+    speak: function (t) { speak(t); },
+    onFinish: function () {
+      stopSpeech();
+      $('heading').innerHTML = T(HEAD.result);
     }
   });
 
-  // ---------- 5. けっか ----------
-  function countOk() {
-    return round.results.filter(function (x) { return x; }).length;
-  }
-  function scoreText(n) {
-    return round.items.length + '[問:もん]の うち ' + n + '[問:もん] [正解:せい.かい]';
-  }
-
-  var STAR_ON = '<svg viewBox="0 0 100 100" class="is-pop"><path d="M50 8 L61 36 L91 38 L68 57 L76 87 L50 70 L24 87 L32 57 L9 38 L39 36 Z" fill="#f3cf63" stroke="#3d3a35" stroke-width="4" stroke-linejoin="round"/></svg>';
-  var STAR_OFF = '<svg viewBox="0 0 100 100"><path d="M50 8 L61 36 L91 38 L68 57 L76 87 L50 70 L24 87 L32 57 L9 38 L39 36 Z" fill="#ece7dc" stroke="#cfc8b8" stroke-width="4" stroke-linejoin="round"/></svg>';
-
-  function drawResult() {
-    if (!round) return;
-    var n = countOk();
-    var stars = '';
-    for (var i = 0; i < round.items.length; i++) {
-      stars += i < n ? STAR_ON.replace('class="is-pop"', 'class="is-pop" style="animation-delay:' + (i * 0.12) + 's"') : STAR_OFF;
-    }
-    $('stars').innerHTML = stars;
-    $('score').innerHTML = T(scoreText(n));
-  }
-
-  $('againBtn').addEventListener('click', function () {
-    unlockAudio();
-    startQuiz();
-  });
-  $('otherBtn').addEventListener('click', function () { show('genre'); });
+  // 先生用の せってい（ながおしで ひらく）：せいかいの あと まつ じかん
+  Mondai.bindGear($('gearBtn'), $('gearHint'),
+    function () { stopSpeech(); quiz.hold(); },
+    function () { quiz.next(); });
 
   // クイズの途中は、新しい版への自動の再読み込みをしない
-  window.kyozaiBusy = function () { return screen === 'quiz'; };
+  window.kyozaiBusy = function () { return screen === 'quiz' && !quiz.finished(); };
 
   document.addEventListener('visibilitychange', function () {
     if (document.visibilityState === 'hidden') stopSpeech();

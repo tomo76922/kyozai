@@ -15,6 +15,7 @@
   <link rel="icon" href="../icons/icon-192.png" type="image/png">
   <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
   <link rel="stylesheet" href="../common.css">
+  <link rel="stylesheet" href="../shared/mondai.css">
   <link rel="stylesheet" href="./kazu.css">
 </head>
 <body>
@@ -31,6 +32,11 @@
               aria-controls="sec-quiz" aria-selected="false" tabindex="-1">いくつかな</button>
     </div>
     <button type="button" class="btn" id="speedBtn" aria-pressed="false">ゆっくり</button>
+    <!-- 先生用：ながおし したときだけ ひらく -->
+    <button type="button" class="md-gear" id="gearBtn" aria-label="せってい（ながおしで ひらく）">
+      <span>せってい</span>
+    </button>
+    <p class="md-gear-hint" id="gearHint" role="status" hidden>ながく おして ください</p>
   </header>
 
   <p class="notice" id="notice" hidden></p>
@@ -47,12 +53,11 @@
 
     <!-- いくつかな：いくつ あるか 下の数字から えらぶ -->
     <section class="section" id="sec-quiz" role="tabpanel" aria-labelledby="tab-quiz" hidden>
-      <div class="toolbar">
+      <div class="toolbar md-keep" id="quizBar">
         <div class="seg" role="group" aria-label="もんだいの はんい">
           <button type="button" class="seg-btn" id="range5" data-max="5" aria-pressed="true">1〜5</button>
           <button type="button" class="seg-btn" id="range10" data-max="10" aria-pressed="false">1〜10</button>
         </div>
-        <button type="button" class="btn next-btn" id="nextBtn">つぎ</button>
       </div>
       <div class="stage">
         <div class="frame" id="quizFrame" role="img" aria-label="いくつ あるかな"></div>
@@ -62,6 +67,7 @@
     </section>
   </main>
 
+  <script src="../shared/mondai.js"></script>
   <script src="./kazu.js"></script>
   <script src="../pwa.js"></script>
 </body>
