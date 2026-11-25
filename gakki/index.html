@@ -112,6 +112,23 @@
     <div class="prep-box">
       <p class="prep-insts" id="prepInsts"></p>
 
+      <section class="sec" id="eyeModeSec" hidden>
+        <h2 class="sec-h">めで えんそうの しかた</h2>
+        <div class="opts">
+          <button type="button" class="btn opt-btn" data-eye-mode="jiyu" aria-pressed="false">じゆう<small>みた ときに みた ほうが なる</small></button>
+          <button type="button" class="btn opt-btn" data-eye-mode="rhythm" aria-pressed="false">リズム<small>ひかった ほうを みて ならす</small></button>
+        </div>
+      </section>
+
+      <section class="sec" id="stepSec" hidden>
+        <h2 class="sec-h">みつづけた ときに おとが かわる はやさ</h2>
+        <div class="opts">
+          <button type="button" class="btn opt-btn" data-step="2" aria-pressed="false">ゆっくり<small>2びょう</small></button>
+          <button type="button" class="btn opt-btn" data-step="1" aria-pressed="false">ふつう<small>1びょう</small></button>
+          <button type="button" class="btn opt-btn" data-step="0.5" aria-pressed="false">はやい<small>0.5びょう</small></button>
+        </div>
+      </section>
+
       <section class="sec" id="speedSec">
         <h2 class="sec-h">ひかる はやさ<small id="speedNote"></small></h2>
         <div class="opts" id="speedOpts">
@@ -212,20 +229,26 @@
     <div class="dlg set-dlg" role="dialog" aria-modal="true" aria-labelledby="setTitle">
       <p class="dlg-title" id="setTitle">せってい（せんせい よう）</p>
 
-      <h3 class="set-h">めで えんそう：ひかる はやさ（こまかく）</h3>
+      <h3 class="set-h">めで リズム：ひかる はやさ（こまかく）</h3>
       <div class="opts stepper">
         <button type="button" class="btn opt-btn" id="spMinus" aria-label="はやく する">−</button>
         <output class="step-val" id="spVal"></output>
         <button type="button" class="btn opt-btn" id="spPlus" aria-label="ゆっくりに する">＋</button>
       </div>
 
-      <h3 class="set-h">めで えんそう：みつづける じかん（これだけ みたら 音が なる）</h3>
+      <h3 class="set-h">めで えんそう：みつづける じかん（これだけ みたら 音が なる。じゆう・リズム とも）</h3>
       <div class="opts">
         <button type="button" class="btn opt-btn" data-dwell-play="0.1" aria-pressed="false">0.1びょう</button>
         <button type="button" class="btn opt-btn" data-dwell-play="0.2" aria-pressed="false">0.2びょう</button>
         <button type="button" class="btn opt-btn" data-dwell-play="0.3" aria-pressed="false">0.3びょう</button>
         <button type="button" class="btn opt-btn" data-dwell-play="0.5" aria-pressed="false">0.5びょう</button>
         <button type="button" class="btn opt-btn" data-dwell-play="0.8" aria-pressed="false">0.8びょう</button>
+      </div>
+
+      <h3 class="set-h">めで じゆう：まんなかを みてから、もういちど おなじ ほうを みたとき</h3>
+      <div class="opts">
+        <button type="button" class="btn opt-btn" data-resume="0" aria-pressed="false">はじめの おとから<small>ド から</small></button>
+        <button type="button" class="btn opt-btn" data-resume="1" aria-pressed="false">つづきから</button>
       </div>
 
       <h3 class="set-h">めで がっきを えらぶ：1つの がっきが ひかる じかん</h3>

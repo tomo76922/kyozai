@@ -2,7 +2,7 @@
 //
 //   Oto.unlock()                 … ボタンを おした ときに よぶ（iPad は さいしょに これが いる）
 //   Oto.setVolume(0〜1)          … ぜんたいの 音量
-//   Oto.play(がっき, 音, ms, 倍率) … 音を 鳴らす（ms：performance.now() の 時こく。なければ すぐ）
+//   Oto.play(がっき, 音, ms, 倍率, 高さ) … 音を 鳴らす（ms：performance.now() の 時こく。なければ すぐ。高さ：すず・トライアングルの 音の 高さの 倍率）
 //   Oto.beep(高い?, ms)          … カウントダウンの「ピッ」
 //   Oto.Song(曲, 1ぷんの はく, 回数, はじまる ms) … 曲を 流す（.update() を ときどき よぶ／.stop()）
 //   Oto.SONGS                    … 曲の 一覧
@@ -174,17 +174,18 @@
   }
 
   // すず：シャン
-  function suzuHit(t, v) {
-    noise(t, v * 0.35, 0.16, 'highpass', 6000, 0);
+  function suzuHit(t, v, rate) {
+    rate = rate || 1;
+    noise(t, v * 0.35, 0.16, 'highpass', 6000 * rate, 0);
     for (var i = 0; i < 7; i++) {
       var dt = Math.random() * 0.05;
-      var f = 3400 + Math.random() * 3800;
+      var f = (3400 + Math.random() * 3800) * rate;
       tone('sine', f, t + dt, v * 0.11, 0.001, 0.12 + Math.random() * 0.18);
       tone('sine', f * 1.47, t + dt, v * 0.04, 0.001, 0.08);
     }
   }
-  function suzuRoll(t, v) {   // シャラシャラ
-    for (var k = 0; k < 8; k++) suzuHit(t + k * 0.085, v * (k % 2 ? 0.55 : 0.8) * (1 - k * 0.06));
+  function suzuRoll(t, v, rate) {   // シャラシャラ
+    for (var k = 0; k < 8; k++) suzuHit(t + k * 0.085, v * (k % 2 ? 0.55 : 0.8) * (1 - k * 0.06), rate);
   }
 
   // カスタネット：タン
@@ -196,16 +197,16 @@
 
   // トライアングル：チーン（金ぞくの 長く のこる 音）
   var TRI = [[1, 1, 1], [2.02, 0.6, 0.85], [2.94, 0.45, 0.7], [4.07, 0.32, 0.55], [5.21, 0.22, 0.45], [6.58, 0.15, 0.35]];
-  function triangle(t, v, ring) {
-    var base = 1180;
+  function triangle(t, v, ring, rate) {
+    var base = 1180 * (rate || 1);
     TRI.forEach(function (p) {
       tone('sine', base * p[0], t, v * 0.16 * p[1], 0.002, ring * p[2]);
     });
     noise(t, v * 0.12, 0.012, 'highpass', 5000, 0);
   }
-  function triRoll(t, v) {   // チリリリ
-    for (var k = 0; k < 12; k++) triangle(t + k * 0.065, v * (k % 2 ? 0.5 : 0.65), 0.5);
-    triangle(t + 12 * 0.065, v * 0.7, 2.6);
+  function triRoll(t, v, rate) {   // チリリリ
+    for (var k = 0; k < 12; k++) triangle(t + k * 0.065, v * (k % 2 ? 0.5 : 0.65), 0.5, rate);
+    triangle(t + 12 * 0.065, v * 0.7, 2.6, rate);
   }
 
   // ---------- がっきと 音の 名前 ----------
@@ -215,7 +216,8 @@
 
   // sound：けんばんの がっきは 0〜7（ド〜ド）、ほかは 0（1つめの 音）・1（2つめの 音）
   // scale：音の 大きさの 倍率（ためしに ならす ときは 小さめに）
-  function play(inst, sound, ms, scale) {
+  // rate：すず・トライアングルの 音の 高さの 倍率（じゆう モードで 少しずつ 変える）
+  function play(inst, sound, ms, scale, rate) {
     if (!ensure()) return;
     var t = at(ms);
     var v = 0.55 * (scale == null ? 1 : scale);
@@ -223,9 +225,9 @@
       case 'piano': piano(freqOf(261.63, sound), t, v * 0.8); break;
       case 'mokkin': mokkin(freqOf(523.25, sound), t, v * 0.85); break;
       case 'taiko': if (sound === 1) ka(t, v * 0.8); else don(t, v * 1.1); break;
-      case 'suzu': if (sound === 1) suzuRoll(t, v * 0.8); else suzuHit(t, v); break;
+      case 'suzu': if (sound === 1) suzuRoll(t, v * 0.8, rate); else suzuHit(t, v, rate); break;
       case 'castanet': castanet(t, v * 0.9); if (sound === 1) castanet(t + 0.14, v); break;
-      case 'triangle': if (sound === 1) triRoll(t, v * 0.8); else triangle(t, v, 3.2); break;
+      case 'triangle': if (sound === 1) triRoll(t, v * 0.8, rate); else triangle(t, v, 3.2, rate); break;
     }
   }
 
