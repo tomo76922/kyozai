@@ -165,8 +165,7 @@
     } catch (e) {}
   }
 
-  // せいかい：やさしい「ピン・ポン」（ひかえめな音量）
-  function goodSound() { playNotes([[0, 784, 0.16], [0.22, 1047, 0.14]]); }
+  // せいかいの 音は 共通の部品（shared/mondai.js）で 鳴らす
   // レベルアップ：ド・ミ・ソ・ド を やさしく
   function levelUpSound() {
     playNotes([[0, 523, 0.13], [0.18, 659, 0.13], [0.36, 784, 0.13], [0.6, 1047, 0.12]]);
@@ -215,6 +214,7 @@
       q = { op: '-', a: x, b: y, answer: x - y, ten: true };
     }
     q.key = q.a + q.op + q.b;
+    q.lv = lv;   // まちがえた もんだいを もういちど するときも、その レベルの ボタンで
     return q;
   }
 
@@ -325,7 +325,7 @@
   // ---------- がめん ----------
   var levelsBox = document.getElementById('levels');
   var starsBox = document.getElementById('stars');
-  var nextBtn = document.getElementById('nextBtn');
+  var toolbarEnd = document.getElementById('toolbarEnd');
   var exprBtn = document.getElementById('expr');
   var replayBtn = document.getElementById('replayBtn');
   var hintBtn = document.getElementById('hintBtn');
@@ -345,6 +345,8 @@
   var luTimer = 0;
   var hintTimer = 0;
   var counting = false;
+  var quiz = null;      // せいかいの あとの 自動で つぎへ・10もんで 一区切り（shared/mondai.js）
+  var sayNext = false;  // つぎの もんだいを 出したら 式を 読み上げる
 
   function durSec() { return slow ? 1.3 : 0.8; }
   function stagger() { return slow ? 1.5 : 1; }
@@ -389,7 +391,7 @@
   }
 
   function renderNums() {
-    var list = LEVELS[progress.level].nums;
+    var list = LEVELS[q.lv].nums;
     side.innerHTML = '<div class="nums is-' + list.length + '" role="group" aria-label="こたえの すうじ">' +
       list.map(function (n) {
         return '<button type="button" class="num" data-v="' + n + '" aria-label="' + numRead(n) + '">' + n + '</button>';
@@ -400,7 +402,7 @@
   function u(v) { return 'calc(var(--u) * ' + (Math.round(v * 1000) / 1000) + ')'; }
 
   function renderBlocks() {
-    lay = layout(q, progress.level);
+    lay = layout(q, q.lv);
     var html = '';
     lay.frames.forEach(function (f) {
       var cells = '';
@@ -515,15 +517,24 @@
     hintTimer = setTimeout(step, 250);
   }
 
-  function newQuestion(say) {
+  // あたらしい もんだい（まえと 同じ もんだいには しない）
+  function makeNext() {
     var prev = q ? q.key : '';
     var guard = 0;
-    do { q = makeQuestion(progress.level); } while (q.key === prev && guard++ < 20);
+    var nq;
+    do { nq = makeQuestion(progress.level); } while (nq.key === prev && guard++ < 20);
+    return nq;
+  }
+
+  function showQuestion(nq) {
+    var say = sayNext;
+    sayNext = true;
+    q = nq;
     solved = false;
     clearTimeout(sayTimer);
+    clearTimeout(luTimer);
     stopCount();
     stopSpeech();
-    nextBtn.classList.remove('is-ready');
     setResult('');
     renderExpr();
     renderNums();
@@ -541,10 +552,11 @@
       el.classList.add('is-ok');
       setResult('せいかい', 'is-ok');
       renderExpr();
-      nextBtn.classList.add('is-ready');
       if (phase !== 1) { clearTimeout(playTimer); setPhase(1, true); }
-      goodSound();
+      quiz.correct(el);
       var up = addStar();
+      // レベルアップの ときは、自動で すすまずに レベルアップの 画面を 出す
+      if (up) quiz.hold(true);
       clearTimeout(sayTimer);
       // 音と重ならないように、少しあとで読み上げる
       sayTimer = setTimeout(function () {
@@ -560,6 +572,7 @@
       void el.offsetWidth;
       el.classList.add('is-ng');
       setResult('もういちど', 'is-retry');
+      quiz.wrong();
       speak('もういちど');
       // ブロックの うごきを もう一度 見せる
       playMotion(slow ? 1100 : 800);
@@ -613,11 +626,6 @@
     startCount();
   });
 
-  nextBtn.addEventListener('click', function () {
-    unlockAudio();
-    newQuestion(true);
-  });
-
   levelsBox.addEventListener('click', function (e) {
     var b = e.target.closest('.lv-btn');
     if (!b || b.disabled) return;
@@ -625,13 +633,15 @@
     setLevel(Number(b.dataset.lv), true);
   });
 
+  // レベルを えらびなおしたら、あたらしい 10もんに する
   function setLevel(n, say) {
     progress.level = n;
     saveProgress();
     renderLevels();
     renderStars(false);
     q = null;
-    newQuestion(say);
+    sayNext = say;
+    quiz.start();
   }
 
   speedBtn.addEventListener('click', function () {
@@ -643,6 +653,7 @@
   // すうじは キーボードからも 入れられる（1〜9。10より 上は ボタンで）
   document.addEventListener('keydown', function (e) {
     if (!settings.hidden || !levelup.hidden) return;
+    if (quiz.waiting() || quiz.finished()) return;
     if (!/^[0-9]$/.test(e.key)) return;
     var b = side.querySelector('.num[data-v="' + e.key + '"]');
     if (b) { unlockAudio(); check(Number(e.key), b); }
@@ -665,6 +676,7 @@
 
   function showLevelUp(next) {
     luNext = next;
+    quiz.hold();
     var html = '';
     for (var i = 0; i < GOAL; i++) html += '<span class="star is-on">' + starSvg(true) + '</span>';
     luStars.innerHTML = html;
@@ -688,18 +700,24 @@
 
   function closeLevelUp() {
     levelup.hidden = true;
-    nextBtn.focus({ preventScroll: true });
   }
 
+  // レベルアップ しても、10もんの とちゅうなら そのまま つづける
   luGo.addEventListener('click', function () {
     unlockAudio();
     closeLevelUp();
-    if (luNext > 0) setLevel(luNext, true);
+    if (luNext > 0) {
+      progress.level = luNext;
+      saveProgress();
+      renderLevels();
+      renderStars(false);
+    }
+    quiz.next();
   });
   luStay.addEventListener('click', function () {
     unlockAudio();
     closeLevelUp();
-    newQuestion(true);
+    quiz.next();
   });
 
   // ---------- せってい（ながおしで ひらく） ----------
@@ -791,9 +809,21 @@
     resetBtn.textContent = 'きろくを リセット';
   }
 
+  var resumeAfter = false;   // せっていを とじたら つぎの もんだいへ
+
+  // せいかいの あと、つぎの もんだいまで まつ じかん（共通の せってい）
+  var waitSection = Mondai.settingsSection('set-sec');
+  document.getElementById('waitSetting').appendChild(waitSection);
+
   function openSettings() {
     stopCount();
     stopSpeech();
+    resumeAfter = false;
+    if (quiz.waiting()) {
+      quiz.hold();
+      resumeAfter = true;
+    }
+    waitSection.mondaiRender();
     disarmReset();
     resetStatus.textContent = '';
     renderSettings();
@@ -812,6 +842,7 @@
     window.scrollTo(0, 0);
     gearBtn.focus({ preventScroll: true });
     fitBlocks();
+    if (resumeAfter) { resumeAfter = false; quiz.next(); }
   }
 
   closeBtn.addEventListener('click', closeSettings);
@@ -823,6 +854,7 @@
     var b = e.target.closest('.set-lv');
     if (!b) return;
     unlockAudio();
+    resumeAfter = false;
     closeSettings();
     setLevel(Number(b.dataset.lv), false);
   });
@@ -843,13 +875,15 @@
     renderStars(false);
     renderSettings();
     q = null;
-    newQuestion(false);
+    resumeAfter = false;
+    sayNext = false;
+    quiz.start();
     resetStatus.textContent = 'きろくを けしました';
   });
 
   // とちゅうで 新しい版への 自動の 再読み込みを しない
   window.kyozaiBusy = function () {
-    return !settings.hidden || !levelup.hidden || counting;
+    return !settings.hidden || !levelup.hidden || counting || quiz.busy();
   };
 
   document.addEventListener('visibilitychange', function () {
@@ -857,7 +891,15 @@
   });
 
   // ---------- はじめ ----------
+  quiz = Mondai.create({
+    area: document.getElementById('play'),
+    countIn: toolbarEnd,
+    total: 10,
+    make: makeNext,
+    show: showQuestion,
+    speak: function (t) { speak(t); }
+  });
   renderLevels();
   renderStars(false);
-  newQuestion(false);
+  quiz.start();
 })();

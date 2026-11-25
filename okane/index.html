@@ -15,6 +15,7 @@
   <link rel="icon" href="../icons/icon-192.png" type="image/png">
   <link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
   <link rel="stylesheet" href="../common.css">
+  <link rel="stylesheet" href="../shared/mondai.css">
   <link rel="stylesheet" href="./okane.css">
 </head>
 <body>
@@ -37,9 +38,8 @@
   <main>
     <div class="toolbar">
       <div class="levels" id="levels" role="group" aria-label="レベル"></div>
-      <div class="toolbar-end">
+      <div class="toolbar-end" id="toolbarEnd">
         <div class="stars" id="stars" role="img" aria-label="ほし 0こ"></div>
-        <button type="button" class="btn next-btn" id="nextBtn">つぎ</button>
       </div>
     </div>
 
@@ -88,6 +88,8 @@
         <div class="set-levels" id="setLevels"></div>
       </section>
 
+      <div id="waitSetting"></div>
+
       <section class="set-sec" aria-labelledby="h-rec">
         <h3 class="set-h" id="h-rec">きろく</h3>
         <p class="set-note" id="recNote"></p>
@@ -99,6 +101,7 @@
     </div>
   </div>
 
+  <script src="../shared/mondai.js"></script>
   <script src="./okane.js"></script>
   <script src="../pwa.js"></script>
 </body>

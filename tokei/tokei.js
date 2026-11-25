@@ -162,58 +162,7 @@
     try { localStorage.setItem('tokei-slow', slow ? '1' : '0'); } catch (e) {}
   });
 
-  // ---------- 音（音のファイルは使わず、その場で作る） ----------
-  var AC = window.AudioContext || window.webkitAudioContext;
-  var ctx = null;
-
-  // iPad では、ボタンをおしたときに音の準備をしておかないと、あとで鳴らせない
-  function unlockAudio() {
-    if (!AC) return;
-    try {
-      if (!ctx) ctx = new AC();
-      if (ctx.state !== 'running' && ctx.resume) ctx.resume();
-      var buf = ctx.createBuffer(1, 1, 22050);
-      var src = ctx.createBufferSource();
-      src.buffer = buf;
-      src.connect(ctx.destination);
-      src.start(0);
-    } catch (e) {}
-  }
-
-  // かねのような音を1つ
-  function bell(t, freq, vol) {
-    [[1, 1], [2, 0.15], [3, 0.04]].forEach(function (p) {
-      var osc = ctx.createOscillator();
-      var g = ctx.createGain();
-      osc.type = 'sine';
-      osc.frequency.value = freq * p[0];
-      g.gain.setValueAtTime(0.0001, t);
-      g.gain.linearRampToValueAtTime(vol * p[1], t + 0.02);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + 1.2 / p[0] + 0.3);
-      osc.connect(g);
-      g.connect(ctx.destination);
-      osc.start(t);
-      osc.stop(t + 1.6);
-    });
-  }
-
-  // せいかいの音：やさしい「ピン・ポン」（ひかえめな音量）
-  function goodSound() {
-    if (!AC) return;
-    try {
-      if (!ctx) ctx = new AC();
-      var play = function () {
-        var t = ctx.currentTime + 0.03;
-        bell(t, 784, 0.16);         // ソ
-        bell(t + 0.22, 1047, 0.14); // ド
-      };
-      if (ctx.state !== 'running' && ctx.resume) {
-        ctx.resume().then(play, play);
-      } else {
-        play();
-      }
-    } catch (e) {}
-  }
+  // 音（せいかいの 音など）は 共通の部品（shared/mondai.js）で 鳴らす
 
   // ---------- うごかす ----------
   var moveSvg = document.getElementById('moveClock');
@@ -298,16 +247,18 @@
   moveSvg.addEventListener('pointercancel', release);
 
   // 動かしている間は、新しい版への自動の再読み込みをしない
-  window.kyozaiBusy = function () { return dragId !== null; };
+  window.kyozaiBusy = function () { return dragId !== null || quiz.busy(); };
 
   setShow(show);
   renderMove();
 
   // ---------- なんじかな ----------
+  // せいかいの あとの 自動で つぎへ・10もんで 一区切り は 共通の部品（shared/mondai.js）
+  var quizSec = document.getElementById('sec-quiz');
+  var quizBar = document.getElementById('quizBar');
   var quizSvg = document.getElementById('quizClock');
   var quizText = document.getElementById('quizText');
   var answersBox = document.getElementById('answers');
-  var nextBtn = document.getElementById('nextBtn');
   var levelBtns = Array.prototype.slice.call(document.querySelectorAll('.seg-btn'));
   var quizClock = buildClock(quizSvg);
 
@@ -374,13 +325,20 @@
     return out;
   }
 
-  function newQuestion() {
+  // あたらしい もんだい（まえと 同じ 時刻には しない）
+  function makeQuestion() {
     var mins = LEVEL_MINUTES[level];
     var prev = ans ? key(ans) : '';
     var t;
     do {
       t = { h: 1 + Math.floor(Math.random() * 12), m: randOf(mins) };
     } while (key(t) === prev);
+    ans = t;
+    return { h: t.h, m: t.m, level: level };
+  }
+
+  function showQuestion(q) {
+    var t = { h: q.h, m: q.m };
     ans = t;
     solved = false;
     clearTimeout(sayTimer);
@@ -390,8 +348,12 @@
     quizText.className = 'stage-text';
     quizText.textContent = 'なんじ かな？';
 
+    // まちがえた もんだいを もういちど するときも、そのときの むずかしさで
+    var keep = level;
+    level = q.level;
     var han = level === 1;
     var choices = shuffle([t].concat(wrongChoices(t)));
+    level = keep;
     answersBox.innerHTML = '';
     choices.forEach(function (c) {
       var b = document.createElement('button');
@@ -404,28 +366,31 @@
     });
   }
 
+  var quiz = Mondai.create({
+    area: quizSec,
+    countIn: quizBar,
+    total: 10,
+    make: makeQuestion,
+    show: showQuestion,
+    speak: function (t) { speak(t); }
+  });
+
   function setLevel(n) {
     level = n;
     levelBtns.forEach(function (b) {
       b.setAttribute('aria-pressed', String(Number(b.dataset.level) === n));
     });
     try { localStorage.setItem('tokei-level', String(n)); } catch (e) {}
-    newQuestion();
+    quiz.start();
   }
 
   levelBtns.forEach(function (b) {
     b.addEventListener('click', function () { setLevel(Number(b.dataset.level)); });
   });
 
-  nextBtn.addEventListener('click', function () {
-    unlockAudio();
-    newQuestion();
-  });
-
   answersBox.addEventListener('click', function (e) {
     var b = e.target.closest('.answer');
     if (!b || solved) return;
-    unlockAudio();
     Array.prototype.forEach.call(answersBox.children, function (x) {
       x.classList.remove('is-ng');
     });
@@ -434,7 +399,7 @@
       b.classList.add('is-ok');
       quizText.className = 'stage-text is-ok';
       quizText.textContent = 'せいかい';
-      goodSound();
+      quiz.correct(b);
       // 音と重ならないように、少しあとで読み上げる
       clearTimeout(sayTimer);
       sayTimer = setTimeout(function () { speak('せいかい'); }, 500);
@@ -444,10 +409,16 @@
       b.classList.add('is-ng');
       quizText.className = 'stage-text is-retry';
       quizText.textContent = 'もういちど';
+      quiz.wrong();
     }
   });
 
   setLevel(level);
+
+  // 先生用の せってい（ながおしで ひらく）：せいかいの あと まつ じかん
+  Mondai.bindGear(document.getElementById('gearBtn'), document.getElementById('gearHint'),
+    function () { stopSpeech(); clearTimeout(sayTimer); quiz.hold(); },
+    function () { quiz.next(); });
 
   // ---------- 「うごかす」「なんじかな」の切り替え ----------
   var tabs = Array.prototype.slice.call(document.querySelectorAll('.tab'));
@@ -461,6 +432,7 @@
     });
     stopSpeech();
     clearTimeout(sayTimer);
+    quiz.stop();
     window.scrollTo(0, 0);
     try { localStorage.setItem('tokei-tab', tab.id); } catch (e) {}
   }

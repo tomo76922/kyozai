@@ -1,0 +1,311 @@
+/* もんだいの すすめかた（共通の部品 shared/mondai.js）の 見た目。色は ../common.css の ものを つかう */
+
+/* ---------- 「3/10」 ---------- */
+.md-count {
+  margin: 0;
+  min-height: 56px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 4px 22px;
+  font-size: clamp(24px, 3.2vw, 32px);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  color: var(--text);
+  background: var(--card);
+  border: 3px solid var(--card-border);
+  border-radius: 999px;
+}
+
+/* ---------- せいかいの あと、まっている 間 ---------- */
+.md-wait {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.md-wait.is-hold { pointer-events: none; cursor: default; }
+.md-wait.is-hold .md-tap { display: none; }
+.md-fx {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.md-maru {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  animation: md-stamp 0.45s cubic-bezier(.2, 1.6, .4, 1) both;
+  filter: drop-shadow(0 2px 0 rgba(0, 0, 0, 0.08));
+}
+.md-maru svg { width: 100%; height: 100%; display: block; }
+.md-kira {
+  position: absolute;
+  width: 26px;
+  height: 26px;
+  margin: -13px 0 0 -13px;
+  opacity: 0;
+  animation: md-kira 0.9s ease-out both;
+}
+.md-kira svg { width: 100%; height: 100%; display: block; }
+
+@keyframes md-stamp {
+  0% { transform: translate(-50%, -50%) scale(0.2) rotate(-30deg); opacity: 0; }
+  100% { transform: translate(-50%, -50%) scale(1) rotate(0); opacity: 0.95; }
+}
+@keyframes md-kira {
+  0% { transform: translate(0, 0) scale(0.3); opacity: 0; }
+  30% { opacity: 1; }
+  100% { transform: translate(var(--dx), var(--dy)) scale(1) rotate(90deg); opacity: 0; }
+}
+
+/* 上に「タップで つぎへ」と、のこりの じかんの バー */
+.md-tap {
+  position: absolute;
+  left: 50%;
+  top: calc(8px + env(safe-area-inset-top));
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 24px 12px;
+  font-size: clamp(18px, 2.2vw, 22px);
+  font-weight: 700;
+  color: var(--muted);
+  background: var(--card);
+  border: 3px solid var(--card-border);
+  border-radius: 22px;
+  box-shadow: var(--shadow);
+  pointer-events: none;
+  white-space: nowrap;
+}
+.md-bar {
+  display: block;
+  width: min(220px, 50vw);
+  height: 10px;
+  border-radius: 999px;
+  background: var(--card-border);
+  overflow: hidden;
+}
+.md-bar span {
+  display: block;
+  height: 100%;
+  background: #8fb58c;
+  border-radius: inherit;
+  transform-origin: left center;
+}
+.md-wait.is-run .md-bar span { animation: md-bar 3s linear both; }
+@keyframes md-bar {
+  from { transform: scaleX(1); }
+  to { transform: scaleX(0); }
+}
+
+/* ---------- おわりの 画面 ---------- */
+.md-done { display: flex !important; flex-direction: column !important; }
+.md-done > :not(.md-result):not(.md-keep) { display: none !important; }
+
+.md-result {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(12px, 2.4vh, 24px);
+  padding: 24px 16px;
+  background: var(--card);
+  border: 3px solid var(--card-border);
+  border-radius: 28px;
+  box-shadow: var(--shadow);
+  text-align: center;
+}
+.md-result-maru {
+  width: clamp(110px, 20vmin, 180px);
+  height: clamp(110px, 20vmin, 180px);
+  animation: md-pop 0.5s cubic-bezier(.2, 1.6, .4, 1) both;
+}
+.md-result-maru svg { width: 100%; height: 100%; display: block; }
+.md-result-sub {
+  margin: 0;
+  font-size: clamp(20px, 2.6vw, 26px);
+  font-weight: 700;
+  color: var(--muted);
+}
+.md-score {
+  margin: 0;
+  font-size: clamp(34px, 6vw, 60px);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1.4;
+}
+.md-score > span { display: inline-block; white-space: nowrap; }
+.md-score-n { font-size: 1.35em; color: #c8504f; }
+.md-praise {
+  margin: 0;
+  font-size: clamp(26px, 4vw, 40px);
+  font-weight: 700;
+  color: #4e8a63;
+}
+.md-btns {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 14px 16px;
+  margin-top: 4px;
+}
+
+.md-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 76px;
+  padding: 8px 32px;
+  font: inherit;
+  font-size: clamp(22px, 3vw, 30px);
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--text);
+  text-decoration: none;
+  background: var(--btn);
+  border: 3px solid var(--btn-border);
+  border-radius: 999px;
+  cursor: pointer;
+}
+.md-btn:active { background: var(--btn-on); }
+.md-btn:focus-visible, .md-gear:focus-visible, .md-set-wait:focus-visible {
+  outline: 4px solid var(--active-border);
+  outline-offset: 3px;
+}
+.md-btn-again { background: #f7ead6; border-color: #d2ad74; }
+.md-btn-again:active { background: #f0dab8; }
+.md-btn-home, .md-btn-extra { background: var(--card); border-color: var(--card-border); }
+.md-btn-home:active, .md-btn-extra:active { background: var(--active); }
+
+@keyframes md-pop {
+  0% { transform: scale(0.3) rotate(-20deg); opacity: 0; }
+  100% { transform: scale(1) rotate(0); opacity: 1; }
+}
+
+/* ---------- 先生用の せってい（ながおしで ひらく） ---------- */
+.md-gear {
+  position: relative;
+  overflow: hidden;
+  align-self: start;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 4px 12px;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--muted);
+  background: transparent;
+  border: 2px solid var(--card-border);
+  border-radius: 12px;
+  cursor: pointer;
+  -webkit-touch-callout: none;
+}
+.md-gear > span { position: relative; z-index: 1; }
+.md-gear::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--active);
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+.md-gear.is-pressing::before {
+  transform: scaleX(1);
+  transition: transform var(--hold, 1s) linear;
+}
+.md-gear-hint {
+  position: absolute;
+  right: var(--side);
+  top: calc(100% - 4px);
+  z-index: 2;
+  margin: 0;
+  padding: 6px 12px;
+  font-size: 15px;
+  color: var(--muted);
+  background: var(--card);
+  border: 2px solid var(--card-border);
+  border-radius: 10px;
+}
+
+.md-settings {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  background: var(--bg);
+  padding: env(safe-area-inset-top) env(safe-area-inset-right)
+           env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+body.md-is-settings { overflow: hidden; }
+.md-set-inner {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 20px var(--side) 48px;
+}
+.md-set-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 8px 0 12px;
+}
+.md-set-title {
+  margin: 0;
+  font-size: clamp(22px, 3.4vw, 32px);
+  font-weight: 700;
+}
+.md-set-sec {
+  margin-top: 20px;
+  padding: 18px clamp(14px, 2.4vw, 24px) 22px;
+  background: var(--card);
+  border: 3px solid var(--card-border);
+  border-radius: 22px;
+}
+.md-set-h {
+  margin: 0 0 6px;
+  font-size: clamp(22px, 3vw, 28px);
+}
+.md-set-note {
+  margin: 0 0 12px;
+  font-size: 17px;
+  color: var(--muted);
+}
+.md-set-waits {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.md-set-wait {
+  min-width: 120px;
+  min-height: 64px;
+  padding: 8px 20px;
+  font: inherit;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text);
+  background: var(--bg);
+  border: 3px solid var(--card-border);
+  border-radius: 999px;
+  cursor: pointer;
+}
+.md-set-wait[aria-pressed="true"] { background: #e9dcc2; border-color: #b89e72; }
+.md-set-wait:active { background: var(--active); }
+
+@media (prefers-reduced-motion: reduce) {
+  .md-maru, .md-result-maru { animation: none; }
+  .md-kira { display: none; }
+}
+
+@media (max-width: 560px) {
+  .md-btn { min-height: 64px; padding: 8px 22px; font-size: 21px; }
+  .md-count { min-height: 48px; padding: 4px 14px; font-size: 22px; }
+}

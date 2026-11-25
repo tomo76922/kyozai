@@ -2,7 +2,7 @@
 // ファイルを更新したら CACHE_VERSION の数字を上げてください。
 // 教材をふやしたら、そのファイルを ASSETS に足してください。
 // 教材を追加・修正したら、news.json に おしらせを1件 足してください（くわしくは CLAUDE.md）。
-var CACHE_VERSION = 'v36';
+var CACHE_VERSION = 'v37';
 var CACHE_PREFIX = 'hiragana-cards-';   // 以前の版の保存を消せるように、名前はそのまま
 var CACHE_NAME = CACHE_PREFIX + CACHE_VERSION;
 
@@ -25,6 +25,8 @@ var ASSETS = [
   './shared/game-lock.js',
   './shared/shisen.js',
   './shared/kiroku.js',
+  './shared/mondai.js',
+  './shared/mondai.css',
   './shared/qr/qrcode.js',
   './shared/qr/jsQR.js',
   // ひらがなカード

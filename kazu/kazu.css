@@ -20,11 +20,12 @@ body {
 
 /* ---------- 上の帯（ひらがなカードと同じ形） ---------- */
 .header {
+  position: relative;
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto 1fr auto auto;
   grid-template-areas:
-    "home title speed"
-    "tabs tabs  tabs";
+    "home title speed gear"
+    "tabs tabs  tabs  tabs";
   align-items: center;
   gap: 14px 16px;
   width: 100%;
@@ -48,6 +49,7 @@ body {
 }
 
 #speedBtn { grid-area: speed; }
+#gearBtn { grid-area: gear; }
 .header .home-btn { grid-area: home; }
 
 .btn, .tab, .seg-btn {
@@ -123,7 +125,6 @@ main {
 }
 .seg { display: flex; gap: 10px; }
 .seg-btn { padding: 8px 24px; }
-.next-btn { padding: 8px 40px; }
 
 /* 絵を見せる 大きなカード */
 .stage {
@@ -250,7 +251,6 @@ main {
 /* せまい画面 */
 @media (max-width: 560px) {
   .btn, .tab, .seg-btn { padding: 8px 16px; }
-  .next-btn { padding: 8px 24px; }
   .stage-text.is-big { font-size: 56px; }
   .title { font-size: 24px; letter-spacing: 0.02em; white-space: nowrap; }
 }
@@ -260,8 +260,8 @@ main {
   body { overflow: hidden; }
 
   .header {
-    grid-template-columns: auto auto 1fr auto;
-    grid-template-areas: "home title tabs speed";
+    grid-template-columns: auto auto 1fr auto auto;
+    grid-template-areas: "home title tabs speed gear";
     max-width: none;
     padding: 10px var(--side);
   }
