@@ -281,12 +281,13 @@
       var len = m[3] ? Number(m[3]) : 1;
       if (m[1] !== '-') {
         var semi = MEL[m[1]] + (m[2] === '^' ? 12 : m[2] === '_' ? -12 : 0);
-        notes.push({ beat: beat, len: len, freq: 523.25 * Math.pow(2, semi / 12) });
+        // deg：けんばんの 何番目か（ド=0 … 上のド=7。おとゲームの レーン）
+        notes.push({ beat: beat, len: len, freq: 523.25 * Math.pow(2, semi / 12), deg: DEG.indexOf(semi) });
       }
       beat += len;
     });
     var bass = s.bass.trim().split(/\s+/).map(function (n, i) {
-      return { beat: i * 2, len: 2, freq: BASS[n] };
+      return { beat: i * 2, len: 2, freq: BASS[n], root: n };
     });
     return { notes: notes, bass: bass, beats: beat };
   }
@@ -331,6 +332,18 @@
     o.connect(g); o2.connect(g2); g2.connect(g); g.connect(dest);
     o.start(t); o2.start(t);
     o.stop(t + dur); o2.stop(t + dur);
+  }
+
+  // おとゲームの 伴奏（小さく）：2はくの はじめに ひくい 音と 和音、あいだの はくに かるい 和音、はくごとに シャッと いう 音
+  var CHORD = { 'ド': [261.63, 329.63, 392.0], 'ファ': [174.61, 220.0, 261.63], 'ソ': [196.0, 246.94, 293.66] };
+  function backing(root, strong, ms, spb) {
+    if (!ensure()) return;
+    var t = at(ms), beat = spb / 1000;
+    if (strong) bassNote(BASS[root], t, beat * 2, 0.16, master);
+    (CHORD[root] || CHORD['ド']).forEach(function (f) {
+      tone('triangle', f, t, strong ? 0.035 : 0.025, 0.01, Math.min(0.6, beat * 0.7));
+    });
+    noise(t, strong ? 0.05 : 0.035, 0.03, 'highpass', 7500, 0);
   }
 
   // 曲を 流す。startMs（performance.now() の 時こく）に 1はくめ。reps：回数（0 は ずっと）
@@ -393,6 +406,7 @@
     SONGS: SONGS,
     NOTE_NAMES: NOTE_NAMES,
     parseSong: parseSong,
+    backing: backing,
     supported: !!AC
   };
 })(window);
