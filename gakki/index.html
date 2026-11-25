@@ -112,6 +112,30 @@
     <div class="prep-box">
       <p class="prep-insts" id="prepInsts"></p>
 
+      <section class="sec" id="fingerModeSec" hidden>
+        <h2 class="sec-h">ゆびで えんそうの しかた</h2>
+        <div class="opts">
+          <button type="button" class="btn opt-btn" data-finger-mode="free" aria-pressed="false">じゆうに ひく</button>
+          <button type="button" class="btn opt-btn" data-finger-mode="game" aria-pressed="false">おとゲーム<small>おちてくる まるに あわせて たたく</small></button>
+        </div>
+        <p class="prep-note" id="gameInstNote" hidden></p>
+      </section>
+
+      <div class="kyoku-box" id="gameBox" hidden>
+        <section class="sec">
+          <h2 class="sec-h">どの きょく？</h2>
+          <div class="opts" id="gSongOpts"></div>
+        </section>
+        <section class="sec">
+          <h2 class="sec-h">むずかしさ</h2>
+          <div class="opts">
+            <button type="button" class="btn opt-btn" data-level="renshu" aria-pressed="false">れんしゅう<small>たたくまで まってくれる</small></button>
+            <button type="button" class="btn opt-btn" data-level="yasashii" aria-pressed="false">やさしい<small>ゆっくり・まるは 1つずつ</small></button>
+            <button type="button" class="btn opt-btn" data-level="futsuu" aria-pressed="false">ふつう<small>すこし はやい・まるが おおい</small></button>
+          </div>
+        </section>
+      </div>
+
       <section class="sec" id="eyeModeSec" hidden>
         <h2 class="sec-h">めで えんそうの しかた</h2>
         <div class="opts">
@@ -139,7 +163,7 @@
         </div>
       </section>
 
-      <section class="sec">
+      <section class="sec" id="kyokuSec">
         <h2 class="sec-h">きょく</h2>
         <div class="opts">
           <button type="button" class="btn opt-btn" data-kyoku="0" aria-pressed="false">きょく なし</button>
@@ -204,6 +228,14 @@
     <div class="center-layer" id="endEl" hidden>
       <div class="ready-card end-card">
         <p class="end-title">おしまい！</p>
+        <div class="end-result" id="endResult" hidden>
+          <div class="hanamaru" id="hanamaru" aria-hidden="true"></div>
+          <ul class="end-counts">
+            <li class="c-pit">ぴったり <b id="cntPit">0</b></li>
+            <li class="c-ii">いいね <b id="cntIi">0</b></li>
+            <li class="c-os">おしい <b id="cntOs">0</b></li>
+          </ul>
+        </div>
         <div class="dlg-btns">
           <button type="button" class="btn btn-main" id="endAgain">もういちど</button>
           <button type="button" class="btn" id="endClose">とじる</button>
@@ -243,6 +275,13 @@
         <button type="button" class="btn opt-btn" data-dwell-play="0.3" aria-pressed="false">0.3びょう</button>
         <button type="button" class="btn opt-btn" data-dwell-play="0.5" aria-pressed="false">0.5びょう</button>
         <button type="button" class="btn opt-btn" data-dwell-play="0.8" aria-pressed="false">0.8びょう</button>
+      </div>
+
+      <h3 class="set-h">ゆびで おとゲーム：きょくの はやさ（むずかしさ ごとの はやさを もとに）</h3>
+      <div class="opts stepper">
+        <button type="button" class="btn opt-btn" id="gtMinus" aria-label="ゆっくりに する">−</button>
+        <output class="step-val" id="gtVal"></output>
+        <button type="button" class="btn opt-btn" id="gtPlus" aria-label="はやく する">＋</button>
       </div>
 
       <h3 class="set-h">めで じゆう：まんなかを みてから、もういちど おなじ ほうを みたとき</h3>
@@ -294,6 +333,7 @@
 
   <script src="../shared/shisen.js"></script>
   <script src="./oto.js"></script>
+  <script src="./otogame.js"></script>
   <script src="./gakki.js"></script>
   <script src="../pwa.js"></script>
 </body>

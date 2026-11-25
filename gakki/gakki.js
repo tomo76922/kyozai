@@ -102,7 +102,8 @@
   var STORE_KEY = 'gakki-v1';
   var VOLS = [{ t: 'ちいさい', v: 0.22 }, { t: 'ふつう', v: 0.4 }, { t: 'おおきい', v: 0.7 }];
   var rec = { vol: 1, speed: 2, kyoku: false, song: 'kirakira', beats: 4, reps: 1, dwellPlay: 0.3, pickSpeed: 3, dwellPick: 0.5, insts: [],
-              eyeMode: 'rhythm', stepSec: 1, resume: false };
+              eyeMode: 'rhythm', stepSec: 1, resume: false,
+              fingerMode: 'free', gSong: 'kirakira', level: 'yasashii', gameTempo: 100 };
   (function load() {
     try {
       var d = JSON.parse(localStorage.getItem(STORE_KEY) || 'null');
@@ -120,6 +121,10 @@
       if (d.eyeMode === 'jiyu' || d.eyeMode === 'rhythm') rec.eyeMode = d.eyeMode;
       if ([0.5, 1, 2].indexOf(d.stepSec) >= 0) rec.stepSec = d.stepSec;
       rec.resume = !!d.resume;
+      if (d.fingerMode === 'free' || d.fingerMode === 'game') rec.fingerMode = d.fingerMode;
+      if (Oto.SONGS.some(function (x) { return x.id === d.gSong; })) rec.gSong = d.gSong;
+      if (d.level === 'renshu' || d.level === 'yasashii' || d.level === 'futsuu') rec.level = d.level;
+      if (isFinite(d.gameTempo)) rec.gameTempo = clamp(Math.round(d.gameTempo / 10) * 10, 50, 150);
     } catch (e) {}
   })();
   function save() { try { localStorage.setItem(STORE_KEY, JSON.stringify(rec)); } catch (e) {} }
@@ -375,6 +380,20 @@
   function fmtSec(s) { return String(s).replace(/\.0$/, ''); }
   function songOf(id) { for (var i = 0; i < Oto.SONGS.length; i++) if (Oto.SONGS[i].id === id) return Oto.SONGS[i]; return Oto.SONGS[0]; }
 
+  (function buildGameSongs() {
+    var box = $('gSongOpts');
+    Oto.SONGS.forEach(function (s) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'btn opt-btn';
+      b.setAttribute('data-gsong', s.id);
+      b.textContent = s.name;
+      b.addEventListener('click', function () { rec.gSong = s.id; save(); renderPrep(); });
+      box.appendChild(b);
+    });
+  })();
+  function isGame() { return how === 'finger' && rec.fingerMode === 'game'; }
+
   (function buildSongs() {
     var box = $('songOpts');
     Oto.SONGS.forEach(function (s) {
@@ -409,7 +428,16 @@
     each('[data-eye-mode]', function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-eye-mode') === rec.eyeMode)); });
     $('stepSec').hidden = !(how === 'eye' && rec.eyeMode === 'jiyu');
     each('[data-step]', function (b) { b.setAttribute('aria-pressed', String(Number(b.getAttribute('data-step')) === rec.stepSec)); });
-    $('speedSec').hidden = !(rhythm || rec.kyoku);
+    var game = isGame();
+    $('fingerModeSec').hidden = how !== 'finger';
+    each('[data-finger-mode]', function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-finger-mode') === rec.fingerMode)); });
+    $('gameBox').hidden = !game;
+    $('gameInstNote').hidden = !(game && sel.length > 1);
+    if (sel.length) $('gameInstNote').textContent = 'おとゲームは さいしょに えらんだ「' + inst(sel[0]).name + '」で あそぶよ';
+    each('[data-gsong]', function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-gsong') === rec.gSong)); });
+    each('[data-level]', function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-level') === rec.level)); });
+    $('kyokuSec').hidden = game;
+    $('speedSec').hidden = game || !(rhythm || rec.kyoku);
     $('speedNote').textContent = rhythm ? '' : '（めで「リズム」で えんそう する 子の iPad と おなじに してね）';
     each('[data-speed]', function (b) { b.setAttribute('aria-pressed', String(Number(b.getAttribute('data-speed')) === rec.speed)); });
     var cu = $('speedCustom');
@@ -417,7 +445,7 @@
     cu.innerHTML = 'せってい<small>' + fmtSec(rec.speed) + 'びょうに 1かい</small>';
 
     each('[data-kyoku]', function (b) { b.setAttribute('aria-pressed', String((b.getAttribute('data-kyoku') === '1') === rec.kyoku)); });
-    $('kyokuBox').hidden = !rec.kyoku;
+    $('kyokuBox').hidden = game || !rec.kyoku;
     var kn = '';
     if (!kyokuOk()) kn = 'いまの はやさ（' + fmtSec(rec.speed) + 'びょうに 1かい）では、きょくを ながせません。2〜5びょうに してね。';
     else if (rec.kyoku) kn = 'きょくは せんせいの iPad 1だいだけで ながしてね。こどもの iPad は「きょく なし」で、おなじ はやさに してね。';
@@ -445,6 +473,12 @@
   });
   each('[data-beats]', function (b) {
     b.addEventListener('click', function () { rec.beats = Number(b.getAttribute('data-beats')); save(); renderPrep(); });
+  });
+  each('[data-finger-mode]', function (b) {
+    b.addEventListener('click', function () { rec.fingerMode = b.getAttribute('data-finger-mode'); save(); renderPrep(); });
+  });
+  each('[data-level]', function (b) {
+    b.addEventListener('click', function () { rec.level = b.getAttribute('data-level'); save(); renderPrep(); });
   });
   each('[data-eye-mode]', function (b) {
     b.addEventListener('click', function () { rec.eyeMode = b.getAttribute('data-eye-mode'); save(); renderPrep(); });
@@ -679,10 +713,12 @@
     var stage = $('stage');
     stage.innerHTML = '';
     G.halves = null;
+    G.game = null;
     G.jiyu = how === 'eye' && rec.eyeMode === 'jiyu';
     stage.className = 'stage stage-' + how + ' n' + sel.length + (G.jiyu ? ' stage-jiyu' : '');
-    if (G.jiyu) buildJiyu(stage); else if (how === 'eye') buildEye(stage); else buildFinger(stage);
-    G.timed = (how === 'eye' && !G.jiyu) || rec.kyoku;
+    if (isGame()) buildGame(stage);
+    else if (G.jiyu) buildJiyu(stage); else if (how === 'eye') buildEye(stage); else buildFinger(stage);
+    G.timed = (how === 'eye' && !G.jiyu) || rec.kyoku || !!G.game;
     setPreview($('playPrev'), how === 'eye');
     $('playCamMsg').hidden = true;
     toReady();
@@ -691,8 +727,58 @@
     G.raf = requestAnimationFrame(playTick);
   }
 
+  // おとゲーム（otogame.js）：さいしょに えらんだ がっきで あそぶ
+  function buildGame(stage) {
+    var it = inst(sel[0]);
+    stage.className = 'stage stage-game';
+    var box = document.createElement('div');
+    stage.appendChild(box);
+    G.game = OtoGame.create({
+      box: box,
+      inst: it,
+      song: songOf(rec.gSong),
+      level: rec.level,
+      tempo: rec.gameTempo,
+      keyColors: KEY_COLORS,
+      noteNames: Oto.NOTE_NAMES,
+      art: ART[it.id],
+      play: function (id, sound) { Oto.unlock(); Oto.play(id, sound); },
+      onEnd: gameEnd
+    });
+  }
+  function gameEnd(r) {
+    $('cntPit').textContent = String(r.pit);
+    $('cntIi').textContent = String(r.ii);
+    $('cntOs').textContent = String(r.os);
+    $('hanamaru').innerHTML = hanamaruSvg();
+    setState('end');
+    Oto.play('triangle', 0, null, 0.5);
+  }
+  // はなまる（ぬりえ と おなじ かきかた）
+  function hanamaruSvg() {
+    var d = '', k = 9, R = 40, i;
+    for (i = 0; i <= k; i++) {
+      var a = i / k * Math.PI * 2 - Math.PI / 2;
+      d += (i === 0 ? 'M' : 'A11 11 0 0 1 ') + (50 + Math.cos(a) * R).toFixed(1) + ' ' + (50 + Math.sin(a) * R).toFixed(1) + ' ';
+    }
+    var sp = '';
+    for (i = 0; i <= 80; i++) {
+      var t = i / 80;
+      var ang = t * Math.PI * 2 * 2.4 - Math.PI / 2;
+      var rr = 4 + t * 26;
+      sp += (i === 0 ? 'M' : 'L') + (50 + Math.cos(ang) * rr).toFixed(1) + ' ' + (50 + Math.sin(ang) * rr).toFixed(1) + ' ';
+    }
+    return '<svg viewBox="-4 -4 108 108">' +
+      '<path class="hm-line" pathLength="1" d="' + sp + '" fill="none" stroke="#e0524a" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>' +
+      '<path class="hm-line" pathLength="1" d="' + d + '" fill="none" stroke="#e0524a" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>' +
+      '</svg>';
+  }
+
   function infoText() {
     var t = [];
+    if (G.game) {
+      return '♪ ' + songOf(rec.gSong).name + '・' + G.game.levelName + '（1ぷんに ' + G.game.bpm + 'はく）';
+    }
     if (rec.kyoku) {
       var s = songOf(rec.song);
       t.push('♪ ' + s.name + '（' + (rec.reps ? rec.reps + 'かい' : 'ずっと') + '）');
@@ -709,12 +795,14 @@
     $('readyEl').hidden = s !== 'ready';
     $('countEl').hidden = s !== 'count';
     $('endEl').hidden = s !== 'end';
+    $('endResult').hidden = !(s === 'end' && G.game);
     $('ctrl').hidden = !(s === 'count' || s === 'run');
     keepAwake(s === 'count' || s === 'run');
   }
   function toReady() {
     stopSong();
     unlight();
+    if (G.game) G.game.reset();
     $('playInfo').textContent = infoText();
     setState(G.timed ? 'ready' : 'free');
   }
@@ -731,7 +819,9 @@
     G.total = Infinity;
     G.k = -1;
     G.lastCount = 0;
-    if (rec.kyoku) {
+    if (G.game) {
+      G.game.start(G.t0);   // 「スタート」の ピッ で 曲の 1はくめ（丸は カウントダウンの あいだから おりてくる）
+    } else if (rec.kyoku) {
       var s = songOf(rec.song);
       var bpm = bpmOf(rec.beats);
       G.song = Oto.Song(s, bpm, rec.reps, G.t0);
@@ -780,6 +870,7 @@
     G.last = now;
     if (mode !== 'play') return;
     if (G.song) G.song.update();
+    if (G.game && (G.state === 'count' || G.state === 'run')) G.game.tick(now);
 
     if (G.state === 'count') {
       var n = 3 - Math.floor((now - G.cStart) / 1000);
@@ -856,6 +947,7 @@
   function leavePlay() {
     stopSong();
     unlight();
+    if (G.game) G.game.reset();
     setState('free');
     keepAwake(false);
     cancelAnimationFrame(G.raf);
@@ -931,6 +1023,9 @@
   function renderSettings() {
     var c = window.Shisen ? Shisen.loadSettings() : { source: 'both' };
     $('spVal').textContent = fmtSec(rec.speed) + 'びょうに 1かい';
+    $('gtVal').textContent = 'いつもの ' + rec.gameTempo + '%';
+    $('gtMinus').disabled = rec.gameTempo <= 50;
+    $('gtPlus').disabled = rec.gameTempo >= 150;
     $('spMinus').disabled = rec.speed <= 1.5;
     $('spPlus').disabled = rec.speed >= 8;
     each('[data-dwell-play]', function (b) { b.setAttribute('aria-pressed', String(Number(b.getAttribute('data-dwell-play')) === rec.dwellPlay)); });
@@ -943,10 +1038,15 @@
     save();
     renderSettings();
     if (mode === 'prep') renderPrep();
-    if (mode === 'play' && !playing()) $('playInfo').textContent = infoText();
+    if (mode === 'play' && !playing()) {
+      if (G.game) openPlay();   // おとゲームの はやさを かえたら 作りなおす
+      else $('playInfo').textContent = infoText();
+    }
   }
   $('spMinus').addEventListener('click', function () { rec.speed = clamp(rec.speed - 0.5, 1.5, 8); afterSetting(); });
   $('spPlus').addEventListener('click', function () { rec.speed = clamp(rec.speed + 0.5, 1.5, 8); afterSetting(); });
+  $('gtMinus').addEventListener('click', function () { rec.gameTempo = clamp(rec.gameTempo - 10, 50, 150); afterSetting(); });
+  $('gtPlus').addEventListener('click', function () { rec.gameTempo = clamp(rec.gameTempo + 10, 50, 150); afterSetting(); });
   each('[data-resume]', function (b) { b.addEventListener('click', function () { rec.resume = b.getAttribute('data-resume') === '1'; afterSetting(); }); });
   each('[data-dwell-play]', function (b) { b.addEventListener('click', function () { rec.dwellPlay = Number(b.getAttribute('data-dwell-play')); afterSetting(); }); });
   each('[data-pick-speed]', function (b) { b.addEventListener('click', function () { rec.pickSpeed = Number(b.getAttribute('data-pick-speed')); afterSetting(); }); });
