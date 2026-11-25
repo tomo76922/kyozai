@@ -123,6 +123,8 @@
     el('rect', { class: 'leg', x: 30, y: TOPH + FRAME_H - 10, width: 60, height: 32, rx: 8 }, board);
     el('rect', { class: 'leg', x: VBW - 90, y: TOPH + FRAME_H - 10, width: 60, height: 32, rx: 8 }, board);
     el('rect', { class: 'hole-bg', x: 4, y: TOPH + 4, width: VBW - 8, height: FRAME_H - 8 }, board);
+    // うえの ▼ は コマより うしろ（落ちはじめの コマが ▼の 前に 見えるように）
+    var arrowLayer = el('g', {}, board);
     layers.pieces = el('g', {}, board);
     var d = roundRect(0, TOPH, VBW, FRAME_H, 22);
     var c, r;
@@ -140,7 +142,7 @@
     var top = el('g', {}, board);
     for (c = 0; c < COLS; c++) {
       flashes.push(el('rect', { class: 'col-flash', x: PAD + c * CELL + 4, y: TOPH + PAD, width: CELL - 8, height: CELL * ROWS, rx: 18 }, top));
-      var a = el('g', { class: 'arrow', transform: 'translate(' + cx(c) + ' ' + ARROW_Y + ')' }, top);
+      var a = el('g', { class: 'arrow', transform: 'translate(' + cx(c) + ' ' + ARROW_Y + ')' }, arrowLayer);
       el('circle', { r: 38 }, a);
       el('path', { d: 'M-17 -12H17L0 16Z' }, a);
       arrows.push(a);
@@ -250,24 +252,25 @@
     });
   }
 
-  // おちる うごき（すこし はねる）
+  // おちる うごき（▼の ところに 一しゅん 出てから 落ちて、すこし はねる）
+  // 「視差効果を減らす」の iPad でも 落ちる うごきは 見せる（はねる うごきだけ やめる）
+  var HOLD = 180;                            // ▼の ところで とまる じかん（ミリ秒）
   function dropAnim(g, x, y0, y1, done) {
     var place = function (y) { g.setAttribute('transform', 'translate(' + x + ' ' + y.toFixed(1) + ')'); };
-    if (reduceMotion) { place(y1); sLand(1); done(); return; }
-    var A = 0.0055;                          // おちる はやさ（SVG の 長さ / ミリ秒²）
+    var A = 0.003;                           // おちる はやさ（SVG の 長さ / ミリ秒²）
     var dist = y1 - y0;
     var tHit = Math.sqrt(2 * dist / A);
     var v = A * tHit;
     var e = 0.24;
     // はねる：1かいめ（つよめ）・2かいめ（よわめ）
-    var segs = [{ v: v * e }, { v: v * e * e }];
+    var segs = reduceMotion ? [] : [{ v: v * e }, { v: v * e * e }];
     segs.forEach(function (s) { s.len = 2 * s.v / A; });
-    sFall(tHit / 1000);
     var t0 = 0, seg = -1;
     place(y0);
     function step(now) {
-      if (!t0) t0 = now;
+      if (!t0) { t0 = now + HOLD; setTimeout(function () { sFall(tHit / 1000); }, HOLD); }
       var t = now - t0;
+      if (t < 0) { requestAnimationFrame(step); return; }
       if (t < tHit) {
         place(y0 + 0.5 * A * t * t);
         requestAnimationFrame(step);
