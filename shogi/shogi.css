@@ -1,0 +1,486 @@
+/* しょうぎ（色・文字・もくじボタンは ../common.css） */
+:root {
+  --gold: #e3b43f;
+}
+
+html, body { height: 100%; }
+body {
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ---------- 上の帯 ---------- */
+.header {
+  display: flex;
+  align-items: center;
+  gap: 10px 16px;
+  width: 100%;
+  max-width: 1300px;
+  margin: 0 auto;
+  padding: 14px var(--side) 8px;
+  flex: none;
+}
+.title {
+  flex: 1 1 auto;
+  margin: 0;
+  font-size: clamp(26px, 4.2vw, 42px);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font: inherit;
+  font-size: clamp(22px, 2.8vw, 28px);
+  font-weight: 700;
+  color: var(--text);
+  text-decoration: none;
+  border-radius: 999px;
+  min-height: 64px;
+  padding: 6px 24px;
+  cursor: pointer;
+  white-space: nowrap;
+  background: var(--btn);
+  border: 3px solid var(--btn-border);
+}
+.btn:active { background: var(--btn-on); }
+.btn:disabled { opacity: 0.4; cursor: default; }
+.btn:disabled:active { background: var(--btn); }
+.btn svg { width: 1.3em; height: 1.3em; flex: none; }
+.btn-main { background: var(--btn-on); }
+.sound-btn { margin-left: auto; min-height: 56px; padding: 6px 18px; }
+.sound-btn[aria-pressed="false"] { background: var(--card); border-color: var(--card-border); color: var(--muted); }
+body.is-playing .sound-btn { padding: 6px 14px; }
+body.is-playing .sound-btn span { display: none; }
+
+.btn:focus-visible, .choice:focus-visible {
+  outline: 4px solid var(--active-border);
+  outline-offset: 3px;
+}
+
+/* ---------- はじめの がめん ---------- */
+.start {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 4px var(--side) 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(12px, 2.2vh, 24px);
+}
+.sec { width: 100%; }
+.sec-h {
+  margin: 0 0 10px;
+  font-size: clamp(22px, 2.8vw, 28px);
+  font-weight: 700;
+  color: var(--muted);
+}
+.choices { display: grid; gap: clamp(10px, 2vw, 20px); }
+.levels { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+.choice {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 84px;
+  padding: 12px 10px;
+  font: inherit;
+  color: var(--text);
+  background: var(--card);
+  border: 3px solid var(--card-border);
+  border-radius: 24px;
+  box-shadow: 0 4px 0 #d9d2c3;
+  cursor: pointer;
+}
+.choice[aria-pressed="true"] {
+  background: var(--active);
+  border-color: var(--active-border);
+  border-width: 5px;
+  padding: 10px 8px;
+}
+.choice:active { transform: scale(0.98); }
+.choice-name { font-size: clamp(24px, 3.2vw, 32px); font-weight: 700; }
+.choice-sub { font-size: clamp(15px, 1.8vw, 18px); color: var(--muted); text-align: center; }
+.stars { font-size: clamp(20px, 2.4vw, 26px); color: var(--gold); letter-spacing: 0.1em; line-height: 1; }
+
+.who-pic { display: flex; align-items: center; gap: 6px; height: 48px; }
+.size-pic { width: 56px; height: 56px; }
+.pc-icon { width: 46px; height: 46px; }
+
+.note { margin: 0; font-size: clamp(16px, 2vw, 19px); color: var(--muted); text-align: center; }
+.go-btn {
+  min-height: 80px;
+  min-width: 260px;
+  font-size: clamp(28px, 3.6vw, 36px);
+  background: var(--btn-on);
+  border-width: 4px;
+}
+.twos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.yomi-pic { display: block; width: 52px; height: 56px; }
+.yomi-pic svg { width: 100%; height: 100%; display: block; }
+.start-btns { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 14px 20px; }
+
+/* ---------- あそぶ がめん ---------- */
+.play {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  gap: 12px 20px;
+  padding: 4px var(--side) 12px;
+}
+.side {
+  flex: none;
+  width: clamp(240px, 26vw, 330px);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.board-wrap { flex: 1 1 auto; min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 8px; }
+.board-box { position: relative; flex: 1 1 auto; min-height: 0; display: flex; }
+.board { width: 100%; height: 100%; display: block; overflow: visible; }
+
+/* どちらの ばんか（大きく） */
+.turn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 24px;
+  background: var(--card);
+  border: 4px solid var(--card-border);
+  min-height: 92px;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+.turn.is-me { background: var(--active); border-color: var(--active-border); }
+.turn.is-check { background: #fbe0dc; border-color: #d0574b; }
+.turn.is-end { background: #fdeccd; border-color: var(--gold); }
+.turn-piece { flex: none; width: 56px; height: 62px; }
+.turn-piece svg { width: 100%; height: 100%; display: block; }
+.turn-text {
+  min-width: 0;
+  font-size: clamp(22px, 2.5vw, 32px);
+  font-weight: 700;
+  line-height: 1.25;
+}
+.nw { white-space: nowrap; }
+.turn-text small { display: block; font-size: 0.6em; color: var(--muted); }
+.turn.is-check .turn-text small { color: #b3352b; }
+.thinking i { display: inline-block; animation: blink 1.2s infinite; font-style: normal; }
+.thinking i:nth-child(2) { animation-delay: 0.2s; }
+.thinking i:nth-child(3) { animation-delay: 0.4s; }
+@keyframes blink { 0%, 100% { opacity: 0.2; } 40% { opacity: 1; } }
+.turn.is-end .turn-piece { animation: pop 0.6s ease; }
+@keyframes pop { 0% { transform: scale(1); } 45% { transform: scale(1.25); } 100% { transform: scale(1); } }
+
+.side-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.side-btns .btn { padding: 6px 10px; }
+.side-btns .how-btn { grid-column: 1 / -1; font-size: clamp(19px, 2.2vw, 24px); }
+#hintBtn[aria-pressed="true"] { background: #fdeccd; border-color: var(--gold); }
+.msg {
+  margin: 0;
+  min-height: 2.6em;
+  font-size: clamp(18px, 2.1vw, 22px);
+  font-weight: 700;
+  line-height: 1.45;
+}
+.end-btns { display: flex; flex-direction: column; gap: 12px; }
+.tally { margin: auto 0 0; font-size: clamp(16px, 1.9vw, 19px); color: var(--muted); font-weight: 700; }
+.tally b { font-size: 1.3em; color: var(--text); }
+
+/* ふたりで：それぞれの ひとに むけた ことば（上の ひとには さかさま） */
+.bar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 4px 16px;
+  border-radius: 16px;
+  background: var(--card);
+  border: 3px solid var(--card-border);
+  font-size: clamp(20px, 2.4vw, 26px);
+  font-weight: 700;
+  color: var(--muted);
+  text-align: center;
+}
+.bar-top { transform: rotate(180deg); }
+.bar.is-turn { background: var(--active); border-color: var(--active-border); color: var(--text); }
+.bar.is-check { background: #fbe0dc; border-color: #d0574b; color: #9d2d24; }
+.bar.is-win { background: #fdeccd; border-color: var(--gold); color: var(--text); }
+
+/* たてむき：上に ばんの ようす・ボタン、下に ばん */
+@media (orientation: portrait), (max-width: 760px) {
+  .play { flex-direction: column; }
+  .side { width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px 12px; }
+  .turn { grid-column: 1; grid-row: 1; min-height: 76px; }
+  .side-btns { grid-column: 2; grid-row: 1; grid-template-columns: auto auto auto; }
+  .side-btns .how-btn { grid-column: auto; }
+  .side-btns .btn { padding: 6px 14px; }
+  .msg { grid-column: 1 / -1; min-height: 1.5em; }
+  .end-btns { grid-column: 1 / -1; flex-direction: row; justify-content: center; }
+  .tally { grid-column: 1 / -1; margin: 0; text-align: center; }
+  .tally:empty { display: none; }
+}
+@media (orientation: portrait) and (max-width: 900px), (max-width: 760px) {
+  .side-btns .how-btn span { display: none; }
+}
+@media (max-width: 560px) {
+  .side { grid-template-columns: 1fr; }
+  .side-btns { grid-column: 1; grid-row: 2; }
+  .turn-piece { width: 44px; height: 50px; }
+}
+
+/* ---------- ばん（SVG） ---------- */
+.frame { fill: #b98a43; }
+.felt { fill: #f1cf87; }
+.zone { fill: #e5b866; opacity: 0.45; }
+.grid-line { stroke: #8a6326; stroke-width: 2.5; fill: none; }
+.grid-dot { fill: #8a6326; }
+.stand { fill: #d9ab5f; stroke: #a87a32; stroke-width: 4; }
+.stand-label { font-size: 22px; font-weight: 700; fill: #7c5a22; text-anchor: middle; dominant-baseline: central; }
+.cell-hit { fill: transparent; pointer-events: all; cursor: pointer; }
+.board.is-off .cell-hit { cursor: default; }
+
+/* こま */
+.pc-body { fill: #f8e2b0; stroke: #8f6a2e; stroke-width: 3; stroke-linejoin: round; }
+.pc-shadow { fill: rgba(70, 40, 0, 0.22); }
+.pc-k {
+  font-family: "Hiragino Mincho ProN", "Yu Mincho", "YuMincho", "Noto Serif JP", serif;
+  font-weight: 700;
+  fill: #2c2620;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+.pc-k.is-pro { fill: #c2382c; }
+.pc-y { font-size: 15px; font-weight: 700; fill: #6e5a3c; text-anchor: middle; dominant-baseline: central; }
+.pc-y.is-pro { fill: #c2382c; }
+.pc-n { fill: #3d3a35; stroke: #fff; stroke-width: 3; }
+.pc-nt { font-size: 24px; font-weight: 700; fill: #fff; text-anchor: middle; dominant-baseline: central; }
+.pc.is-faint { opacity: 0.5; }
+.pc.is-sel .pc-body { fill: #fff2b8; stroke: #d39b12; stroke-width: 6; }
+
+/* しるし */
+.hl-last { fill: #f3a43b; opacity: 0.35; }
+.hl-from { fill: #f3a43b; opacity: 0.18; }
+.hl-sel { fill: #ffe66b; opacity: 0.75; }
+.hl-check { fill: #e2463f; opacity: 0.55; animation: chk 0.9s ease-in-out infinite alternate; }
+.hl-mate { fill: #e2463f; opacity: 0.6; }
+@keyframes chk { from { opacity: 0.3; } to { opacity: 0.7; } }
+.dest { fill: #3f9a61; opacity: 0.75; pointer-events: none; }
+.dest-cap { fill: none; stroke: #3f9a61; stroke-width: 9; opacity: 0.85; pointer-events: none; }
+.dest-sq { fill: #7fd39a; opacity: 0.35; pointer-events: none; }
+.press { fill: #fff; opacity: 0.4; pointer-events: none; }
+
+/* ヒント */
+.hint-layer { pointer-events: none; }
+.hint-from { fill: none; stroke: var(--gold); stroke-width: 8; stroke-dasharray: 14 10; }
+.hint-best { fill: #fffdf3; fill-opacity: 0.35; stroke: var(--gold); stroke-width: 8; animation: best 0.8s ease-in-out infinite alternate; }
+.hint-star { fill: var(--gold); stroke: #fff; stroke-width: 3; }
+.hint-danger { fill: none; stroke: #d0392f; stroke-width: 7; }
+.hint-bang { fill: #d0392f; }
+.hint-bang-t { font-size: 26px; font-weight: 700; fill: #fff; text-anchor: middle; dominant-baseline: central; }
+@keyframes best { from { stroke-width: 5; opacity: 0.75; } to { stroke-width: 11; opacity: 1; } }
+
+/* おうて！・つみ！ */
+.pop {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5;
+  pointer-events: none;
+}
+.pop.is-flip { transform: rotate(180deg); }
+.pop-word {
+  padding: 14px 44px;
+  background: var(--card);
+  border: 5px solid #d0574b;
+  border-radius: 28px;
+  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.15);
+  font-size: clamp(52px, 8vw, 88px);
+  font-weight: 700;
+  color: #b3352b;
+  letter-spacing: 0.08em;
+  animation: popin 0.3s ease;
+}
+.pop.is-end .pop-word { border-color: var(--gold); color: var(--text); }
+@keyframes popin { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+/* なる？ */
+.promo {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(61, 58, 53, 0.3);
+  border-radius: 20px;
+}
+.promo.is-flip { transform: rotate(180deg); }
+.promo-in {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 18px 24px 22px;
+  background: var(--card);
+  border: 4px solid var(--active-border);
+  border-radius: 28px;
+  box-shadow: 0 6px 0 #d9d2c3;
+  animation: popin 0.25s ease;
+}
+.promo-title { margin: 0; font-size: clamp(34px, 5vw, 48px); font-weight: 700; }
+.promo-btns { display: flex; gap: 18px; }
+.promo-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 140px;
+  padding: 10px 14px 12px;
+  font: inherit;
+  font-size: clamp(24px, 3vw, 30px);
+  font-weight: 700;
+  color: var(--text);
+  background: var(--btn);
+  border: 4px solid var(--btn-border);
+  border-radius: 24px;
+  cursor: pointer;
+}
+.promo-btn.is-yes { background: #fbe3cf; border-color: #d98b5a; }
+.promo-btn:active { transform: scale(0.97); }
+.promo-btn svg { width: 86px; height: 92px; display: block; }
+
+/* ---------- キラキラ ---------- */
+.fx { position: fixed; inset: 0; pointer-events: none; z-index: 20; }
+.spark {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  margin: -9px 0 0 -9px;
+  animation: spark 0.9s ease-out forwards;
+}
+.spark svg { width: 100%; height: 100%; display: block; }
+@keyframes spark {
+  0% { transform: translate(0, 0) scale(0.3) rotate(0deg); opacity: 1; }
+  70% { opacity: 1; }
+  100% { transform: translate(var(--dx), var(--dy)) scale(1) rotate(90deg); opacity: 0; }
+}
+
+/* ---------- ダイアログ ---------- */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(61, 58, 53, 0.45);
+}
+.dlg {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: min(560px, 100%);
+  padding: 28px 24px;
+  background: var(--card);
+  border: 3px solid var(--card-border);
+  border-radius: 28px;
+  box-shadow: 0 6px 0 #d9d2c3;
+  text-align: center;
+}
+.dlg-title { margin: 0; font-size: clamp(30px, 4.2vw, 40px); font-weight: 700; }
+.dlg-btns { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 8px; }
+
+/* こまの うごきかた */
+.dlg.how {
+  width: min(1100px, 100%);
+  max-height: 100%;
+  padding: 16px 18px 18px;
+  align-items: stretch;
+  text-align: left;
+}
+.dlg.how.is-flip { transform: rotate(180deg); }
+.how-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.how-head .dlg-title { flex: 1 1 auto; font-size: clamp(26px, 3.4vw, 34px); }
+.how-head .btn { min-height: 56px; }
+.how-body {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.how-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
+.how-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px 12px;
+  background: #fffaf0;
+  border: 3px solid var(--card-border);
+  border-radius: 20px;
+}
+.how-row { display: flex; align-items: center; gap: 10px; }
+.how-name { font-size: clamp(22px, 2.6vw, 26px); font-weight: 700; line-height: 1.2; }
+.how-name small { display: block; font-size: 0.68em; color: var(--muted); white-space: nowrap; }
+.how-desc { margin: 0; font-size: clamp(17px, 1.9vw, 19px); font-weight: 700; line-height: 1.4; }
+.how-desc.is-pro { color: #b3352b; }
+.how-pair { display: flex; align-items: flex-start; gap: 10px; }
+.how-one { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.how-arrow { align-self: center; font-size: 15px; font-weight: 700; color: #b3352b; text-align: center; line-height: 1.2; }
+.how-dia { width: 100%; max-width: 150px; height: auto; display: block; }
+.dia-bg { fill: #f6dca4; }
+.dia-line { stroke: #b4914f; stroke-width: 1.5; fill: none; }
+.dia-dot { fill: #e07a2f; }
+.dia-ray { fill: #e07a2f; opacity: 0.35; }
+.dia-arrow { stroke: #c0571a; stroke-width: 6; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.how-rules {
+  margin: 0;
+  padding: 12px 16px 12px 36px;
+  background: #f4f8f5;
+  border: 3px solid var(--btn-border);
+  border-radius: 20px;
+  font-size: clamp(17px, 1.9vw, 20px);
+  font-weight: 700;
+  line-height: 1.55;
+}
+.how-rules li + li { margin-top: 4px; }
+.how-h { margin: 4px 0 0; font-size: clamp(20px, 2.4vw, 24px); font-weight: 700; color: var(--muted); }
+
+@media (max-width: 700px) {
+  .levels { grid-template-columns: 1fr; }
+  .level { flex-direction: row; flex-wrap: wrap; gap: 4px 14px; }
+  .promo-btn { min-width: 110px; }
+  .promo-btn svg { width: 64px; height: 70px; }
+}
+body.is-playing .title { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .hint-best, .hl-check, .thinking i, .turn.is-end .turn-piece, .pop-word, .promo-in { animation: none; }
+  .spark { animation-duration: 0.01s; }
+}
