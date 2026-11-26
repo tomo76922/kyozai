@@ -2,7 +2,7 @@
 // ファイルを更新したら CACHE_VERSION の数字を上げてください。
 // 教材をふやしたら、そのファイルを ASSETS に足してください。
 // 教材を追加・修正したら、news.json に おしらせを1件 足してください（くわしくは CLAUDE.md）。
-var CACHE_VERSION = 'v42';
+var CACHE_VERSION = 'v43';
 var CACHE_PREFIX = 'hiragana-cards-';   // 以前の版の保存を消せるように、名前はそのまま
 var CACHE_NAME = CACHE_PREFIX + CACHE_VERSION;
 
@@ -76,6 +76,14 @@ var ASSETS = [
   './kisetsu/kanji.js',
   './kisetsu/data.js',
   './kisetsu/kisetsu.js',
+  // どっちかな
+  './dotchi/',
+  './dotchi/index.html',
+  './dotchi/dotchi.css',
+  './dotchi/art.js',
+  './dotchi/data.js',
+  './dotchi/maker.js',
+  './dotchi/dotchi.js',
   // なぞりがき
   './nazori/',
   './nazori/index.html',
