@@ -48,8 +48,9 @@ body {
   outline-offset: 3px;
 }
 
-.sound-btn { gap: 6px; padding: 6px 18px; }
-.sound-btn svg { width: 1.3em; height: 1.3em; flex: none; }
+.sound-btn, .bgm-btn { gap: 6px; padding: 6px 16px; }
+.sound-btn svg, .bgm-btn svg { width: 1.3em; height: 1.3em; flex: none; }
+.bgm-btn[aria-pressed="false"],
 .sound-btn[aria-pressed="false"] { background: var(--card); border-color: var(--card-border); color: var(--muted); }
 
 /* ---------- ステージえらび ---------- */
@@ -65,8 +66,8 @@ body {
 .header {
   position: relative;
   display: grid;
-  grid-template-columns: auto 1fr auto auto auto;
-  grid-template-areas: "home title name sound gear";
+  grid-template-columns: auto 1fr auto auto auto auto;
+  grid-template-areas: "home title name bgm sound gear";
   align-items: center;
   gap: 12px 16px;
   width: 100%;
@@ -74,6 +75,7 @@ body {
 }
 .header .home-btn { grid-area: home; min-height: 60px; }
 .header .sound-btn { grid-area: sound; }
+.header .bgm-btn { grid-area: bgm; }
 .header .name-chip { grid-area: name; }
 .title {
   grid-area: title;
@@ -285,7 +287,7 @@ body {
   padding: 12px var(--side) 0;
 }
 .hud-top .home-btn { min-height: 60px; flex: none; }
-.hud-top .sound-btn { flex: none; }
+.hud-top .sound-btn, .hud-top .bgm-btn { flex: none; }
 
 .progress {
   flex: 1 1 auto;
@@ -693,6 +695,8 @@ body {
 }
 .set-status { font-size: 18px; font-weight: 700; color: #4e8a63; }
 .set-note-gap { margin-top: 18px; }
+.vol-label { min-width: 6em; font-size: 20px; font-weight: 700; }
+#bgmKoeBtn[aria-pressed="false"] { background: var(--card); border-color: var(--card-border); }
 .opt-btn[aria-pressed="false"] { background: var(--card); border-color: var(--card-border); }
 #openAllBtn[aria-pressed="false"] { background: var(--card); border-color: var(--card-border); }
 .btn-reset { background: #fbe9e4; border-color: #e0a99c; }
@@ -765,3 +769,12 @@ body {
   padding: 6px 24px;
 }
 .send-btn svg { width: 1.4em; height: 1.4em; flex: none; }
+
+/* ボタンが ふえたので、すこし せまい iPad では 上の帯を つめる */
+@media (max-width: 1260px) {
+  .header { gap: 10px 10px; }
+  .header .title { font-size: clamp(24px, 2.8vw, 34px); letter-spacing: 0.02em; }
+  .header .kr-chip-act { display: none; }
+  .header .kr-chip { padding: 4px 14px 4px 10px; }
+  .sound-btn, .bgm-btn { padding: 6px 12px; }
+}

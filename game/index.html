@@ -33,6 +33,7 @@
       <h1 class="title">ぴよぴよ ラン</h1>
       <!-- なまえ（イニシャルと いろの マーク）。おすと かえられる -->
       <div class="name-chip" id="nameChip"></div>
+      <button type="button" class="btn bgm-btn" aria-pressed="true"></button>
       <button type="button" class="btn sound-btn" aria-pressed="true"></button>
       <!-- 先生用：ながおし したときだけ ひらく -->
       <button type="button" class="gear" id="gearBtn" aria-label="せってい（ながおしで ひらく）">
@@ -100,6 +101,7 @@
         </svg>
         <span id="acornNum">0</span>
       </p>
+      <button type="button" class="btn bgm-btn" aria-pressed="true"></button>
       <button type="button" class="btn sound-btn" aria-pressed="true"></button>
     </div>
 
@@ -274,6 +276,30 @@
         <p class="set-note set-note-gap" id="thNote"></p>
         <div class="set-row">
           <button type="button" class="btn" id="setTestBtn">こえテストを ひらく</button>
+        </div>
+      </section>
+
+      <section class="set-sec" aria-labelledby="h-oto">
+        <h3 class="set-h" id="h-oto">おと</h3>
+        <p class="set-note">こうかおん（ジャンプ・どんぐり など）と、きょく（BGM）の おおきさを べつべつに えらべます。</p>
+        <div class="set-row set-vol" role="group" aria-label="こうかおんの おおきさ">
+          <span class="vol-label">こうかおん</span>
+          <button type="button" class="btn opt-btn" data-se-vol="1" aria-pressed="false">ちいさい</button>
+          <button type="button" class="btn opt-btn" data-se-vol="2" aria-pressed="false">すこし ちいさい</button>
+          <button type="button" class="btn opt-btn" data-se-vol="3" aria-pressed="true">ふつう</button>
+          <button type="button" class="btn opt-btn" data-se-vol="4" aria-pressed="false">おおきい</button>
+        </div>
+        <div class="set-row set-vol" role="group" aria-label="きょくの おおきさ">
+          <span class="vol-label">きょく</span>
+          <button type="button" class="btn opt-btn" data-bgm-vol="1" aria-pressed="false">ちいさい</button>
+          <button type="button" class="btn opt-btn" data-bgm-vol="2" aria-pressed="true">すこし ちいさい</button>
+          <button type="button" class="btn opt-btn" data-bgm-vol="3" aria-pressed="false">ふつう</button>
+          <button type="button" class="btn opt-btn" data-bgm-vol="4" aria-pressed="false">おおきい</button>
+        </div>
+        <p class="set-note set-note-gap">「こえで あそぶ」ときは、きょくの 音を マイクが ひろって ジャンプ しないように、はじめは きょくを ならしません。
+          ならしたい ときは ここで オンに してください（へやの ようすを みながら こえテストで たしかめてください）。</p>
+        <div class="set-row">
+          <button type="button" class="btn" id="bgmKoeBtn" aria-pressed="false">こえで あそぶ ときも きょくを ならす</button>
         </div>
       </section>
 
